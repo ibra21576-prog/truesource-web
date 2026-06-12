@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    background-color: #0a1628;
+    color: #e2eaf4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+  a { color: inherit; }
+  input, select, textarea {
+    background-color: #0d1e33;
+    border: 1px solid #1e3050;
+    color: #e2eaf4;
+    border-radius: 8px;
+    padding: 8px 12px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: #4FE6C7;
+  }
+  input::placeholder { color: #4a6380; }
+  select option { background-color: #111f35; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent text-bg font-semibold rounded-lg px-4 py-2 hover:bg-accent-dim transition-colors cursor-pointer;
+  }
+  .btn-secondary {
+    @apply bg-surface border border-border text-white rounded-lg px-4 py-2 hover:bg-card transition-colors cursor-pointer;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-muted hover:text-white transition-colors cursor-pointer rounded px-2 py-1;
+  }
+  .card {
+    @apply bg-card border border-border rounded-xl p-4;
+  }
+  .badge {
+    @apply text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+  .badge-vinted { @apply bg-teal-900 text-teal-300; }
+  .badge-ebay   { @apply bg-yellow-900 text-yellow-300; }
+  .badge-kleinanzeigen { @apply bg-orange-900 text-orange-300; }
+}
