@@ -1,49 +1,177 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
   body {
-    background-color: #0a1628;
-    color: #e2eaf4;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background-color: #07090f;
+    color: #d4e0f0;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  a { color: inherit; }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,240,197,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,240,197,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body > * { position: relative; z-index: 1; }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0d1117; }
+  ::-webkit-scrollbar-thumb { background: #1e2d42; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2a3f5a; }
+
   input, select, textarea {
-    background-color: #0d1e33;
-    border: 1px solid #1e3050;
-    color: #e2eaf4;
-    border-radius: 8px;
-    padding: 8px 12px;
+    background-color: #0d1117;
+    border: 1px solid #1e2d42;
+    color: #d4e0f0;
+    border-radius: 10px;
+    padding: 10px 14px;
     outline: none;
     width: 100%;
-    transition: border-color 0.15s;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
+
   input:focus, select:focus, textarea:focus {
-    border-color: #4FE6C7;
+    border-color: #3bf0c5;
+    box-shadow: 0 0 0 3px rgba(59,240,197,0.1);
   }
-  input::placeholder { color: #4a6380; }
-  select option { background-color: #111f35; }
+
+  input::placeholder { color: #3a5470; }
+  select option { background-color: #0d1117; color: #d4e0f0; }
 }
 
 @layer components {
+
+  /* ── Buttons ── */
   .btn-primary {
-    @apply bg-accent text-bg font-semibold rounded-lg px-4 py-2 hover:bg-accent-dim transition-colors cursor-pointer;
+    @apply inline-flex items-center justify-center font-semibold rounded-xl px-5 py-2.5 transition-all cursor-pointer select-none;
+    background: linear-gradient(135deg, #3bf0c5, #1ab896);
+    color: #07090f;
+    box-shadow: 0 0 20px rgba(59,240,197,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
   }
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5af5d3, #3bf0c5);
+    box-shadow: 0 0 30px rgba(59,240,197,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
   .btn-secondary {
-    @apply bg-surface border border-border text-white rounded-lg px-4 py-2 hover:bg-card transition-colors cursor-pointer;
+    @apply inline-flex items-center justify-center font-medium rounded-xl px-5 py-2.5 transition-all cursor-pointer select-none;
+    background: #111827;
+    border: 1px solid #1e2d42;
+    color: #94afc8;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
   }
+  .btn-secondary:hover:not(:disabled) {
+    border-color: #2a3f5a;
+    color: #d4e0f0;
+    background: #162032;
+    transform: translateY(-1px);
+  }
+  .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
   .btn-ghost {
-    @apply bg-transparent text-muted hover:text-white transition-colors cursor-pointer rounded px-2 py-1;
+    @apply inline-flex items-center justify-center rounded-lg transition-all cursor-pointer select-none;
+    color: #6b87a0;
+    padding: 6px 10px;
   }
+  .btn-ghost:hover { color: #d4e0f0; background: rgba(255,255,255,0.05); }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center font-medium rounded-xl px-5 py-2.5 transition-all cursor-pointer select-none;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.25);
+    color: #f87171;
+  }
+  .btn-danger:hover { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+
+  /* ── Cards ── */
   .card {
-    @apply bg-card border border-border rounded-xl p-4;
+    background: #111827;
+    border: 1px solid #1e2d42;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
   }
+
+  .card-hover:hover {
+    border-color: rgba(59,240,197,0.3);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(59,240,197,0.1);
+    transform: translateY(-1px);
+  }
+
+  /* ── Badges ── */
   .badge {
-    @apply text-xs font-semibold px-2 py-0.5 rounded-full;
+    @apply inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full;
   }
-  .badge-vinted { @apply bg-teal-900 text-teal-300; }
-  .badge-ebay   { @apply bg-yellow-900 text-yellow-300; }
-  .badge-kleinanzeigen { @apply bg-orange-900 text-orange-300; }
+  .badge-vinted {
+    background: rgba(20,184,166,0.15);
+    color: #2dd4bf;
+    border: 1px solid rgba(20,184,166,0.2);
+  }
+  .badge-ebay {
+    background: rgba(234,179,8,0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(234,179,8,0.2);
+  }
+  .badge-kleinanzeigen {
+    background: rgba(249,115,22,0.12);
+    color: #fb923c;
+    border: 1px solid rgba(249,115,22,0.2);
+  }
+  .badge-new {
+    background: linear-gradient(135deg, rgba(59,240,197,0.2), rgba(99,102,241,0.2));
+    color: #3bf0c5;
+    border: 1px solid rgba(59,240,197,0.25);
+  }
+
+  /* ── Stat chip ── */
+  .stat-chip {
+    @apply flex items-center gap-2 rounded-xl px-4 py-3;
+    background: #111827;
+    border: 1px solid #1e2d42;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  /* ── Form label ── */
+  .form-label {
+    @apply text-xs font-medium uppercase tracking-wider mb-1.5 block;
+    color: #6b87a0;
+  }
+
+  /* ── Section title ── */
+  .section-title {
+    @apply text-2xl font-bold;
+    color: #f0f6ff;
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    @apply card text-center py-20 flex flex-col items-center gap-4;
+  }
 }
