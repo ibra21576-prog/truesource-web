@@ -4,9 +4,9 @@ import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 
 const NAV = [
-  { href: '/dashboard', label: 'Feed', icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
-  { href: '/searches',  label: 'Suchen', icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> },
-  { href: '/archive',   label: 'Archiv', icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg> },
+  { href: '/dashboard', label: 'Feed',    icon: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
+  { href: '/searches',  label: 'Searches', icon: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> },
+  { href: '/archive',   label: 'Archive',  icon: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg> },
 ]
 
 export default function Navigation() {
@@ -17,12 +17,11 @@ export default function Navigation() {
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', gap: 0 }}>
 
         {/* Logo */}
-        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginRight: 32 }}>
+        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginRight: 28 }}>
           <Image src="/logo.png" alt="TrueSource" width={34} height={34} style={{ borderRadius: 8 }} />
           <div>
             <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
-              TrueSource
-              <span style={{ color: 'var(--accent)', marginLeft: 4 }}>Flip</span>
+              TrueSource<span style={{ color: 'var(--accent)', marginLeft: 3 }}>Flip</span>
             </div>
             <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, letterSpacing: '0.05em' }}>DEAL MONITOR</div>
           </div>
@@ -35,7 +34,7 @@ export default function Navigation() {
             return (
               <Link key={l.href} href={l.href} style={{
                 display: 'flex', alignItems: 'center', gap: 7,
-                padding: '6px 14px', borderRadius: 8, fontSize: 13.5, fontWeight: active ? 600 : 500,
+                padding: '6px 13px', borderRadius: 8, fontSize: 13.5, fontWeight: active ? 600 : 500,
                 textDecoration: 'none', transition: 'all 0.15s',
                 color: active ? 'var(--accent)' : 'var(--text2)',
                 background: active ? 'rgba(61,245,200,0.08)' : 'transparent',
@@ -47,10 +46,28 @@ export default function Navigation() {
           })}
         </div>
 
-        {/* Spacer + Live dot */}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span className="pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--success)', letterSpacing: '0.04em' }}>LIVE</span>
+        {/* Right side */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--success)', letterSpacing: '0.04em' }}>LIVE</span>
+          </div>
+          <a href="/api/auth/logout" style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+            borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--text3)',
+            textDecoration: 'none', transition: 'all 0.15s',
+            border: '1px solid transparent',
+          }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = 'var(--danger)'; el.style.borderColor = 'rgba(248,113,113,0.2)'; el.style.background = 'rgba(248,113,113,0.05)' }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = 'var(--text3)'; el.style.borderColor = 'transparent'; el.style.background = 'transparent' }}
+          >
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Sign out
+          </a>
         </div>
 
       </div>
