@@ -1,14 +1,15 @@
 'use client'
 import { useState } from 'react'
 
-const VINTED_DOMAINS = [
-  'www.vinted.de','www.vinted.at','www.vinted.com','www.vinted.fr',
-  'www.vinted.nl','www.vinted.es','www.vinted.it','www.vinted.pl','www.vinted.co.uk',
+const VINTED_DOMAINS = ['www.vinted.de','www.vinted.at','www.vinted.com','www.vinted.fr','www.vinted.nl','www.vinted.es','www.vinted.it','www.vinted.pl','www.vinted.co.uk']
+
+const PLATFORMS = [
+  { value: 'vinted',        label: 'Vinted',        color: '#2dd4bf', active: 'rgba(20,184,166,0.12)', activeBorder: 'rgba(20,184,166,0.3)', icon: '🟢' },
+  { value: 'ebay',          label: 'eBay',           color: '#fbbf24', active: 'rgba(234,179,8,0.1)',   activeBorder: 'rgba(234,179,8,0.3)',   icon: '🟡' },
+  { value: 'kleinanzeigen', label: 'Kleinanzeigen',  color: '#fb923c', active: 'rgba(249,115,22,0.1)',  activeBorder: 'rgba(249,115,22,0.3)',  icon: '🟠' },
 ]
 
-interface Props { onCreated: () => void }
-
-export default function SearchForm({ onCreated }: Props) {
+export default function SearchForm({ onCreated }: { onCreated: () => void }) {
   const [query,    setQuery]    = useState('')
   const [platform, setPlatform] = useState('vinted')
   const [domain,   setDomain]   = useState('www.vinted.de')
@@ -41,57 +42,63 @@ export default function SearchForm({ onCreated }: Props) {
     finally { setLoading(false) }
   }
 
-  const platformOptions = [
-    { value: 'vinted',        label: 'Vinted',        color: '#2dd4bf' },
-    { value: 'ebay',          label: 'eBay',           color: '#fbbf24' },
-    { value: 'kleinanzeigen', label: 'Kleinanzeigen',  color: '#fb923c' },
-  ]
+  const activePlatform = PLATFORMS.find(p => p.value === platform)!
 
   return (
-    <form onSubmit={handleSubmit} className="card space-y-5">
+    <form onSubmit={handleSubmit} style={{
+      background: 'rgba(255,255,255,0.025)',
+      border: '1px solid rgba(255,255,255,0.07)',
+      borderRadius: 20,
+      padding: 24,
+      backdropFilter: 'blur(12px)',
+      boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 8px 32px rgba(0,0,0,0.3)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 20,
+    }}>
+
       {/* Header */}
-      <div className="flex items-center gap-2.5 pb-1">
-        <div style={{ background: 'rgba(59,240,197,0.1)', border: '1px solid rgba(59,240,197,0.2)' }}
-          className="w-8 h-8 rounded-lg flex items-center justify-center">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3bf0c5" strokeWidth="2">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(59,240,197,0.08)', border: '1px solid rgba(59,240,197,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3bf0c5" strokeWidth="2" strokeLinecap="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
         </div>
         <div>
-          <h2 className="font-semibold text-white text-sm">Neue Suche</h2>
-          <p className="text-xs" style={{ color: '#4a6a88' }}>Listing-Monitor erstellen</p>
+          <h2 style={{ fontWeight: 700, fontSize: 16, color: '#f0f6ff', margin: 0 }}>Neue Suche</h2>
+          <p style={{ fontSize: 11, color: '#3a5470', marginTop: 2 }}>Monitor erstellen</p>
         </div>
       </div>
 
-      {/* Search query */}
+      {/* Search input */}
       <div>
         <label className="form-label">Suchbegriff</label>
-        <div className="relative">
+        <div style={{ position: 'relative' }}>
           <input value={query} onChange={e => setQuery(e.target.value)}
-            placeholder="z.B. Nintendo Switch, Adidas Samba…" required
-            style={{ paddingLeft: 40 }} />
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3a5470" strokeWidth="2"
+            placeholder="z.B. Nike Air Jordan, PS5 Controller…"
+            required style={{ paddingLeft: 40 }} />
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2e4460" strokeWidth="2" strokeLinecap="round"
             style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
         </div>
       </div>
 
-      {/* Platform picker */}
+      {/* Platform selector */}
       <div>
         <label className="form-label">Plattform</label>
-        <div className="grid grid-cols-3 gap-2">
-          {platformOptions.map(opt => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+          {PLATFORMS.map(opt => (
             <button key={opt.value} type="button" onClick={() => handlePlatformChange(opt.value)}
-              className="rounded-xl py-2.5 px-3 text-sm font-medium transition-all"
-              style={platform === opt.value ? {
-                background: `rgba(${opt.value === 'vinted' ? '45,212,191' : opt.value === 'ebay' ? '251,191,36' : '251,146,60'},0.12)`,
-                border: `1px solid rgba(${opt.value === 'vinted' ? '45,212,191' : opt.value === 'ebay' ? '251,191,36' : '251,146,60'},0.3)`,
-                color: opt.color,
-              } : {
-                background: '#0d1117',
-                border: '1px solid #1e2d42',
-                color: '#6b87a0',
+              style={{
+                padding: '10px 8px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                transition: 'all 0.2s', border: `1px solid`, fontFamily: 'Inter, sans-serif',
+                ...(platform === opt.value ? {
+                  background: opt.active, borderColor: opt.activeBorder, color: opt.color,
+                  boxShadow: `0 0 12px ${opt.color}18`,
+                } : {
+                  background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.07)', color: '#4a6a88',
+                }),
               }}>
               {opt.label}
             </button>
@@ -107,50 +114,37 @@ export default function SearchForm({ onCreated }: Props) {
             {VINTED_DOMAINS.map(d => <option key={d} value={d}>{d.replace('www.', '')}</option>)}
           </select>
         ) : (
-          <input value={domain} readOnly style={{ opacity: 0.5, cursor: 'default' }} />
+          <input value={domain} readOnly />
         )}
       </div>
 
       {/* Price range */}
       <div>
-        <label className="form-label">Preisbereich (optional)</label>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="relative">
-            <input type="number" value={minPrice} onChange={e => setMinPrice(e.target.value)}
-              placeholder="Min." min="0" style={{ paddingRight: 32 }} />
-            <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#3a5470', fontSize: 13, pointerEvents: 'none' }}>€</span>
+        <label className="form-label">Preisbereich <span style={{ color: '#2e4460', textTransform: 'none', fontWeight: 400, letterSpacing: 0 }}>(optional)</span></label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ position: 'relative' }}>
+            <input type="number" value={minPrice} onChange={e => setMinPrice(e.target.value)} placeholder="Min." min="0" style={{ paddingRight: 30 }} />
+            <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#2e4460', fontSize: 13, pointerEvents: 'none', fontWeight: 600 }}>€</span>
           </div>
-          <div className="relative">
-            <input type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
-              placeholder="Max." min="0" style={{ paddingRight: 32 }} />
-            <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#3a5470', fontSize: 13, pointerEvents: 'none' }}>€</span>
+          <div style={{ position: 'relative' }}>
+            <input type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} placeholder="Max." min="0" style={{ paddingRight: 30 }} />
+            <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#2e4460', fontSize: 13, pointerEvents: 'none', fontWeight: 600 }}>€</span>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="rounded-xl p-3 text-sm flex items-center gap-2"
-          style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
+        <div style={{ borderRadius: 12, padding: '12px 14px', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.18)', color: '#f87171', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           {error}
         </div>
       )}
 
-      <button type="submit" disabled={loading} className="btn-primary w-full">
+      <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%' }}>
         {loading ? (
-          <span className="flex items-center gap-2">
-            <span className="w-4 h-4 border-2 border-bg border-t-transparent rounded-full animate-spin" />
-            Wird erstellt…
-          </span>
+          <><span className="animate-spin" style={{ width: 14, height: 14, border: '2px solid rgba(0,0,0,0.25)', borderTop: '2px solid #06080f', borderRadius: '50%', display: 'inline-block' }} />Wird erstellt…</>
         ) : (
-          <span className="flex items-center gap-2">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Suche hinzufügen
-          </span>
+          <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Suche hinzufügen</>
         )}
       </button>
     </form>
