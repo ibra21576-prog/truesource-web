@@ -1,13 +1,12 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import Navigation from '@/components/Navigation'
 import ItemCard from '@/components/ItemCard'
 
 interface Item {
   id: string; item_id: string; platform: string; domain: string
   title?: string; price?: string; url?: string; image?: string | null
-  found_at: string; search_query?: string
+  found_at: string; search_query?: string; searches?: { query: string }
 }
 
 export default function ArchivePage() {
@@ -15,19 +14,15 @@ export default function ArchivePage() {
   const [loading,  setLoading]  = useState(true)
   const [search,   setSearch]   = useState('')
   const [platform, setPlatform] = useState('')
-  const supabase = createClient()
 
   const load = useCallback(async () => {
-    let query = supabase
-      .from('items')
-      .select(`*, searches(query)`)
-      .order('found_at', { ascending: false })
-      .limit(500)
-
-    if (platform) query = query.eq('platform', platform)
-
-    const { data } = await query
-    if (data) setItems(data.map((it: any) => ({ ...it, search_query: it.searches?.query })))
+    const params = new URLSearchParams()
+    if (platform) params.set('platform', platform)
+    const res = await fetch(`/api/feed?${params}`)
+    if (res.ok) {
+      const data = await res.json()
+      setItems(data.map((it: any) => ({ ...it, search_query: it.searches?.query })))
+    }
     setLoading(false)
   }, [platform])
 
@@ -35,9 +30,7 @@ export default function ArchivePage() {
 
   async function clearAll() {
     if (!confirm('Gesamtes Archiv löschen?')) return
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    await supabase.from('items').delete().eq('user_id', user.id)
+    await fetch('/api/feed', { method: 'DELETE' })
     setItems([])
   }
 
@@ -62,7 +55,6 @@ export default function ArchivePage() {
           </button>
         </div>
 
-        {/* Filters */}
         <div className="flex gap-3">
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Suche im Archiv…" className="max-w-xs" />

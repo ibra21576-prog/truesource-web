@@ -2,7 +2,6 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { fetchItems } from '@/lib/scraper'
 import { NextResponse } from 'next/server'
 
-// Called by Vercel Cron every 5 minutes
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -22,18 +21,7 @@ export async function GET(req: Request) {
 
   for (const search of searches) {
     try {
-      // Get Vinted session cookies if needed
-      let cookieStr: string | undefined
-      if (search.platform === 'vinted') {
-        const { data: session } = await supabase
-          .from('vinted_sessions')
-          .select('cookies')
-          .eq('user_id', search.user_id)
-          .single()
-        cookieStr = session?.cookies
-      }
-
-      const items = await fetchItems(search, cookieStr)
+      const items = await fetchItems(search)
 
       const { data: seenRows } = await supabase
         .from('seen_ids')
@@ -47,7 +35,6 @@ export async function GET(req: Request) {
       if (newItems.length > 0) {
         const rows = newItems.map(it => ({
           search_id:  search.id,
-          user_id:    search.user_id,
           item_id:    it.id,
           platform:   it.platform,
           domain:     search.domain,
@@ -58,8 +45,10 @@ export async function GET(req: Request) {
           first_scan: isFirst,
         }))
         await supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id', ignoreDuplicates: true })
-        const seenInserts = items.map(it => ({ search_id: search.id, item_id: it.id }))
-        await supabase.from('seen_ids').upsert(seenInserts, { ignoreDuplicates: true })
+        await supabase.from('seen_ids').upsert(
+          items.map(it => ({ search_id: search.id, item_id: it.id })),
+          { ignoreDuplicates: true }
+        )
       }
 
       processed++

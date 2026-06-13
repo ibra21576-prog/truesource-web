@@ -1,6 +1,5 @@
 export interface Search {
   id: string
-  user_id: string
   query: string
   platform: string
   domain: string

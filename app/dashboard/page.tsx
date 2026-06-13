@@ -1,13 +1,12 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import Navigation from '@/components/Navigation'
 import ItemCard from '@/components/ItemCard'
 
 interface Item {
   id: string; item_id: string; platform: string; domain: string
   title?: string; price?: string; url?: string; image?: string | null
-  found_at: string; search_query?: string
+  found_at: string; search_query?: string; searches?: { query: string }
 }
 
 interface Search {
@@ -15,38 +14,31 @@ interface Search {
 }
 
 export default function DashboardPage() {
-  const [items,   setItems]   = useState<Item[]>([])
+  const [items,    setItems]    = useState<Item[]>([])
   const [searches, setSearches] = useState<Search[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading,  setLoading]  = useState(true)
   const [scraping, setScraping] = useState<Record<string, boolean>>({})
-  const [errors,  setErrors]  = useState<Record<string, string>>({})
-  const supabase = createClient()
+  const [errors,   setErrors]   = useState<Record<string, string>>({})
 
   const loadFeed = useCallback(async () => {
-    const { data } = await supabase
-      .from('items')
-      .select(`*, searches(query)`)
-      .order('found_at', { ascending: false })
-      .limit(60)
-    if (data) {
+    const res = await fetch('/api/feed')
+    if (res.ok) {
+      const data = await res.json()
       setItems(data.map((it: any) => ({ ...it, search_query: it.searches?.query })))
     }
     setLoading(false)
   }, [])
 
   const loadSearches = useCallback(async () => {
-    const { data } = await supabase.from('searches').select('id,query,platform,domain,enabled').eq('enabled', true)
-    if (data) setSearches(data)
+    const res = await fetch('/api/searches')
+    if (res.ok) setSearches((await res.json()).filter((s: Search) => s.enabled))
   }, [])
 
   useEffect(() => {
     loadFeed()
     loadSearches()
-    // Live updates
-    const channel = supabase.channel('items-feed')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'items' }, loadFeed)
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
+    const iv = setInterval(loadFeed, 60000)
+    return () => clearInterval(iv)
   }, [])
 
   async function refresh(searchId: string) {
@@ -77,14 +69,12 @@ export default function DashboardPage() {
       <Navigation />
       <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
 
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Feed</h1>
             <p className="text-muted text-sm">{items.length} Listings gefunden</p>
           </div>
-          <button onClick={refreshAll} disabled={searches.length === 0}
-            className="btn-primary flex items-center gap-2">
+          <button onClick={refreshAll} disabled={searches.length === 0} className="btn-primary flex items-center gap-2">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
               <path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
@@ -94,40 +84,30 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Per-search refresh buttons */}
         {searches.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {searches.map(s => (
               <div key={s.id} className="flex flex-col gap-1">
                 <button onClick={() => refresh(s.id)} disabled={scraping[s.id]}
                   className={`btn-secondary text-sm flex items-center gap-2 ${scraping[s.id] ? 'opacity-60' : ''}`}>
-                  {scraping[s.id] ? (
-                    <span className="inline-block w-3 h-3 border-2 border-accent border-t-transparent rounded-full animate-spin"/>
-                  ) : (
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                      <path d="M21 3v5h-5"/>
-                    </svg>
-                  )}
+                  {scraping[s.id]
+                    ? <span className="inline-block w-3 h-3 border-2 border-accent border-t-transparent rounded-full animate-spin"/>
+                    : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                  }
                   {s.query} · {s.platform}
                 </button>
-                {errors[s.id] && (
-                  <span className="text-xs text-red-400">{errors[s.id]}</span>
-                )}
+                {errors[s.id] && <span className="text-xs text-red-400">{errors[s.id]}</span>}
               </div>
             ))}
           </div>
         )}
 
-        {/* Feed */}
         {loading ? (
           <div className="text-center text-muted py-20">Lade…</div>
         ) : items.length === 0 ? (
           <div className="card text-center py-16">
             <p className="text-white font-medium mb-2">Noch keine Ergebnisse</p>
-            <p className="text-muted text-sm">
-              Erstell zuerst eine Suche, dann klick auf &quot;Alle aktualisieren&quot;.
-            </p>
+            <p className="text-muted text-sm">Erstell zuerst eine Suche unter &quot;Suchen&quot;, dann klick &quot;Alle aktualisieren&quot;.</p>
           </div>
         ) : (
           <div className="space-y-3">
