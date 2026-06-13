@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 
 const ERROR_MESSAGES: Record<string, string> = {
-  no_access:         "You don't have an active subscription. Purchase access on Whop to continue.",
+  no_access:         "Your subscription is not active. Purchase access to continue.",
   token_failed:      'Authentication failed. Please try again.',
   user_failed:       'Could not retrieve your account. Please try again.',
   membership_failed: 'Could not verify your membership. Please try again.',
@@ -22,8 +22,6 @@ function LoginContent() {
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       padding: 24, fontFamily: 'Inter, sans-serif',
     }}>
-
-      {/* Card */}
       <div style={{
         background: 'var(--card)', border: '1.5px solid var(--border)',
         borderRadius: 20, padding: '40px 36px', width: '100%', maxWidth: 420,
@@ -44,20 +42,17 @@ function LoginContent() {
           </div>
         </div>
 
-        {/* Divider */}
         <div style={{ width: '100%', height: 1, background: 'var(--border)' }} />
 
-        {/* Description */}
         <div style={{ textAlign: 'center' }}>
           <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
             Subscriber Access Required
           </p>
           <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.6 }}>
-            This tool is exclusively available to members of the TrueSource Flip course on Whop. Sign in with your Whop account to continue.
+            This tool is exclusively available to members of the TrueSource Flip course. Sign in with your Whop account to continue.
           </p>
         </div>
 
-        {/* Error */}
         {error && (
           <div style={{
             width: '100%', background: 'rgba(248,113,113,0.08)',
@@ -73,25 +68,21 @@ function LoginContent() {
           </div>
         )}
 
-        {/* Login button */}
         <a href="/api/auth/whop" style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
           padding: '13px 20px', borderRadius: 12, fontWeight: 700, fontSize: 15,
-          background: 'var(--accent)', color: 'var(--bg)', textDecoration: 'none',
-          boxShadow: '0 0 24px rgba(61,245,200,0.25)',
-          transition: 'all 0.15s',
-        }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 0 36px rgba(61,245,200,0.4)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 0 24px rgba(61,245,200,0.25)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
-        >
-          {/* Whop icon */}
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+          background: '#FA4616', color: '#fff', textDecoration: 'none',
+          boxShadow: '0 0 28px rgba(250,70,22,0.4)', transition: 'all 0.15s',
+        }}>
+          {/* Official Whop brandmark */}
+          <svg width="22" height="12" viewBox="0 0 1000 515" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M158.881 -0.00366211C93.2014 -0.00366211 47.9251 28.989 13.6619 61.7749C13.6619 61.7749 -0.173169 74.965 0.00164277 75.3669L143.897 220.129L287.766 75.3669C260.521 37.6314 209.152 -0.00366211 158.881 -0.00366211Z" fill="white"/>
+            <path d="M514.191 -0.00354004C448.513 -0.00354004 403.236 28.9891 368.971 61.7751C368.971 61.7751 356.336 74.6134 355.763 75.3671L177.903 254.322L321.574 398.857L643.077 75.3671C615.831 37.6316 564.488 -0.00354004 514.191 -0.00354004Z" fill="white"/>
+            <path d="M870.479 -0.00354004C804.798 -0.00354004 759.524 28.9891 725.259 61.7751C725.259 61.7751 712.098 74.7138 711.6 75.3671L355.806 433.351L393.466 471.237C451.73 529.852 547.101 529.852 605.365 471.237L998.914 75.3671H999.365C972.119 37.6316 920.773 -0.00354004 870.479 -0.00354004Z" fill="white"/>
           </svg>
-          Sign in with Whop
+          Connect to Whop
         </a>
 
-        {/* No account */}
         <div style={{ textAlign: 'center' }}>
           <p style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
             Don&apos;t have access yet?{' '}
@@ -102,10 +93,8 @@ function LoginContent() {
             </a>
           </p>
         </div>
-
       </div>
 
-      {/* Footer */}
       <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 24, textAlign: 'center' }}>
         Protected by Whop · TrueSource Flip
       </p>

@@ -31,12 +31,19 @@ export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
     }
   } catch (_) {}
 
-  // 2. HTML fallback
+  // 2. HTML fallback — try Googlebot UA first (bypasses IP blocks on eBay)
   const htmlUrl = `https://${domain}/sch/i.html?${params}`
   let res = await fetch(htmlUrl, {
-    headers: { ...BASE_HEADERS, 'User-Agent': UA_BROWSER, Accept: 'text/html,*/*' },
+    headers: { ...BASE_HEADERS, 'User-Agent': UA_CRAWLER, Accept: 'text/html,*/*', From: 'googlebot@googlebot.com' },
     signal: AbortSignal.timeout(15000),
   })
+  if (!res.ok) {
+    // Try browser UA as last resort
+    res = await fetch(htmlUrl, {
+      headers: { ...BASE_HEADERS, 'User-Agent': UA_BROWSER, Accept: 'text/html,*/*' },
+      signal: AbortSignal.timeout(15000),
+    })
+  }
   if (!res.ok) throw new Error(`eBay HTTP ${res.status}`)
   let html = await res.text()
 

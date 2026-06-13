@@ -9,8 +9,23 @@ interface Item {
   found_at: string; first_scan?: boolean; searches?: { query: string }; search_query?: string
 }
 interface Search { id: string; query: string; platform: string; domain: string; enabled: boolean }
+interface Me { userId: string; username: string; memberSince?: string }
 
 const PLAT_COLOR: Record<string, string> = { vinted: '#3df5c8', ebay: '#fbbf24', kleinanzeigen: '#fb923c' }
+
+function memberDuration(since?: string) {
+  if (!since) return null
+  const ms   = Date.now() - new Date(since).getTime()
+  const days = Math.floor(ms / 86400000)
+  if (days < 1)   return 'since today'
+  if (days === 1) return 'for 1 day'
+  if (days < 30)  return `for ${days} days`
+  const months = Math.floor(days / 30)
+  if (months === 1) return 'for 1 month'
+  if (months < 12)  return `for ${months} months`
+  const years = Math.floor(months / 12)
+  return years === 1 ? 'for 1 year' : `for ${years} years`
+}
 
 export default function DashboardPage() {
   const [items,    setItems]    = useState<Item[]>([])
@@ -18,6 +33,7 @@ export default function DashboardPage() {
   const [loading,  setLoading]  = useState(true)
   const [scraping, setScraping] = useState<Record<string, boolean>>({})
   const [errors,   setErrors]   = useState<Record<string, string>>({})
+  const [me,       setMe]       = useState<Me | null>(null)
 
   const loadFeed = useCallback(async () => {
     const res = await fetch('/api/feed')
@@ -32,6 +48,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadFeed(); loadSearches()
+    fetch('/api/me').then(r => r.ok ? r.json() : null).then(setMe)
     const iv = setInterval(loadFeed, 60000)
     return () => clearInterval(iv)
   }, [])
@@ -64,6 +81,64 @@ export default function DashboardPage() {
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <Navigation />
       <div className="page">
+
+        {/* Welcome card */}
+        {me && (
+          <div style={{
+            position: 'relative', overflow: 'hidden',
+            background: 'linear-gradient(135deg, #0d1f1a 0%, #0a1a14 50%, #0d1f1a 100%)',
+            border: '1.5px solid rgba(61,245,200,0.2)',
+            borderRadius: 20, padding: '32px 32px', marginBottom: 32,
+          }}>
+            {/* Glow blobs */}
+            <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(61,245,200,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: -40, left: 60, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(61,245,200,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+              {/* Logo */}
+              <div style={{
+                width: 72, height: 72, borderRadius: 18, flexShrink: 0,
+                background: 'rgba(61,245,200,0.08)', border: '1.5px solid rgba(61,245,200,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 32px rgba(61,245,200,0.15)',
+              }}>
+                <img src="/logo.png" alt="TrueSource" width={52} height={52} style={{ borderRadius: 12, display: 'block' }} />
+              </div>
+
+              {/* Text */}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
+                  TrueSource Member
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                  Welcome back,{' '}
+                  <span style={{
+                    background: 'linear-gradient(90deg, #3df5c8, #22d3a0)',
+                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                  }}>
+                    {me.username}
+                  </span>{' '}👋
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <svg width="13" height="13" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  Subscribed {memberDuration(me.memberSince) ?? 'recently'}
+                </div>
+              </div>
+
+              {/* Badge */}
+              <div style={{
+                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
+                background: 'rgba(61,245,200,0.08)', border: '1px solid rgba(61,245,200,0.2)',
+                borderRadius: 100, padding: '8px 16px',
+              }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 6px var(--accent)' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)' }}>Active</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
           <div>
