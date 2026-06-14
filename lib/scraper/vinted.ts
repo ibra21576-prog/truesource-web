@@ -26,6 +26,26 @@ async function loadVintedSession(domain: string): Promise<{ cookies: string; bea
   }
 }
 
+function sanitizeCookieHeader(cookieStr: string): string {
+  return cookieStr
+    .split(';')
+    .map(c => c.trim())
+    .filter(c => c.includes('='))
+    .map(c => {
+      const eqIdx = c.indexOf('=')
+      const name  = c.slice(0, eqIdx).trim()
+      // Keep only printable ASCII + Latin-1; strip control chars and chars > 255
+      const value = c.slice(eqIdx + 1).replace(/[^\x09\x20-\x7e\xa0-\xff]/g, '')
+      return `${name}=${value}`
+    })
+    .filter(c => {
+      const name = c.slice(0, c.indexOf('='))
+      // Skip cookies whose name contains non-ASCII
+      return /^[a-zA-Z0-9_\-\.]+$/.test(name)
+    })
+    .join('; ')
+}
+
 export async function fetchVinted(search: Search, cookieStr?: string): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.vinted.de'
 
@@ -39,6 +59,7 @@ export async function fetchVinted(search: Search, cookieStr?: string): Promise<S
   }
 
   if (!cookies) throw new Error('LOGIN_REQUIRED')
+  cookies = sanitizeCookieHeader(cookies)
 
   const params = new URLSearchParams({
     search_text: search.query,

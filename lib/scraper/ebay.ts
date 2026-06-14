@@ -20,7 +20,7 @@ export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
     const rssUrl = `https://${domain}/sch/i.html?${rssParams}`
     const rssRes = await fetch(rssUrl, {
       headers: { ...BASE_HEADERS, 'User-Agent': UA_BROWSER, Accept: 'application/rss+xml,text/xml,*/*' },
-      signal: AbortSignal.timeout(12000),
+      signal: AbortSignal.timeout(6000),
     })
     if (rssRes.ok) {
       const text = await rssRes.text()
@@ -35,13 +35,13 @@ export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
   const htmlUrl = `https://${domain}/sch/i.html?${params}`
   let res = await fetch(htmlUrl, {
     headers: { ...BASE_HEADERS, 'User-Agent': UA_CRAWLER, Accept: 'text/html,*/*', From: 'googlebot@googlebot.com' },
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(6000),
   })
   if (!res.ok) {
     // Try browser UA as last resort
     res = await fetch(htmlUrl, {
       headers: { ...BASE_HEADERS, 'User-Agent': UA_BROWSER, Accept: 'text/html,*/*' },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(5000),
     })
   }
   if (!res.ok) throw new Error(`eBay HTTP ${res.status}`)

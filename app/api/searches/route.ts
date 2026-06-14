@@ -1,12 +1,20 @@
 import { createServiceClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET() {
+export const dynamic = 'force-dynamic'
+
+export async function GET(req: NextRequest) {
+  // Allow local scraper to fetch searches with extension token
+  const extToken = req.headers.get('x-extension-token')
+  if (extToken && extToken !== process.env.EXTENSION_TOKEN) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+  }
+
   const supabase = createServiceClient()
-  const { data, error } = await supabase
-    .from('searches')
-    .select('*')
-    .order('created_at', { ascending: false })
+  const qb = supabase.from('searches').select('*').order('created_at', { ascending: false })
+  const { data, error } = extToken
+    ? await qb.eq('enabled', true)
+    : await qb
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
 }

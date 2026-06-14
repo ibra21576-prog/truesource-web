@@ -17,7 +17,7 @@ export async function GET(req: Request) {
   if (!searches?.length) return NextResponse.json({ ok: true, processed: 0 })
 
   let processed = 0
-  let errors = 0
+  const errorDetails: string[] = []
 
   for (const search of searches) {
     try {
@@ -53,10 +53,9 @@ export async function GET(req: Request) {
 
       processed++
     } catch (e: any) {
-      console.error(`[cron] search ${search.id} failed:`, e.message)
-      errors++
+      errorDetails.push(`[${search.platform}] "${search.query}": ${e.message}`)
     }
   }
 
-  return NextResponse.json({ ok: true, processed, errors })
+  return NextResponse.json({ ok: true, processed, errors: errorDetails.length, errorDetails })
 }
