@@ -4,10 +4,22 @@ import { verifySession } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
+const BUCKET = 'ts-settings'
+
 async function getUser(req: NextRequest) {
   const token = req.cookies.get('session')?.value
   if (!token) return null
   return verifySession(token)
+}
+
+async function getUserSearchIds(supabase: any, userId: string): Promise<string[]> {
+  try {
+    const { data } = await supabase.storage.from(BUCKET).download(`user-data/${userId}/search-ids.json`)
+    if (!data) return []
+    return JSON.parse(await data.text()) as string[]
+  } catch {
+    return []
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -20,17 +32,6 @@ export async function GET(req: NextRequest) {
 
   const supabase = createServiceClient()
 
-  // Get user's search IDs first (admins see everything)
-  let searchIds: string[] | null = null
-  if (!isAdmin) {
-    const { data: searches } = await supabase
-      .from('searches')
-      .select('id')
-      .eq('user_id', user.userId)
-    searchIds = (searches || []).map((s: any) => s.id)
-    if (searchIds.length === 0) return NextResponse.json([])
-  }
-
   let query = supabase
     .from('items')
     .select('*, searches(query)')
@@ -38,7 +39,12 @@ export async function GET(req: NextRequest) {
     .limit(500)
 
   if (platform) query = query.eq('platform', platform)
-  if (searchIds) query = query.in('search_id', searchIds)
+
+  if (!isAdmin) {
+    const ids = await getUserSearchIds(supabase, user.userId)
+    if (ids.length === 0) return NextResponse.json([])
+    query = query.in('search_id', ids)
+  }
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

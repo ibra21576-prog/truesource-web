@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
 
   await supabase.storage.createBucket(BUCKET, { public: false }).catch(() => {})
 
-  const payload = JSON.stringify({ cookies, bearerToken: bearerToken || '', updatedAt: Date.now() })
+  const { refreshToken } = body
+  const payload = JSON.stringify({ cookies, bearerToken: bearerToken || '', refreshToken: refreshToken || '', updatedAt: Date.now() })
   const { error } = await supabase.storage
     .from(BUCKET)
     .upload(`vinted/${domain}.json`, Buffer.from(payload), {

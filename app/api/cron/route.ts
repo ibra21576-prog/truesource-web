@@ -4,6 +4,8 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
+const BUCKET = 'ts-settings'
+
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -14,23 +16,38 @@ export async function GET(req: Request) {
   let processed = 0
   const errorDetails: string[] = []
 
-  // ── 1. Per-user searches (each user with their own Vinted session) ──────────
-  const { data: userFolders } = await supabase.storage.from('ts-settings').list('vinted-sessions')
+  // ── 1. Per-user searches ────────────────────────────────────────────────────
+  // List all user folders under user-data/
+  const { data: userFolders } = await supabase.storage.from(BUCKET).list('user-data')
 
   for (const folder of userFolders ?? []) {
     const userId = folder.name
 
+    // Get this user's Vinted session domains
+    const { data: sessionFiles } = await supabase.storage.from(BUCKET).list(`vinted-sessions/${userId}`)
+    const userDomains = (sessionFiles ?? []).map(f => f.name.replace('.json', ''))
+
+    // Get this user's search IDs
+    let searchIds: string[] = []
+    try {
+      const { data: idsFile } = await supabase.storage.from(BUCKET).download(`user-data/${userId}/search-ids.json`)
+      if (idsFile) searchIds = JSON.parse(await idsFile.text())
+    } catch {}
+
+    if (!searchIds.length) continue
+
+    // Fetch those searches from DB
     const { data: searches } = await supabase
       .from('searches')
       .select('*')
-      .eq('user_id', userId)
+      .in('id', searchIds)
       .eq('enabled', true)
 
-    if (!searches?.length) continue
-
-    for (const search of searches) {
+    for (const search of searches ?? []) {
+      // Attach userId so vinted.ts loads the right session
+      const searchWithUser = { ...search, user_id: userId }
       try {
-        const items = await fetchItems(search)
+        const items = await fetchItems(searchWithUser)
         await saveNewItems(supabase, search, items)
         processed++
       } catch (e: any) {
@@ -39,14 +56,28 @@ export async function GET(req: Request) {
     }
   }
 
-  // ── 2. Global / admin searches (no user_id — legacy or admin-created) ───────
-  const { data: globalSearches } = await supabase
+  // ── 2. Admin / global searches (searches not owned by any user) ─────────────
+  // These are searches created before the per-user system, or admin-only searches
+  const { data: allSearches } = await supabase
     .from('searches')
     .select('*')
-    .is('user_id', null)
     .eq('enabled', true)
 
-  for (const search of globalSearches ?? []) {
+  // Collect all IDs already processed via user folders
+  const processedIds = new Set<string>()
+  for (const folder of userFolders ?? []) {
+    try {
+      const { data } = await supabase.storage.from(BUCKET).download(`user-data/${folder.name}/search-ids.json`)
+      if (data) {
+        const ids: string[] = JSON.parse(await data.text())
+        ids.forEach(id => processedIds.add(id))
+      }
+    } catch {}
+  }
+
+  const globalSearches = (allSearches ?? []).filter(s => !processedIds.has(s.id))
+
+  for (const search of globalSearches) {
     try {
       const items = await fetchItems(search)
       await saveNewItems(supabase, search, items)
