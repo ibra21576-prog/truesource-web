@@ -42,14 +42,27 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const { domain, email, password } = body
 
-  if (!domain || !email || !password) {
-    return NextResponse.json({ ok: false, error: 'domain, email und password erforderlich' }, { status: 400 })
+  if (!domain || (!email && !body.accessToken)) {
+    return NextResponse.json({ ok: false, error: 'domain und (email+password oder accessToken) erforderlich' }, { status: 400 })
   }
   if (!ALLOWED_DOMAINS.includes(domain)) {
     return NextResponse.json({ ok: false, error: 'Ungültige Domain' }, { status: 400 })
   }
 
-  // Authenticate with Vinted via OAuth2 password grant
+  // Path A: Direct token (Google/Apple/Facebook login users)
+  if (body.accessToken) {
+    const accessToken  = body.accessToken  as string
+    const refreshToken = (body.refreshToken ?? '') as string
+    const supabase = createServiceClient()
+    await supabase.storage.createBucket(BUCKET, { public: false }).catch(() => {})
+    const payload = JSON.stringify({ email: body.email ?? '', accessToken, refreshToken, connectedAt: Date.now(), updatedAt: Date.now() })
+    const { error } = await supabase.storage.from(BUCKET).upload(`vinted-sessions/${user.userId}/${domain}.json`, Buffer.from(payload), { contentType: 'application/json', upsert: true })
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    console.log(`[vinted-connect] user ${user.userId} connected ${domain} via token`)
+    return NextResponse.json({ ok: true })
+  }
+
+  // Path B: Email + password login
   let accessToken = ''
   let refreshToken = ''
 
