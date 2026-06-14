@@ -14,17 +14,43 @@ export default function Navigation() {
   const path = usePathname()
 
   return (
-    <nav style={{ background: 'var(--surface)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0, zIndex: 100 }}>
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', gap: 0 }}>
+    <nav style={{
+      background: 'rgba(8,10,15,0.85)',
+      borderBottom: '1px solid rgba(30,37,53,0.8)',
+      position: 'sticky', top: 0, zIndex: 100,
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      boxShadow: '0 1px 0 rgba(255,255,255,0.03), 0 4px 24px rgba(0,0,0,0.3)',
+    }}>
+      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', gap: 0 }}>
 
         {/* Logo */}
-        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginRight: 28 }}>
-          <Image src="/logo.png" alt="TrueSource" width={34} height={34} style={{ borderRadius: 8 }} />
+        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none', marginRight: 32 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10, overflow: 'hidden',
+            border: '1px solid rgba(61,245,200,0.2)',
+            boxShadow: '0 0 16px rgba(61,245,200,0.12)',
+            flexShrink: 0,
+          }}>
+            <Image src="/logo.png" alt="TrueSource" width={36} height={36} style={{ display: 'block' }} />
+          </div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
-              TrueSource<span style={{ color: 'var(--accent)', marginLeft: 3 }}>Flip</span>
+            <div style={{ fontWeight: 800, fontSize: 15.5, letterSpacing: '-0.03em', lineHeight: 1.15 }}>
+              <span style={{
+                background: 'linear-gradient(135deg, #edf2ff 0%, #c9d6f0 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>TrueSource</span>
+              <span style={{
+                background: 'linear-gradient(135deg, #3df5c8 0%, #818cf8 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                marginLeft: 3,
+              }}>Flip</span>
             </div>
-            <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, letterSpacing: '0.05em' }}>DEAL MONITOR</div>
+            <div style={{ fontSize: 9.5, color: 'var(--text3)', fontWeight: 700, letterSpacing: '0.1em', marginTop: 1 }}>DEAL MONITOR</div>
           </div>
         </Link>
 
@@ -35,10 +61,19 @@ export default function Navigation() {
             return (
               <Link key={l.href} href={l.href} style={{
                 display: 'flex', alignItems: 'center', gap: 7,
-                padding: '6px 13px', borderRadius: 8, fontSize: 13.5, fontWeight: active ? 600 : 500,
-                textDecoration: 'none', transition: 'all 0.15s',
+                padding: '7px 14px', borderRadius: 10, fontSize: 13.5,
+                fontWeight: active ? 600 : 500,
+                textDecoration: 'none',
+                transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
                 color: active ? 'var(--accent)' : 'var(--text2)',
-                background: active ? 'rgba(61,245,200,0.08)' : 'transparent',
+                background: active
+                  ? 'rgba(61,245,200,0.08)'
+                  : 'transparent',
+                border: active
+                  ? '1px solid rgba(61,245,200,0.15)'
+                  : '1px solid transparent',
+                boxShadow: active ? '0 0 16px rgba(61,245,200,0.08)' : 'none',
+                letterSpacing: '-0.01em',
               }}>
                 {l.icon}
                 {l.label}
@@ -48,19 +83,37 @@ export default function Navigation() {
         </div>
 
         {/* Right side */}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span className="pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--success)', letterSpacing: '0.04em' }}>LIVE</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* Live indicator */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 7,
+            background: 'rgba(52,211,153,0.07)',
+            border: '1px solid rgba(52,211,153,0.15)',
+            padding: '5px 10px', borderRadius: 20,
+          }}>
+            <span className="pulse glow-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', display: 'inline-block', boxShadow: '0 0 8px var(--success)' }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--success)', letterSpacing: '0.06em' }}>LIVE</span>
           </div>
+
+          {/* Sign out */}
           <a href="/api/auth/logout" style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
-            borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--text3)',
-            textDecoration: 'none', transition: 'all 0.15s',
+            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px',
+            borderRadius: 10, fontSize: 13, fontWeight: 500, color: 'var(--text3)',
+            textDecoration: 'none', transition: 'all 0.2s',
             border: '1px solid transparent',
           }}
-            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = 'var(--danger)'; el.style.borderColor = 'rgba(248,113,113,0.2)'; el.style.background = 'rgba(248,113,113,0.05)' }}
-            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = 'var(--text3)'; el.style.borderColor = 'transparent'; el.style.background = 'transparent' }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLElement
+              el.style.color = 'var(--danger)'
+              el.style.borderColor = 'rgba(248,113,113,0.2)'
+              el.style.background = 'rgba(248,113,113,0.05)'
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLElement
+              el.style.color = 'var(--text3)'
+              el.style.borderColor = 'transparent'
+              el.style.background = 'transparent'
+            }}
           >
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
