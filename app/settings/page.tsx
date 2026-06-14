@@ -119,9 +119,75 @@ function SettingsInner() {
         <div style={{ background: 'var(--card)', border: '1.5px solid rgba(61,245,200,0.3)', borderRadius: 16, overflow: 'hidden' }}>
 
           {step === 'idle' && (
-            <div style={{ padding: '32px 28px', textAlign: 'center' }}>
-              <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', margin: '0 0 8px', letterSpacing: '-0.01em' }}>Connect your Vinted account</p>
-              <p style={{ fontSize: 13, color: 'var(--text3)', margin: '0 0 28px', lineHeight: 1.6 }}>Works with Google, Apple, Facebook — any login method</p>
+            <div style={{ padding: '28px' }}>
+              <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', margin: '0 0 4px', letterSpacing: '-0.01em' }}>Connect your Vinted account</p>
+              <p style={{ fontSize: 13, color: 'var(--text3)', margin: '0 0 20px' }}>Works with Google, Apple, Facebook — any login method</p>
+
+              {/* Animated tutorial */}
+              <style>{`
+                @keyframes blink-bar { 0%,100%{opacity:0.3} 50%{opacity:1} }
+                @keyframes drag-btn { 0%{transform:translate(0,0)} 40%{transform:translate(0,0)} 70%{transform:translate(60px,-28px)} 100%{transform:translate(60px,-28px)} }
+                @keyframes drag-cursor { 0%{transform:translate(30px,14px)} 40%{transform:translate(30px,14px)} 70%{transform:translate(90px,-14px)} 100%{transform:translate(90px,-14px)} }
+                @keyframes fade-in-bar-item { 0%,65%{opacity:0;width:0} 80%,100%{opacity:1;width:90px} }
+                @keyframes pulse-click { 0%,79%{transform:scale(1);box-shadow:none} 82%{transform:scale(0.92);box-shadow:0 0 0 4px rgba(61,245,200,0.3)} 100%{transform:scale(1);box-shadow:0 0 0 0 transparent} }
+                @keyframes redirect-flash { 0%,84%{opacity:1} 90%{opacity:0.2} 100%{opacity:1} }
+                @keyframes step-highlight { 0%{background:rgba(61,245,200,0)} 50%{background:rgba(61,245,200,0.12)} 100%{background:rgba(61,245,200,0)} }
+              `}</style>
+
+              <div style={{ background: 'var(--bg)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden', marginBottom: 20 }}>
+                {/* Browser mockup */}
+                <div style={{ background: '#1a1a2e', padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  {/* Browser chrome */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff5f57' }} />
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ffbd2e' }} />
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#28ca42' }} />
+                    <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 4, padding: '3px 10px', fontSize: 10, color: 'rgba(255,255,255,0.4)', marginLeft: 8, fontFamily: 'monospace' }}>vinted.de</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>Ctrl+Shift+B</div>
+                  </div>
+                  {/* Bookmarks bar */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 22 }}>
+                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>BOOKMARKS</span>
+                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.04)', borderRadius: 3, padding: '2px 6px' }}>Amazon</div>
+                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.04)', borderRadius: 3, padding: '2px 6px' }}>YouTube</div>
+                    {/* Newly added bookmarklet */}
+                    <div style={{ fontSize: 9, color: '#3df5c8', background: 'rgba(61,245,200,0.12)', borderRadius: 3, padding: '2px 6px', overflow: 'hidden', animation: 'fade-in-bar-item 4s ease-in-out infinite', whiteSpace: 'nowrap' }}>⭐ Connect Vinted</div>
+                  </div>
+                </div>
+
+                {/* Page content area */}
+                <div style={{ padding: '16px 14px', position: 'relative', minHeight: 110 }}>
+                  {/* Vinted logo mock */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: 6, background: '#09b1ba', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: '#fff' }}>V</div>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>vinted.de</span>
+                    <div style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.35)', animation: 'redirect-flash 4s ease-in-out infinite' }}>● Logged in as you</div>
+                  </div>
+                  {/* Fake page content lines */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {[80,60,70].map((w,i) => <div key={i} style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)', width: `${w}%` }} />)}
+                  </div>
+
+                  {/* Draggable button animation */}
+                  <div style={{ position: 'absolute', bottom: 16, left: 14, animation: 'drag-btn 4s ease-in-out infinite' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 6, background: 'rgba(61,245,200,0.1)', border: '1.5px dashed rgba(61,245,200,0.5)', fontSize: 10, fontWeight: 700, color: '#3df5c8', whiteSpace: 'nowrap' }}>
+                      ⭐ Connect Vinted
+                    </div>
+                  </div>
+                  {/* Cursor */}
+                  <div style={{ position: 'absolute', bottom: 14, left: 12, animation: 'drag-cursor 4s ease-in-out infinite', pointerEvents: 'none' }}>
+                    <svg width="12" height="14" viewBox="0 0 12 14" fill="white" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }}>
+                      <path d="M0 0 L0 12 L3 9 L5.5 14 L7 13.3 L4.5 8.3 L8 8.3 Z"/>
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Caption bar */}
+                <div style={{ padding: '8px 14px', background: 'rgba(61,245,200,0.04)', borderTop: '1px solid rgba(61,245,200,0.1)', fontSize: 11, color: 'var(--accent)', fontWeight: 600, textAlign: 'center', animation: 'step-highlight 4s ease-in-out infinite' }}>
+                  Drag ⭐ Connect Vinted into your bookmarks bar → log into Vinted → click it → done!
+                </div>
+              </div>
+
               <button onClick={handleConnect} className="btn-primary" style={{ width: '100%', fontSize: 16, padding: '15px', borderRadius: 12 }}>
                 Connect with Vinted →
               </button>
