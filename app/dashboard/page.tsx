@@ -99,65 +99,23 @@ function SetupGuide({ vintedLinked, hasSearches }: { vintedLinked: boolean | nul
   )
 }
 
-function QuickConnectBanner({ onConnected }: { onConnected: () => void }) {
-  const [open,   setOpen]   = useState(false)
-  const [email,  setEmail]  = useState('')
-  const [pass,   setPass]   = useState('')
-  const [saving, setSaving] = useState(false)
-  const [err,    setErr]    = useState('')
-  const [ok,     setOk]     = useState(false)
-
-  async function connect() {
-    if (!email.trim() || !pass.trim()) { setErr('Please enter email and password'); return }
-    setSaving(true); setErr('')
-    const r = await fetch('/api/vinted-connect', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ domain: 'www.vinted.de', email: email.trim(), password: pass }),
-    })
-    const d = await r.json()
-    if (r.ok && d.ok) { setOk(true); setTimeout(onConnected, 800) }
-    else setErr(d.error || 'Wrong email or password — please try again')
-    setSaving(false)
+function QuickConnectBanner({ onConnected: _ }: { onConnected: () => void }) {
+  function handleConnect() {
+    window.location.href = '/settings'
   }
 
-  if (ok) return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(61,245,200,0.08)', border: '1.5px solid rgba(61,245,200,0.3)', borderRadius: 12, padding: '14px 18px', marginBottom: 24 }}>
-      <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 6px var(--accent)' }} />
-      <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', margin: 0 }}>Vinted connected! Scanning now…</p>
-    </div>
-  )
-
-  if (!open) return (
-    <div onClick={() => setOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(61,245,200,0.06)', border: '1.5px solid rgba(61,245,200,0.25)', borderRadius: 12, padding: '14px 18px', marginBottom: 24, cursor: 'pointer' }}>
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(61,245,200,0.06)', border: '1.5px solid rgba(61,245,200,0.25)', borderRadius: 12, padding: '14px 18px', marginBottom: 24 }}>
       <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(61,245,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <svg width="18" height="18" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       </div>
       <div style={{ flex: 1 }}>
-        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', margin: 0 }}>Connect your Vinted account</p>
-        <p style={{ fontSize: 12, color: 'var(--text3)', margin: 0, marginTop: 2 }}>Click here → enter email + password → done</p>
+        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', margin: 0 }}>Vinted not connected yet</p>
+        <p style={{ fontSize: 12, color: 'var(--text3)', margin: 0, marginTop: 2 }}>Connect your account to start scanning</p>
       </div>
-      <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-    </div>
-  )
-
-  return (
-    <div style={{ background: 'var(--card)', border: '1.5px solid rgba(61,245,200,0.3)', borderRadius: 12, padding: '20px 22px', marginBottom: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Connect Vinted</p>
-        <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}>×</button>
-      </div>
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Vinted email" autoComplete="email" style={{ flex: '1 1 160px', minWidth: 0 }} />
-        <input type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="Password" autoComplete="current-password" onKeyDown={e => e.key === 'Enter' && connect()} style={{ flex: '1 1 140px', minWidth: 0 }} />
-        <button onClick={connect} disabled={saving} className="btn-primary" style={{ flexShrink: 0 }}>
-          {saving ? <span className="spin" style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.2)', borderTop: '2px solid #000', display: 'inline-block' }} /> : 'Connect'}
-        </button>
-      </div>
-      {err && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 8, marginBottom: 0 }}>{err}</p>}
-      <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10, marginBottom: 0 }}>
-        Password is never stored — only the session token.{' '}
-        <a href="/settings" style={{ color: 'var(--text3)', textDecoration: 'underline' }}>More options →</a>
-      </p>
+      <button onClick={handleConnect} className="btn-primary" style={{ flexShrink: 0, padding: '8px 16px', fontSize: 13 }}>
+        Connect Vinted →
+      </button>
     </div>
   )
 }
