@@ -12,8 +12,8 @@ interface Search { id: string; query: string; platform: string; domain: string; 
 interface Me { userId: string; username: string; memberSince?: string }
 
 const PLAT_COLOR: Record<string, string> = { vinted: '#3df5c8', kleinanzeigen: '#fb923c' }
-const FEED_INTERVAL  = 20 * 1000       // refresh feed display every 20s
-const SCRAPE_INTERVAL = 5 * 60 * 1000 // auto-scrape every 5 min
+const FEED_INTERVAL  = 15 * 1000      // refresh feed display every 15s
+const SCRAPE_INTERVAL = 1 * 60 * 1000 // auto-scrape every 1 min
 
 function SetupGuide({ vintedLinked, hasSearches }: { vintedLinked: boolean | null; hasSearches: boolean }) {
   const step1Done = vintedLinked === true
