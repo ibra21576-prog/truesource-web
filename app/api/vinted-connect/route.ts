@@ -18,23 +18,21 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const supabase = createServiceClient()
-  const result: Record<string, { connected: boolean; email?: string; connectedAt?: number }> = {}
 
-  for (const domain of ALLOWED_DOMAINS) {
-    try {
-      const { data } = await supabase.storage.from(BUCKET).download(`vinted-sessions/${user.userId}/${domain}.json`)
-      if (data) {
-        const info = JSON.parse(await data.text())
-        result[domain] = { connected: true, email: info.email, connectedAt: info.connectedAt }
-      } else {
-        result[domain] = { connected: false }
-      }
-    } catch {
-      result[domain] = { connected: false }
-    }
-  }
+  const entries = await Promise.all(
+    ALLOWED_DOMAINS.map(async domain => {
+      try {
+        const { data } = await supabase.storage.from(BUCKET).download(`vinted-sessions/${user.userId}/${domain}.json`)
+        if (data) {
+          const info = JSON.parse(await data.text())
+          return [domain, { connected: true, email: info.email, connectedAt: info.connectedAt }] as const
+        }
+      } catch {}
+      return [domain, { connected: false }] as const
+    })
+  )
 
-  return NextResponse.json(result)
+  return NextResponse.json(Object.fromEntries(entries))
 }
 
 export async function POST(req: NextRequest) {
@@ -128,6 +126,10 @@ export async function DELETE(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { domain } = await req.json()
+  if (!domain || !ALLOWED_DOMAINS.includes(domain)) {
+    return NextResponse.json({ ok: false, error: 'Ungültige Domain' }, { status: 400 })
+  }
+
   const supabase = createServiceClient()
   await supabase.storage.from(BUCKET).remove([`vinted-sessions/${user.userId}/${domain}.json`])
   return NextResponse.json({ ok: true })

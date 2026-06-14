@@ -8,7 +8,7 @@ const BUCKET = 'ts-settings'
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -16,27 +16,28 @@ export async function GET(req: Request) {
   let processed = 0
   const errorDetails: string[] = []
 
-  // ── 1. Per-user searches ────────────────────────────────────────────────────
-  // List all user folders under user-data/
+  // ── 1. Per-user searches ─────────────────────────────────────────────────────
   const { data: userFolders } = await supabase.storage.from(BUCKET).list('user-data')
 
-  for (const folder of userFolders ?? []) {
-    const userId = folder.name
+  // Load each user's search IDs once, store in map to avoid re-downloading
+  const userSearchMap = new Map<string, string[]>()
+  await Promise.all(
+    (userFolders ?? []).map(async folder => {
+      try {
+        const { data } = await supabase.storage.from(BUCKET).download(`user-data/${folder.name}/search-ids.json`)
+        if (data) userSearchMap.set(folder.name, JSON.parse(await data.text()))
+      } catch {}
+    })
+  )
 
-    // Get this user's Vinted session domains
-    const { data: sessionFiles } = await supabase.storage.from(BUCKET).list(`vinted-sessions/${userId}`)
-    const userDomains = (sessionFiles ?? []).map(f => f.name.replace('.json', ''))
+  // Collect all user-owned search IDs (used later for global dedup)
+  const allUserSearchIds = new Set<string>()
+  userSearchMap.forEach(ids => ids.forEach((id: string) => allUserSearchIds.add(id)))
 
-    // Get this user's search IDs
-    let searchIds: string[] = []
-    try {
-      const { data: idsFile } = await supabase.storage.from(BUCKET).download(`user-data/${userId}/search-ids.json`)
-      if (idsFile) searchIds = JSON.parse(await idsFile.text())
-    } catch {}
-
+  const userEntries = Array.from(userSearchMap.entries())
+  for (const [userId, searchIds] of userEntries) {
     if (!searchIds.length) continue
 
-    // Fetch those searches from DB
     const { data: searches } = await supabase
       .from('searches')
       .select('*')
@@ -44,10 +45,8 @@ export async function GET(req: Request) {
       .eq('enabled', true)
 
     for (const search of searches ?? []) {
-      // Attach userId so vinted.ts loads the right session
-      const searchWithUser = { ...search, user_id: userId }
       try {
-        const items = await fetchItems(searchWithUser)
+        const items = await fetchItems({ ...search, user_id: userId })
         await saveNewItems(supabase, search, items)
         processed++
       } catch (e: any) {
@@ -56,28 +55,13 @@ export async function GET(req: Request) {
     }
   }
 
-  // ── 2. Admin / global searches (searches not owned by any user) ─────────────
-  // These are searches created before the per-user system, or admin-only searches
+  // ── 2. Global / admin searches (not owned by any user) ───────────────────────
   const { data: allSearches } = await supabase
     .from('searches')
     .select('*')
     .eq('enabled', true)
 
-  // Collect all IDs already processed via user folders
-  const processedIds = new Set<string>()
-  for (const folder of userFolders ?? []) {
-    try {
-      const { data } = await supabase.storage.from(BUCKET).download(`user-data/${folder.name}/search-ids.json`)
-      if (data) {
-        const ids: string[] = JSON.parse(await data.text())
-        ids.forEach(id => processedIds.add(id))
-      }
-    } catch {}
-  }
-
-  const globalSearches = (allSearches ?? []).filter(s => !processedIds.has(s.id))
-
-  for (const search of globalSearches) {
+  for (const search of (allSearches ?? []).filter(s => !allUserSearchIds.has(s.id))) {
     try {
       const items = await fetchItems(search)
       await saveNewItems(supabase, search, items)
@@ -114,10 +98,12 @@ async function saveNewItems(supabase: any, search: any, items: any[]) {
       image:      it.image,
       first_scan: isFirst,
     }))
-    await supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id', ignoreDuplicates: true })
-    await supabase.from('seen_ids').upsert(
-      items.map((it: any) => ({ search_id: search.id, item_id: it.id })),
-      { ignoreDuplicates: true }
-    )
+    await Promise.all([
+      supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id', ignoreDuplicates: true }),
+      supabase.from('seen_ids').upsert(
+        items.map((it: any) => ({ search_id: search.id, item_id: it.id })),
+        { ignoreDuplicates: true }
+      ),
+    ])
   }
 }

@@ -138,8 +138,8 @@ export async function fetchVinted(search: Search, cookieStr?: string): Promise<S
     refreshToken = session.refreshToken
   }
 
-  if (!cookies) throw new Error('LOGIN_REQUIRED')
-  cookies = sanitizeCookieHeader(cookies)
+  if (!cookies && !bearer) throw new Error('LOGIN_REQUIRED')
+  if (cookies) cookies = sanitizeCookieHeader(cookies)
 
   const params = new URLSearchParams({
     search_text: search.query,
