@@ -102,14 +102,6 @@ export default function SearchesPage() {
           </div>
         </div>
 
-        <div style={{ marginTop: 28, borderRadius: 10, padding: '12px 16px', background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.12)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          <svg width="15" height="15" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24" style={{ marginTop: 1, flexShrink: 0 }}>
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <p style={{ fontSize: 12, color: '#8a7030', lineHeight: 1.5 }}>
-            <strong style={{ color: '#fbbf24' }}>Vinted note:</strong> Requires an active session. If Vinted searches fail, enable the Chrome Extension — it automatically syncs your Vinted cookies.
-          </p>
-        </div>
       </div>
     </div>
   )

@@ -13,6 +13,132 @@ interface Me { userId: string; username: string; memberSince?: string }
 
 const PLAT_COLOR: Record<string, string> = { vinted: '#3df5c8', ebay: '#fbbf24', kleinanzeigen: '#fb923c' }
 
+function SetupGuide({ vintedLinked, hasSearches }: { vintedLinked: boolean | null; hasSearches: boolean }) {
+  const step1Done = vintedLinked === true
+  const step2Done = hasSearches
+  const step3Done = false
+
+  const steps = [
+    {
+      num: 1,
+      done: step1Done,
+      title: 'Vinted-Konto verbinden',
+      desc: 'Einmalig E-Mail + Passwort eingeben. Dauert 10 Sekunden.',
+      action: { label: 'Jetzt verbinden →', href: '/settings' },
+      icon: (
+        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      ),
+    },
+    {
+      num: 2,
+      done: step2Done,
+      title: 'Suche hinzufügen',
+      desc: 'Was suchst du? z.B. "PlayStation 5", "Nike Air Max 90", "iPhone 15".',
+      action: { label: 'Suche erstellen →', href: '/searches' },
+      icon: (
+        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      ),
+    },
+    {
+      num: 3,
+      done: step3Done,
+      title: 'Fertig — Angebote kommen automatisch',
+      desc: 'Alle 5 Minuten werden neue Angebote gefunden und hier angezeigt.',
+      action: null,
+      icon: (
+        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      ),
+    },
+  ]
+
+  const nextStep = steps.find(s => !s.done)
+
+  return (
+    <div style={{ maxWidth: 560, margin: '0 auto' }}>
+      <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ fontSize: 32, marginBottom: 12 }}>🚀</div>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>
+          In 2 Schritten loslegen
+        </h2>
+        <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 6 }}>
+          Danach findet TrueSource automatisch neue Deals für dich.
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {steps.map((step, i) => {
+          const isNext = step === nextStep
+          const isPast = step.done
+          const isFuture = !isPast && !isNext
+
+          return (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'flex-start', gap: 16,
+              padding: '20px 22px',
+              background: isPast ? 'rgba(61,245,200,0.04)' : isNext ? 'var(--card)' : 'var(--bg)',
+              border: `1.5px solid ${isPast ? 'rgba(61,245,200,0.2)' : isNext ? 'var(--border)' : 'var(--border)'}`,
+              borderRadius: 14,
+              opacity: isFuture ? 0.4 : 1,
+              transition: 'all 0.2s',
+            }}>
+              {/* Circle */}
+              <div style={{
+                width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: isPast ? 'rgba(61,245,200,0.15)' : isNext ? 'rgba(61,245,200,0.08)' : 'var(--border)',
+                border: `2px solid ${isPast ? 'rgba(61,245,200,0.4)' : isNext ? 'rgba(61,245,200,0.25)' : 'transparent'}`,
+                color: isPast ? 'var(--accent)' : isNext ? 'var(--accent)' : 'var(--text3)',
+              }}>
+                {isPast
+                  ? <svg width="18" height="18" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                  : step.icon
+                }
+              </div>
+
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '0.08em' }}>
+                    SCHRITT {step.num}
+                  </span>
+                  {isPast && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'rgba(61,245,200,0.1)', padding: '2px 8px', borderRadius: 100 }}>Erledigt</span>}
+                  {isNext && <span style={{ fontSize: 11, fontWeight: 700, background: 'var(--accent)', padding: '2px 8px', borderRadius: 100, color: '#000' }}>Jetzt</span>}
+                </div>
+                <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0, marginBottom: 4 }}>{step.title}</p>
+                <p style={{ fontSize: 13, color: 'var(--text3)', margin: 0, lineHeight: 1.5 }}>{step.desc}</p>
+                {step.action && isNext && (
+                  <a href={step.action.href} style={{
+                    display: 'inline-flex', alignItems: 'center', marginTop: 14,
+                    padding: '9px 18px', borderRadius: 10,
+                    background: 'var(--accent)', color: '#000',
+                    fontWeight: 800, fontSize: 13, textDecoration: 'none',
+                    transition: 'opacity 0.15s',
+                  }}>
+                    {step.action.label}
+                  </a>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {step1Done && step2Done && (
+        <div style={{ textAlign: 'center', marginTop: 24, padding: '16px', borderRadius: 12, background: 'rgba(61,245,200,0.06)', border: '1px solid rgba(61,245,200,0.15)' }}>
+          <p style={{ fontSize: 13, color: 'var(--text3)', margin: 0 }}>
+            Alles eingerichtet! Klick oben auf <strong style={{ color: 'var(--accent)' }}>Refresh All</strong> um sofort die ersten Ergebnisse zu laden.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function memberDuration(since?: string) {
   if (!since) return null
   const ms   = Date.now() - new Date(since).getTime()
@@ -241,18 +367,10 @@ export default function DashboardPage() {
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 0', gap: 16 }}>
             <span className="spin" style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid var(--border)', borderTop: '3px solid var(--accent)', display: 'inline-block' }} />
-            <p style={{ color: 'var(--text3)', fontSize: 14 }}>Loading feed…</p>
+            <p style={{ color: 'var(--text3)', fontSize: 14 }}>Lade Feed…</p>
           </div>
         ) : items.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '72px 24px', background: 'var(--card)', border: '1.5px solid var(--border)', borderRadius: 14 }}>
-            <div style={{ width: 56, height: 56, borderRadius: 14, background: 'rgba(61,245,200,0.06)', border: '1px solid rgba(61,245,200,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <svg width="24" height="24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            </div>
-            <p style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 8 }}>No listings yet</p>
-            <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.6 }}>
-              Go to <a href="/searches" style={{ color: 'var(--accent)', fontWeight: 600 }}>Searches</a>, create a search, then click &quot;Refresh All&quot;.
-            </p>
-          </div>
+          <SetupGuide vintedLinked={vintedLinked} hasSearches={searches.length > 0} />
         ) : (
           <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {items.map(item => <ItemCard key={item.id} item={item} />)}
