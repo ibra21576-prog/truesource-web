@@ -38,10 +38,10 @@ export default function ArchivePage() {
   })
 
   const filters = [
-    { value: '',             label: 'All',          color: 'var(--purple)', glow: 'rgba(129,140,248,0.12)' },
-    { value: 'vinted',       label: 'Vinted',       color: '#3df5c8',       glow: 'rgba(61,245,200,0.12)' },
-    { value: 'ebay',         label: 'eBay',         color: '#fbbf24',       glow: 'rgba(251,191,36,0.12)' },
-    { value: 'kleinanzeigen',label: 'Kleinanzeigen',color: '#fb923c',       glow: 'rgba(251,146,60,0.12)' },
+    { value: '',              label: 'All' },
+    { value: 'vinted',        label: 'Vinted' },
+    { value: 'ebay',          label: 'eBay' },
+    { value: 'kleinanzeigen', label: 'Kleinanzeigen' },
   ]
 
   return (
@@ -52,17 +52,14 @@ export default function ArchivePage() {
         {/* Page header */}
         <div style={{
           display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-          gap: 16, marginBottom: 32, flexWrap: 'wrap',
+          gap: 16, marginBottom: 28, flexWrap: 'wrap',
         }}>
           <div>
             <h1 style={{
-              fontSize: 30, fontWeight: 900, margin: 0, letterSpacing: '-0.04em',
-              background: 'linear-gradient(135deg, #edf2ff 0%, #818cf8 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              fontSize: 28, fontWeight: 700, margin: 0,
+              letterSpacing: '-0.03em', color: 'var(--text)',
             }}>Archive</h1>
-            <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 6, letterSpacing: '0.01em' }}>
+            <p style={{ fontSize: 14, color: 'var(--text2)', marginTop: 6, lineHeight: 1.6 }}>
               {filtered.length} of {items.length} listings
             </p>
           </div>
@@ -77,31 +74,30 @@ export default function ArchivePage() {
 
         {/* Filters bar */}
         <div style={{
-          display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center',
-          background: 'rgba(20,24,36,0.5)',
+          display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center',
+          background: 'var(--card)',
           border: '1px solid var(--border)',
-          borderRadius: 16, padding: '12px 16px',
-          backdropFilter: 'blur(12px)',
+          borderRadius: 10, padding: '10px 14px',
         }}>
           {/* Search input */}
-          <div style={{ position: 'relative', flex: 1, minWidth: 180, maxWidth: 320 }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 180, maxWidth: 300 }}>
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search archive…"
-              style={{ paddingLeft: 38 }}
+              style={{ paddingLeft: 36 }}
             />
-            <svg width="14" height="14" fill="none" stroke="var(--text3)" strokeWidth="2" viewBox="0 0 24 24"
-              style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <svg width="13" height="13" fill="none" stroke="var(--text3)" strokeWidth="2" viewBox="0 0 24 24"
+              style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
           </div>
 
           {/* Divider */}
-          <div style={{ width: 1, height: 28, background: 'var(--border)', flexShrink: 0 }} />
+          <div style={{ width: 1, height: 24, background: 'var(--border)', flexShrink: 0 }} />
 
           {/* Platform filters */}
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 4 }}>
             {filters.map(f => {
               const active = platform === f.value
               return (
@@ -109,21 +105,19 @@ export default function ArchivePage() {
                   key={f.value}
                   onClick={() => setPlatform(f.value)}
                   style={{
-                    padding: '7px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600,
-                    cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                    transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
-                    letterSpacing: '-0.01em',
+                    padding: '6px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500,
+                    cursor: 'pointer',
+                    fontFamily: 'Geist, -apple-system, system-ui, sans-serif',
+                    border: 'none',
+                    transition: 'all 0.15s ease',
                     ...(active
                       ? {
-                          background: `${f.color}12`,
-                          border: `1.5px solid ${f.color}40`,
-                          color: f.color,
-                          boxShadow: `0 0 14px ${f.glow}`,
-                          transform: 'translateY(-1px)',
+                          background: 'var(--surface)',
+                          color: 'var(--text)',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
                         }
                       : {
                           background: 'transparent',
-                          border: '1.5px solid transparent',
                           color: 'var(--text3)',
                         }
                     ),
@@ -137,42 +131,39 @@ export default function ArchivePage() {
 
         {/* Content */}
         {loading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '100px 0', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 0', gap: 14 }}>
             <span className="spin" style={{
-              width: 40, height: 40, borderRadius: '50%',
+              width: 32, height: 32, borderRadius: '50%',
               border: '2px solid var(--border)',
               borderTop: '2px solid var(--accent)',
               display: 'inline-block',
-              boxShadow: '0 0 20px rgba(61,245,200,0.15)',
             }} />
-            <p style={{ color: 'var(--text3)', fontSize: 14, letterSpacing: '0.01em' }}>Loading archive…</p>
+            <p style={{ color: 'var(--text3)', fontSize: 14 }}>Loading archive…</p>
           </div>
         ) : filtered.length === 0 ? (
           <div style={{
-            textAlign: 'center', padding: '80px 24px',
-            background: 'rgba(20,24,36,0.6)',
-            border: '1.5px solid var(--border)',
-            borderRadius: 20,
-            backdropFilter: 'blur(12px)',
+            textAlign: 'center', padding: '64px 24px',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 12,
           }}>
             <div style={{
-              width: 60, height: 60, borderRadius: 16,
-              background: 'rgba(129,140,248,0.06)',
-              border: '1px solid rgba(129,140,248,0.14)',
+              width: 52, height: 52, borderRadius: 12,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 18px',
-              boxShadow: '0 0 20px rgba(129,140,248,0.06)',
+              margin: '0 auto 16px',
             }}>
-              <svg width="24" height="24" fill="none" stroke="#818cf8" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 24 24">
+              <svg width="22" height="22" fill="none" stroke="var(--text3)" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 24 24">
                 <polyline points="21 8 21 21 3 21 3 8"/>
                 <rect x="1" y="3" width="22" height="5"/>
                 <line x1="10" y1="12" x2="14" y2="12"/>
               </svg>
             </div>
-            <p style={{ fontWeight: 800, fontSize: 16, color: 'var(--text)', marginBottom: 8, letterSpacing: '-0.03em' }}>
+            <p style={{ fontWeight: 600, fontSize: 15, color: 'var(--text)', marginBottom: 6, letterSpacing: '-0.01em' }}>
               Archive is empty
             </p>
-            <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.6 }}>
+            <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.6 }}>
               {search ? 'No results for your search query.' : 'Listings will be saved here automatically.'}
             </p>
           </div>
