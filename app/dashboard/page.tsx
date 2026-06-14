@@ -28,12 +28,13 @@ function memberDuration(since?: string) {
 }
 
 export default function DashboardPage() {
-  const [items,    setItems]    = useState<Item[]>([])
-  const [searches, setSearches] = useState<Search[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [scraping, setScraping] = useState<Record<string, boolean>>({})
-  const [errors,   setErrors]   = useState<Record<string, string>>({})
-  const [me,       setMe]       = useState<Me | null>(null)
+  const [items,         setItems]         = useState<Item[]>([])
+  const [searches,      setSearches]      = useState<Search[]>([])
+  const [loading,       setLoading]       = useState(true)
+  const [scraping,      setScraping]      = useState<Record<string, boolean>>({})
+  const [errors,        setErrors]        = useState<Record<string, string>>({})
+  const [me,            setMe]            = useState<Me | null>(null)
+  const [vintedLinked,  setVintedLinked]  = useState<boolean | null>(null)
 
   const loadFeed = useCallback(async () => {
     const res = await fetch('/api/feed')
@@ -49,6 +50,9 @@ export default function DashboardPage() {
   useEffect(() => {
     loadFeed(); loadSearches()
     fetch('/api/me').then(r => r.ok ? r.json() : null).then(setMe)
+    fetch('/api/vinted-connect').then(r => r.ok ? r.json() : null).then(d => {
+      if (d) setVintedLinked(Object.values(d).some((s: any) => s.connected))
+    })
     const iv = setInterval(loadFeed, 60000)
     return () => clearInterval(iv)
   }, [])
@@ -140,6 +144,32 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Vinted not connected banner */}
+        {vintedLinked === false && (
+          <a href="/settings" style={{ textDecoration: 'none' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              background: 'rgba(61,245,200,0.06)', border: '1.5px solid rgba(61,245,200,0.25)',
+              borderRadius: 12, padding: '14px 18px', marginBottom: 24, cursor: 'pointer',
+            }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(61,245,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', margin: 0 }}>Vinted-Konto verbinden</p>
+                <p style={{ fontSize: 12, color: 'var(--text3)', margin: 0, marginTop: 2 }}>
+                  Einmalig E-Mail + Passwort eingeben — danach läuft alles automatisch
+                </p>
+              </div>
+              <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </div>
+          </a>
+        )}
+
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>Live Feed</h1>
@@ -175,19 +205,35 @@ export default function DashboardPage() {
         {/* Per-search buttons */}
         {searches.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-            {searches.map(s => (
-              <div key={s.id}>
-                <button onClick={() => scrape(s.id)} disabled={scraping[s.id]} className="btn-secondary" style={{ fontSize: 13, padding: '7px 14px', gap: 6 }}>
-                  {scraping[s.id]
-                    ? <span className="spin" style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid var(--border2)', borderTop: `2px solid ${PLAT_COLOR[s.platform] ?? 'var(--accent)'}`, display: 'inline-block' }} />
-                    : <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
-                  }
-                  {s.query}
-                  <span style={{ color: 'var(--text3)', fontSize: 11 }}>· {s.platform}</span>
-                </button>
-                {errors[s.id] && <p style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>{errors[s.id]}</p>}
-              </div>
-            ))}
+            {searches.map(s => {
+              const err = errors[s.id]
+              const needsLogin = err?.includes('LOGIN_REQUIRED')
+              const isTimeout  = err?.includes('timeout') || err?.includes('aborted')
+              return (
+                <div key={s.id}>
+                  <button onClick={() => scrape(s.id)} disabled={scraping[s.id]} className="btn-secondary" style={{ fontSize: 13, padding: '7px 14px', gap: 6 }}>
+                    {scraping[s.id]
+                      ? <span className="spin" style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid var(--border2)', borderTop: `2px solid ${PLAT_COLOR[s.platform] ?? 'var(--accent)'}`, display: 'inline-block' }} />
+                      : <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                    }
+                    {s.query}
+                    <span style={{ color: 'var(--text3)', fontSize: 11 }}>· {s.platform}</span>
+                  </button>
+                  {needsLogin && (
+                    <p style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4 }}>
+                      Vinted nicht verbunden —{' '}
+                      <a href="/settings" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'underline' }}>jetzt verbinden</a>
+                    </p>
+                  )}
+                  {isTimeout && (
+                    <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>eBay blockiert automatische Anfragen</p>
+                  )}
+                  {err && !needsLogin && !isTimeout && (
+                    <p style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>{err}</p>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
 
