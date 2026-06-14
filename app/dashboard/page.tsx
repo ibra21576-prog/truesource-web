@@ -16,15 +16,14 @@ const PLAT_COLOR: Record<string, string> = { vinted: '#3df5c8', ebay: '#fbbf24',
 function SetupGuide({ vintedLinked, hasSearches }: { vintedLinked: boolean | null; hasSearches: boolean }) {
   const step1Done = vintedLinked === true
   const step2Done = hasSearches
-  const step3Done = false
 
   const steps = [
     {
       num: 1,
       done: step1Done,
-      title: 'Vinted-Konto verbinden',
-      desc: 'Einmalig E-Mail + Passwort eingeben. Dauert 10 Sekunden.',
-      action: { label: 'Jetzt verbinden →', href: '/settings' },
+      title: 'Connect your Vinted account',
+      desc: 'Enter your email + password once. Takes 10 seconds.',
+      action: { label: 'Connect now →', href: '/settings' },
       icon: (
         <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
           <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
@@ -34,9 +33,9 @@ function SetupGuide({ vintedLinked, hasSearches }: { vintedLinked: boolean | nul
     {
       num: 2,
       done: step2Done,
-      title: 'Suche hinzufügen',
-      desc: 'Was suchst du? z.B. "PlayStation 5", "Nike Air Max 90", "iPhone 15".',
-      action: { label: 'Suche erstellen →', href: '/searches' },
+      title: 'Add a search',
+      desc: 'What are you looking for? e.g. "PlayStation 5", "Nike Air Max 90", "iPhone 15".',
+      action: { label: 'Create search →', href: '/searches' },
       icon: (
         <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -45,9 +44,9 @@ function SetupGuide({ vintedLinked, hasSearches }: { vintedLinked: boolean | nul
     },
     {
       num: 3,
-      done: step3Done,
-      title: 'Fertig — Angebote kommen automatisch',
-      desc: 'Alle 5 Minuten werden neue Angebote gefunden und hier angezeigt.',
+      done: false,
+      title: 'Done — listings appear automatically',
+      desc: 'Every 5 minutes new listings are found and shown here in real time.',
       action: null,
       icon: (
         <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
@@ -64,10 +63,10 @@ function SetupGuide({ vintedLinked, hasSearches }: { vintedLinked: boolean | nul
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         <div style={{ fontSize: 32, marginBottom: 12 }}>🚀</div>
         <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>
-          In 2 Schritten loslegen
+          Get started in 2 steps
         </h2>
         <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 6 }}>
-          Danach findet TrueSource automatisch neue Deals für dich.
+          TrueSource will automatically find new deals for you after setup.
         </p>
       </div>
 
@@ -82,12 +81,11 @@ function SetupGuide({ vintedLinked, hasSearches }: { vintedLinked: boolean | nul
               display: 'flex', alignItems: 'flex-start', gap: 16,
               padding: '20px 22px',
               background: isPast ? 'rgba(61,245,200,0.04)' : isNext ? 'var(--card)' : 'var(--bg)',
-              border: `1.5px solid ${isPast ? 'rgba(61,245,200,0.2)' : isNext ? 'var(--border)' : 'var(--border)'}`,
+              border: `1.5px solid ${isPast ? 'rgba(61,245,200,0.2)' : 'var(--border)'}`,
               borderRadius: 14,
               opacity: isFuture ? 0.4 : 1,
               transition: 'all 0.2s',
             }}>
-              {/* Circle */}
               <div style={{
                 width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -104,10 +102,10 @@ function SetupGuide({ vintedLinked, hasSearches }: { vintedLinked: boolean | nul
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '0.08em' }}>
-                    SCHRITT {step.num}
+                    STEP {step.num}
                   </span>
-                  {isPast && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'rgba(61,245,200,0.1)', padding: '2px 8px', borderRadius: 100 }}>Erledigt</span>}
-                  {isNext && <span style={{ fontSize: 11, fontWeight: 700, background: 'var(--accent)', padding: '2px 8px', borderRadius: 100, color: '#000' }}>Jetzt</span>}
+                  {isPast && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'rgba(61,245,200,0.1)', padding: '2px 8px', borderRadius: 100 }}>Done</span>}
+                  {isNext && <span style={{ fontSize: 11, fontWeight: 700, background: 'var(--accent)', padding: '2px 8px', borderRadius: 100, color: '#000' }}>Now</span>}
                 </div>
                 <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0, marginBottom: 4 }}>{step.title}</p>
                 <p style={{ fontSize: 13, color: 'var(--text3)', margin: 0, lineHeight: 1.5 }}>{step.desc}</p>
@@ -117,7 +115,6 @@ function SetupGuide({ vintedLinked, hasSearches }: { vintedLinked: boolean | nul
                     padding: '9px 18px', borderRadius: 10,
                     background: 'var(--accent)', color: '#000',
                     fontWeight: 800, fontSize: 13, textDecoration: 'none',
-                    transition: 'opacity 0.15s',
                   }}>
                     {step.action.label}
                   </a>
@@ -131,10 +128,120 @@ function SetupGuide({ vintedLinked, hasSearches }: { vintedLinked: boolean | nul
       {step1Done && step2Done && (
         <div style={{ textAlign: 'center', marginTop: 24, padding: '16px', borderRadius: 12, background: 'rgba(61,245,200,0.06)', border: '1px solid rgba(61,245,200,0.15)' }}>
           <p style={{ fontSize: 13, color: 'var(--text3)', margin: 0 }}>
-            Alles eingerichtet! Klick oben auf <strong style={{ color: 'var(--accent)' }}>Refresh All</strong> um sofort die ersten Ergebnisse zu laden.
+            All set! Click <strong style={{ color: 'var(--accent)' }}>Refresh All</strong> above to load your first results.
           </p>
         </div>
       )}
+    </div>
+  )
+}
+
+function QuickConnectBanner({ onConnected }: { onConnected: () => void }) {
+  const [open,   setOpen]   = useState(false)
+  const [email,  setEmail]  = useState('')
+  const [pass,   setPass]   = useState('')
+  const [saving, setSaving] = useState(false)
+  const [err,    setErr]    = useState('')
+  const [ok,     setOk]     = useState(false)
+
+  async function connect() {
+    if (!email.trim() || !pass.trim()) { setErr('Please enter email and password'); return }
+    setSaving(true); setErr('')
+    const r = await fetch('/api/vinted-connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain: 'www.vinted.de', email: email.trim(), password: pass }),
+    })
+    const d = await r.json()
+    if (r.ok && d.ok) {
+      setOk(true)
+      setTimeout(onConnected, 1000)
+    } else {
+      setErr(d.error || 'Connection failed — check your email and password')
+    }
+    setSaving(false)
+  }
+
+  if (ok) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        background: 'rgba(61,245,200,0.08)', border: '1.5px solid rgba(61,245,200,0.3)',
+        borderRadius: 12, padding: '14px 18px', marginBottom: 24,
+      }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 6px var(--accent)', flexShrink: 0 }} />
+        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', margin: 0 }}>Vinted connected! Loading your feed…</p>
+      </div>
+    )
+  }
+
+  if (!open) {
+    return (
+      <div
+        onClick={() => setOpen(true)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 14,
+          background: 'rgba(61,245,200,0.06)', border: '1.5px solid rgba(61,245,200,0.25)',
+          borderRadius: 12, padding: '14px 18px', marginBottom: 24, cursor: 'pointer',
+        }}
+      >
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(61,245,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <svg width="18" height="18" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', margin: 0 }}>Connect your Vinted account</p>
+          <p style={{ fontSize: 12, color: 'var(--text3)', margin: 0, marginTop: 2 }}>
+            Click here to enter your email + password and start scanning
+          </p>
+        </div>
+        <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{
+      background: 'var(--card)', border: '1.5px solid rgba(61,245,200,0.3)',
+      borderRadius: 12, padding: '20px 22px', marginBottom: 24,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Connect Vinted</p>
+        <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 0 }}>×</button>
+      </div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="Vinted email"
+          autoComplete="email"
+          style={{ flex: '1 1 160px', minWidth: 0 }}
+        />
+        <input
+          type="password"
+          value={pass}
+          onChange={e => setPass(e.target.value)}
+          placeholder="Password"
+          autoComplete="current-password"
+          onKeyDown={e => e.key === 'Enter' && connect()}
+          style={{ flex: '1 1 140px', minWidth: 0 }}
+        />
+        <button onClick={connect} disabled={saving} className="btn-primary" style={{ flexShrink: 0 }}>
+          {saving
+            ? <span className="spin" style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.2)', borderTop: '2px solid #000', display: 'inline-block' }} />
+            : 'Connect'
+          }
+        </button>
+      </div>
+      {err && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 10, marginBottom: 0 }}>{err}</p>}
+      <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10, marginBottom: 0, lineHeight: 1.6 }}>
+        Your password is never stored — only the Vinted session token.{' '}
+        <a href="/token" style={{ color: 'var(--text3)' }}>Using Google/Apple?</a>
+      </p>
     </div>
   )
 }
@@ -173,12 +280,15 @@ export default function DashboardPage() {
     if (res.ok) setSearches((await res.json()).filter((s: Search) => s.enabled))
   }, [])
 
+  async function refreshVintedStatus() {
+    const d = await fetch('/api/vinted-connect').then(r => r.ok ? r.json() : null)
+    if (d) setVintedLinked(Object.values(d).some((s: any) => s.connected))
+  }
+
   useEffect(() => {
     loadFeed(); loadSearches()
     fetch('/api/me').then(r => r.ok ? r.json() : null).then(setMe)
-    fetch('/api/vinted-connect').then(r => r.ok ? r.json() : null).then(d => {
-      if (d) setVintedLinked(Object.values(d).some((s: any) => s.connected))
-    })
+    refreshVintedStatus()
     const iv = setInterval(loadFeed, 60000)
     return () => clearInterval(iv)
   }, [])
@@ -220,12 +330,10 @@ export default function DashboardPage() {
             border: '1.5px solid rgba(61,245,200,0.2)',
             borderRadius: 20, padding: '32px 32px', marginBottom: 32,
           }}>
-            {/* Glow blobs */}
             <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(61,245,200,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
             <div style={{ position: 'absolute', bottom: -40, left: 60, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(61,245,200,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-              {/* Logo */}
               <div style={{
                 width: 72, height: 72, borderRadius: 18, flexShrink: 0,
                 background: 'rgba(61,245,200,0.08)', border: '1.5px solid rgba(61,245,200,0.2)',
@@ -235,17 +343,13 @@ export default function DashboardPage() {
                 <img src="/logo.png" alt="TrueSource" width={52} height={52} style={{ borderRadius: 12, display: 'block' }} />
               </div>
 
-              {/* Text */}
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
                   TrueSource Member
                 </div>
                 <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                   Welcome back,{' '}
-                  <span style={{
-                    background: 'linear-gradient(90deg, #3df5c8, #22d3a0)',
-                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                  }}>
+                  <span style={{ background: 'linear-gradient(90deg, #3df5c8, #22d3a0)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                     {me.username}
                   </span>{' '}👋
                 </div>
@@ -257,7 +361,6 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Badge */}
               <div style={{
                 flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
                 background: 'rgba(61,245,200,0.08)', border: '1px solid rgba(61,245,200,0.2)',
@@ -270,30 +373,9 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Vinted not connected banner */}
+        {/* Vinted not connected — inline quick connect */}
         {vintedLinked === false && (
-          <a href="/settings" style={{ textDecoration: 'none' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              background: 'rgba(61,245,200,0.06)', border: '1.5px solid rgba(61,245,200,0.25)',
-              borderRadius: 12, padding: '14px 18px', marginBottom: 24, cursor: 'pointer',
-            }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(61,245,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="18" height="18" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
-                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
-              </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', margin: 0 }}>Vinted-Konto verbinden</p>
-                <p style={{ fontSize: 12, color: 'var(--text3)', margin: 0, marginTop: 2 }}>
-                  Einmalig E-Mail + Passwort eingeben — danach läuft alles automatisch
-                </p>
-              </div>
-              <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
-            </div>
-          </a>
+          <QuickConnectBanner onConnected={() => { refreshVintedStatus(); loadSearches(); loadFeed() }} />
         )}
 
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
@@ -347,12 +429,12 @@ export default function DashboardPage() {
                   </button>
                   {needsLogin && (
                     <p style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4 }}>
-                      Vinted nicht verbunden —{' '}
-                      <a href="/settings" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'underline' }}>jetzt verbinden</a>
+                      Vinted not connected —{' '}
+                      <a href="/settings" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'underline' }}>connect now</a>
                     </p>
                   )}
                   {isTimeout && (
-                    <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>eBay blockiert automatische Anfragen</p>
+                    <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>Request timed out — try again</p>
                   )}
                   {err && !needsLogin && !isTimeout && (
                     <p style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>{err}</p>
@@ -367,7 +449,7 @@ export default function DashboardPage() {
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 0', gap: 16 }}>
             <span className="spin" style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid var(--border)', borderTop: '3px solid var(--accent)', display: 'inline-block' }} />
-            <p style={{ color: 'var(--text3)', fontSize: 14 }}>Lade Feed…</p>
+            <p style={{ color: 'var(--text3)', fontSize: 14 }}>Loading feed…</p>
           </div>
         ) : items.length === 0 ? (
           <SetupGuide vintedLinked={vintedLinked} hasSearches={searches.length > 0} />
