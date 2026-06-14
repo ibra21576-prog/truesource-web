@@ -130,43 +130,89 @@ function SettingsInner() {
 
           {step === 'waiting' && (
             <div style={{ padding: '28px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#fbbf24', boxShadow: '0 0 8px #fbbf24', flexShrink: 0 }} />
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Vinted opened in a new tab — log in there first</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Vinted opened — log in there with Google first</span>
               </div>
 
-              {/* Option A — Bookmarklet (all browsers) */}
-              <div style={{ background: 'var(--bg)', border: '1.5px solid rgba(61,245,200,0.25)', borderRadius: 12, padding: '16px 18px', marginBottom: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'rgba(61,245,200,0.1)', border: '1px solid rgba(61,245,200,0.2)', borderRadius: 20, padding: '2px 8px' }}>OPTION A — ALL BROWSERS</span>
+              {/* Option A Bookmarklet */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                  <div style={{ height: 1, flex: 1, background: 'rgba(61,245,200,0.2)' }} />
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.06em' }}>OPTION A — ALL BROWSERS (easiest)</span>
+                  <div style={{ height: 1, flex: 1, background: 'rgba(61,245,200,0.2)' }} />
                 </div>
-                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px' }}>Drag this button to your bookmarks bar, then click it on Vinted</p>
-                <p style={{ fontSize: 11, color: 'var(--text3)', margin: '0 0 12px' }}>One-time setup — works forever after. Show bar: <strong>Ctrl+Shift+B</strong></p>
-                <a
-                  href={BOOKMARKLET}
-                  onClick={e => { e.preventDefault(); alert('Drag this button to your bookmarks bar — don\'t click it here!') }}
-                  draggable
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 8, background: 'rgba(61,245,200,0.08)', border: '2px dashed rgba(61,245,200,0.4)', color: 'var(--accent)', fontSize: 13, fontWeight: 700, textDecoration: 'none', cursor: 'grab', userSelect: 'none' }}
-                >
-                  ⭐ Connect Vinted
-                </a>
+
+                {/* Tutorial steps */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+                  {/* Step 1 */}
+                  <div style={{ display: 'flex', gap: 14 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(61,245,200,0.12)', border: '1.5px solid rgba(61,245,200,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: 'var(--accent)' }}>1</div>
+                      <div style={{ width: 2, height: 18, background: 'var(--border)', marginTop: 3 }} />
+                    </div>
+                    <div style={{ paddingTop: 5, paddingBottom: 18 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Show your bookmarks bar</p>
+                      <p style={{ fontSize: 12, color: 'var(--text3)', margin: '3px 0 0' }}>Press <kbd style={{ padding: '1px 6px', borderRadius: 4, border: '1px solid var(--border2)', background: 'var(--surface)', fontSize: 11, fontFamily: 'monospace', fontWeight: 700 }}>Ctrl+Shift+B</kbd> — a bar with your bookmarks will appear at the top of the browser</p>
+                    </div>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div style={{ display: 'flex', gap: 14 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(61,245,200,0.12)', border: '1.5px solid rgba(61,245,200,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: 'var(--accent)' }}>2</div>
+                      <div style={{ width: 2, height: 18, background: 'var(--border)', marginTop: 3 }} />
+                    </div>
+                    <div style={{ paddingTop: 5, paddingBottom: 18 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Drag this button into the bookmarks bar</p>
+                      <div style={{ marginTop: 10 }}>
+                        <a
+                          href={BOOKMARKLET}
+                          onClick={e => { e.preventDefault(); alert('Drag this button into your bookmarks bar — do not click it here!') }}
+                          draggable
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 9, background: 'rgba(61,245,200,0.08)', border: '2px dashed rgba(61,245,200,0.45)', color: 'var(--accent)', fontSize: 13, fontWeight: 700, textDecoration: 'none', cursor: 'grab', userSelect: 'none' }}
+                        >
+                          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M18.364 5.636a9 9 0 1 1-12.728 0M12 3v9"/></svg>
+                          Connect Vinted
+                        </a>
+                      </div>
+                      <p style={{ fontSize: 11, color: 'var(--text3)', margin: '6px 0 0' }}>Hold and drag the button above to your bookmarks bar</p>
+                    </div>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div style={{ display: 'flex', gap: 14 }}>
+                    <div style={{ flexShrink: 0 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(61,245,200,0.12)', border: '1.5px solid rgba(61,245,200,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: 'var(--accent)' }}>3</div>
+                    </div>
+                    <div style={{ paddingTop: 5 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Go to vinted.de, log in, then click "Connect Vinted" in your bookmarks bar</p>
+                      <p style={{ fontSize: 12, color: 'var(--text3)', margin: '3px 0 0' }}>You'll be redirected back here and automatically connected!</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Option B — Console */}
-              <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 18px' }}>
+              {/* Option B Console */}
+              <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: '2px 8px' }}>OPTION B — CHROME / FIREFOX / EDGE</span>
+                  <div style={{ height: 1, flex: 1, background: 'var(--border)' }} />
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '0.06em' }}>OPTION B — CHROME / FIREFOX / EDGE</span>
+                  <div style={{ height: 1, flex: 1, background: 'var(--border)' }} />
                 </div>
-                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: '0 0 10px' }}>
-                  On the Vinted tab: press <kbd style={{ padding: '1px 6px', borderRadius: 4, border: '1.5px solid var(--border2)', background: 'var(--surface)', fontSize: 11, fontFamily: 'monospace' }}>F12</kbd> → click <strong>Console</strong> → press <kbd style={{ padding: '1px 6px', borderRadius: 4, border: '1.5px solid var(--border2)', background: 'var(--surface)', fontSize: 11, fontFamily: 'monospace' }}>Ctrl+V</kbd> → <kbd style={{ padding: '1px 6px', borderRadius: 4, border: '1.5px solid var(--border2)', background: 'var(--surface)', fontSize: 11, fontFamily: 'monospace' }}>Enter</kbd>
+                <p style={{ fontSize: 12, color: 'var(--text)', margin: '0 0 10px', lineHeight: 1.7 }}>
+                  On the Vinted tab:<br />
+                  1. Press <kbd style={{ padding: '1px 6px', borderRadius: 4, border: '1px solid var(--border2)', background: 'var(--surface)', fontSize: 11, fontFamily: 'monospace', fontWeight: 700 }}>F12</kbd> on your keyboard<br />
+                  2. Click the <strong>"Console"</strong> tab at the top<br />
+                  3. Click into the black area → press <kbd style={{ padding: '1px 6px', borderRadius: 4, border: '1px solid var(--border2)', background: 'var(--surface)', fontSize: 11, fontFamily: 'monospace', fontWeight: 700 }}>Ctrl+V</kbd> → press <kbd style={{ padding: '1px 6px', borderRadius: 4, border: '1px solid var(--border2)', background: 'var(--surface)', fontSize: 11, fontFamily: 'monospace', fontWeight: 700 }}>Enter</kbd>
                 </p>
                 <button
                   onClick={() => { navigator.clipboard.writeText(SCRIPT); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
                   style={{ padding: '7px 14px', borderRadius: 8, background: copied ? 'rgba(61,245,200,0.1)' : 'var(--surface)', border: `1px solid ${copied ? 'rgba(61,245,200,0.3)' : 'var(--border)'}`, color: copied ? 'var(--accent)' : 'var(--text3)', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
                 >
-                  {copied ? '✓ Script copied!' : 'Copy script again'}
+                  {copied ? '✓ Copied!' : 'Copy script'}
                 </button>
-                <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6, marginBottom: 0 }}>Script was auto-copied when you clicked Connect</p>
               </div>
 
               <button onClick={() => setStep('idle')} style={{ marginTop: 16, background: 'none', border: 'none', color: 'var(--text3)', fontSize: 12, cursor: 'pointer', padding: 0 }}>← Start over</button>
