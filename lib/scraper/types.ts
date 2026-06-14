@@ -6,6 +6,7 @@ export interface Search {
   min_price?: number | null
   max_price?: number | null
   enabled: boolean
+  user_id?: string | null
 }
 
 export interface ScrapedItem {

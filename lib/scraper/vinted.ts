@@ -4,16 +4,28 @@ import { createServiceClient } from '@/lib/supabase/server'
 
 const BUCKET = 'ts-settings'
 
-async function loadVintedSession(domain: string): Promise<{ cookies: string; bearer: string; refreshToken: string }> {
+async function loadVintedSession(domain: string, userId?: string | null): Promise<{ cookies: string; bearer: string; refreshToken: string }> {
   if (process.env.VINTED_COOKIES) {
     return { cookies: process.env.VINTED_COOKIES, bearer: process.env.VINTED_BEARER ?? '', refreshToken: '' }
   }
+  const supabase = createServiceClient()
+
+  // Per-user session (new system: user logged in with own Vinted account)
+  if (userId) {
+    try {
+      const { data } = await supabase.storage.from(BUCKET).download(`vinted-sessions/${userId}/${domain}.json`)
+      if (data) {
+        const parsed = JSON.parse(await data.text())
+        return { cookies: '', bearer: parsed.accessToken ?? '', refreshToken: parsed.refreshToken ?? '' }
+      }
+    } catch {}
+  }
+
+  // Global admin session (legacy: cookie-based)
   try {
-    const supabase = createServiceClient()
     const { data, error } = await supabase.storage.from(BUCKET).download(`vinted/${domain}.json`)
     if (error || !data) return { cookies: '', bearer: '', refreshToken: '' }
-    const text = await data.text()
-    const parsed = JSON.parse(text)
+    const parsed = JSON.parse(await data.text())
     if (parsed.updatedAt && Date.now() - parsed.updatedAt > 60 * 24 * 3600 * 1000) {
       return { cookies: '', bearer: '', refreshToken: '' }
     }
@@ -23,7 +35,7 @@ async function loadVintedSession(domain: string): Promise<{ cookies: string; bea
   }
 }
 
-async function refreshVintedToken(domain: string, refreshToken: string): Promise<string> {
+async function refreshVintedToken(domain: string, refreshToken: string, userId?: string | null): Promise<string> {
   try {
     const res = await fetch(`https://${domain}/oauth/token`, {
       method: 'POST',
@@ -42,19 +54,29 @@ async function refreshVintedToken(domain: string, refreshToken: string): Promise
     const newAccessToken  = data.access_token  ?? ''
     const newRefreshToken = data.refresh_token ?? ''
 
-    // Save updated tokens to Supabase Storage so they persist for next run
     if (newAccessToken) {
       const supabase = createServiceClient()
-      const { data: existing } = await supabase.storage.from(BUCKET).download(`vinted/${domain}.json`)
+      // Determine which storage path to update
+      const storagePath = userId
+        ? `vinted-sessions/${userId}/${domain}.json`
+        : `vinted/${domain}.json`
+
+      const { data: existing } = await supabase.storage.from(BUCKET).download(storagePath)
       let stored: Record<string, unknown> = {}
       if (existing) {
         try { stored = JSON.parse(await existing.text()) } catch {}
       }
-      stored.bearerToken  = newAccessToken
-      if (newRefreshToken) stored.refreshToken = newRefreshToken
+      // Update the right field name depending on session type
+      if (userId) {
+        stored.accessToken  = newAccessToken
+        if (newRefreshToken) stored.refreshToken = newRefreshToken
+      } else {
+        stored.bearerToken  = newAccessToken
+        if (newRefreshToken) stored.refreshToken = newRefreshToken
+      }
       stored.updatedAt = Date.now()
       await supabase.storage.from(BUCKET)
-        .upload(`vinted/${domain}.json`, Buffer.from(JSON.stringify(stored)), {
+        .upload(storagePath, Buffer.from(JSON.stringify(stored)), {
           contentType: 'application/json', upsert: true,
         })
     }
@@ -103,13 +125,14 @@ async function doVintedRequest(apiUrl: string, domain: string, cookies: string, 
 
 export async function fetchVinted(search: Search, cookieStr?: string): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.vinted.de'
+  const userId = search.user_id ?? null
 
   let cookies = cookieStr ?? ''
   let bearer  = ''
   let refreshToken = ''
 
   if (!cookies) {
-    const session = await loadVintedSession(domain)
+    const session = await loadVintedSession(domain, userId)
     cookies      = session.cookies
     bearer       = session.bearer
     refreshToken = session.refreshToken
@@ -133,7 +156,7 @@ export async function fetchVinted(search: Search, cookieStr?: string): Promise<S
   // Auto-refresh: if token expired and we have a refreshToken, try once
   if ((res.status === 401 || res.status === 403) && refreshToken) {
     console.log('[vinted] token expired — attempting refresh')
-    const newBearer = await refreshVintedToken(domain, refreshToken)
+    const newBearer = await refreshVintedToken(domain, refreshToken, userId)
     if (newBearer) {
       bearer = newBearer
       res = await doVintedRequest(apiUrl, domain, cookies, bearer)
