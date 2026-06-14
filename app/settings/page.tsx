@@ -144,67 +144,64 @@ function SettingsInner() {
         }}>
 
           {step === 'idle' && (
-            <div style={{ padding: '24px' }}>
-              <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: '0 0 4px', letterSpacing: '-0.01em' }}>Connect your Vinted account</p>
-              <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 20px', lineHeight: 1.6 }}>Works with Google, Apple, Facebook — any login method</p>
-
-              {/* Animated tutorial */}
+            <div style={{ padding: '28px 24px' }}>
               <style>{`
-                @keyframes blink-bar { 0%,100%{opacity:0.3} 50%{opacity:1} }
-                @keyframes drag-btn { 0%{transform:translate(0,0)} 40%{transform:translate(0,0)} 70%{transform:translate(60px,-28px)} 100%{transform:translate(60px,-28px)} }
-                @keyframes drag-cursor { 0%{transform:translate(30px,14px)} 40%{transform:translate(30px,14px)} 70%{transform:translate(90px,-14px)} 100%{transform:translate(90px,-14px)} }
-                @keyframes fade-in-bar-item { 0%,65%{opacity:0;width:0} 80%,100%{opacity:1;width:90px} }
-                @keyframes redirect-flash { 0%,84%{opacity:1} 90%{opacity:0.2} 100%{opacity:1} }
-                @keyframes step-highlight { 0%{background:rgba(20,184,166,0)} 50%{background:rgba(20,184,166,0.08)} 100%{background:rgba(20,184,166,0)} }
+                @keyframes pulse-num { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+                @keyframes arrow-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(4px)} }
+                @keyframes appear { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
               `}</style>
 
-              <div style={{ background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)', overflow: 'hidden', marginBottom: 18 }}>
-                {/* Browser mockup */}
-                <div style={{ background: 'var(--surface)', padding: '8px 12px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 7 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff5f57' }} />
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ffbd2e' }} />
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#28ca42' }} />
-                    <div style={{ flex: 1, background: 'var(--card)', borderRadius: 4, padding: '3px 10px', fontSize: 10, color: 'var(--text3)', marginLeft: 8, fontFamily: 'monospace' }}>vinted.de</div>
-                    <div style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'monospace' }}>Ctrl+Shift+B</div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 22 }}>
-                    <span style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600 }}>BOOKMARKS</span>
-                    <div style={{ fontSize: 9, color: 'var(--text3)', background: 'var(--card)', borderRadius: 3, padding: '2px 6px' }}>Amazon</div>
-                    <div style={{ fontSize: 9, color: 'var(--text3)', background: 'var(--card)', borderRadius: 3, padding: '2px 6px' }}>YouTube</div>
-                    <div style={{ fontSize: 9, color: 'var(--accent)', background: 'rgba(20,184,166,0.1)', borderRadius: 3, padding: '2px 6px', overflow: 'hidden', animation: 'fade-in-bar-item 4s ease-in-out infinite', whiteSpace: 'nowrap' }}>Connect Vinted</div>
-                  </div>
-                </div>
+              {/* Step cards */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
 
-                <div style={{ padding: '14px 12px', position: 'relative', minHeight: 100 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                    <div style={{ width: 22, height: 22, borderRadius: 6, background: '#09b1ba', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff' }}>V</div>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>vinted.de</span>
-                    <div style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text3)', animation: 'redirect-flash 4s ease-in-out infinite' }}>Logged in</div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    {[80,60,70].map((w,i) => <div key={i} style={{ height: 5, borderRadius: 3, background: 'var(--border)', width: `${w}%` }} />)}
-                  </div>
-                  <div style={{ position: 'absolute', bottom: 14, left: 12, animation: 'drag-btn 4s ease-in-out infinite' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, background: 'rgba(20,184,166,0.08)', border: '1.5px dashed rgba(20,184,166,0.4)', fontSize: 10, fontWeight: 600, color: 'var(--accent)', whiteSpace: 'nowrap' }}>
+                {/* Step 1 */}
+                <div style={{ display: 'flex', gap: 16, padding: '16px', background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', animation: 'appear 0.3s ease both' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>1</div>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: '0 0 4px' }}>Drag this button into your browser bookmarks bar</p>
+                    <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 10px', lineHeight: 1.5 }}>The bookmarks bar is the bar under your browser address bar. First press <kbd style={{ padding: '1px 6px', borderRadius: 4, border: '1px solid var(--border2)', background: 'var(--card)', fontSize: 12, fontFamily: 'monospace', fontWeight: 600 }}>Ctrl+Shift+B</kbd> to show it.</p>
+                    <a
+                      href={BOOKMARKLET}
+                      onClick={e => { e.preventDefault(); alert('Hold and drag this button to your bookmarks bar!') }}
+                      draggable
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 8, background: 'var(--card)', border: '2px dashed var(--border2)', color: 'var(--accent)', fontSize: 13, fontWeight: 600, textDecoration: 'none', cursor: 'grab', userSelect: 'none', transition: 'border-color 0.15s' }}
+                    >
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M18.364 5.636a9 9 0 1 1-12.728 0M12 3v9"/></svg>
                       Connect Vinted
-                    </div>
-                  </div>
-                  <div style={{ position: 'absolute', bottom: 12, left: 10, animation: 'drag-cursor 4s ease-in-out infinite', pointerEvents: 'none' }}>
-                    <svg width="12" height="14" viewBox="0 0 12 14" fill="white" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }}>
-                      <path d="M0 0 L0 12 L3 9 L5.5 14 L7 13.3 L4.5 8.3 L8 8.3 Z"/>
-                    </svg>
+                    </a>
+                    <p style={{ fontSize: 11, color: 'var(--text3)', margin: '8px 0 0' }}>↑ Hold mouse down on this and drag it up to the bookmarks bar</p>
                   </div>
                 </div>
 
-                <div style={{ padding: '8px 12px', background: 'var(--surface)', borderTop: '1px solid var(--border)', fontSize: 11, color: 'var(--text3)', textAlign: 'center', animation: 'step-highlight 4s ease-in-out infinite' }}>
-                  Drag "Connect Vinted" into your bookmarks bar → log into Vinted → click it
+                {/* Arrow */}
+                <div style={{ textAlign: 'center', animation: 'arrow-bounce 1.5s ease-in-out infinite', color: 'var(--text3)', fontSize: 18 }}>↓</div>
+
+                {/* Step 2 */}
+                <div style={{ display: 'flex', gap: 16, padding: '16px', background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', animation: 'appear 0.3s ease 0.1s both' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>2</div>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: '0 0 4px' }}>Click "Connect with Vinted" — Vinted opens</p>
+                    <p style={{ fontSize: 13, color: 'var(--text2)', margin: 0, lineHeight: 1.5 }}>Log in on Vinted with Google, Apple or any method you used before.</p>
+                  </div>
+                </div>
+
+                {/* Arrow */}
+                <div style={{ textAlign: 'center', animation: 'arrow-bounce 1.5s ease-in-out 0.3s infinite', color: 'var(--text3)', fontSize: 18 }}>↓</div>
+
+                {/* Step 3 */}
+                <div style={{ display: 'flex', gap: 16, padding: '16px', background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', animation: 'appear 0.3s ease 0.2s both' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>3</div>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: '0 0 4px' }}>Click "Connect Vinted" in your bookmarks bar</p>
+                    <p style={{ fontSize: 13, color: 'var(--text2)', margin: 0, lineHeight: 1.5 }}>You get redirected back here and your account is connected automatically. Done!</p>
+                  </div>
                 </div>
               </div>
 
-              <button onClick={handleConnect} className="btn-primary" style={{ width: '100%', paddingTop: 12, paddingBottom: 12, fontSize: 14 }}>
-                Connect with Vinted
+              <button onClick={handleConnect} className="btn-primary" style={{ width: '100%', paddingTop: 13, paddingBottom: 13, fontSize: 15 }}>
+                Connect with Vinted →
               </button>
+              <p style={{ fontSize: 12, color: 'var(--text3)', margin: '10px 0 0', textAlign: 'center' }}>Vinted will open in a new tab</p>
             </div>
           )}
 
