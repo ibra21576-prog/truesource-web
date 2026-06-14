@@ -31,18 +31,6 @@ async function saveUserSearchIds(supabase: any, userId: string, ids: string[]) {
 }
 
 export async function GET(req: NextRequest) {
-  // Local scraper: return all enabled searches
-  const extToken = req.headers.get('x-extension-token')
-  if (extToken) {
-    if (extToken !== process.env.EXTENSION_TOKEN) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-    const supabase = createServiceClient()
-    const { data, error } = await supabase.from('searches').select('*').eq('enabled', true).order('created_at', { ascending: false })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json(data)
-  }
-
   const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
