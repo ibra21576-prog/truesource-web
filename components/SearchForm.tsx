@@ -7,7 +7,8 @@ const VINTED_DOMAINS = [
 ]
 const PLATFORMS = [
   { value: 'vinted',        label: 'Vinted',        color: '#3df5c8', bg: 'rgba(61,245,200,0.1)',  border: 'rgba(61,245,200,0.25)' },
-  { value: 'kleinanzeigen', label: 'Kleinanzeigen',  color: '#fb923c', bg: 'rgba(251,146,60,0.1)', border: 'rgba(251,146,60,0.25)' },
+  { value: 'ebay',          label: 'eBay',          color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',  border: 'rgba(251,191,36,0.25)' },
+  { value: 'kleinanzeigen', label: 'Kleinanzeigen', color: '#fb923c', bg: 'rgba(251,146,60,0.1)',  border: 'rgba(251,146,60,0.25)' },
 ]
 
 export default function SearchForm({ onCreated }: { onCreated: () => void }) {
@@ -22,6 +23,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
   function handlePlatformChange(p: string) {
     setPlatform(p)
     if (p === 'vinted') setDomain('www.vinted.de')
+    else if (p === 'ebay') setDomain('www.ebay.de')
     else setDomain('www.kleinanzeigen.de')
   }
 
@@ -61,7 +63,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
 
       <div>
         <label className="label">Platform</label>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
           {PLATFORMS.map(opt => (
             <button key={opt.value} type="button" onClick={() => handlePlatformChange(opt.value)}
               style={{

@@ -5,6 +5,16 @@ const UA_BROWSER = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
 const UA_CRAWLER = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
 const BASE_HEADERS = { 'Accept-Language': 'de-DE,de;q=0.9,en;q=0.8', 'Cache-Control': 'no-cache' }
 
+async function fetchViaProxy(url: string, headers: Record<string, string>): Promise<Response> {
+  const key = process.env.SCRAPERAPI_KEY
+  if (key) {
+    // Route through ScraperAPI to bypass eBay IP blocks
+    const proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=de`
+    return fetch(proxyUrl, { signal: AbortSignal.timeout(30000) })
+  }
+  return fetch(url, { headers, signal: AbortSignal.timeout(8000) })
+}
+
 export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.ebay.de'
   const params = new URLSearchParams({
@@ -13,15 +23,12 @@ export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
     ...(search.max_price ? { _udhi: String(search.max_price) } : {}),
   })
 
-  // 1. Try RSS
+  // 1. Try RSS (works without proxy on some IPs)
   try {
     const rssParams = new URLSearchParams(params)
     rssParams.set('_rss', '1')
     const rssUrl = `https://${domain}/sch/i.html?${rssParams}`
-    const rssRes = await fetch(rssUrl, {
-      headers: { ...BASE_HEADERS, 'User-Agent': UA_BROWSER, Accept: 'application/rss+xml,text/xml,*/*' },
-      signal: AbortSignal.timeout(6000),
-    })
+    const rssRes = await fetchViaProxy(rssUrl, { ...BASE_HEADERS, 'User-Agent': UA_BROWSER, Accept: 'application/rss+xml,text/xml,*/*' })
     if (rssRes.ok) {
       const text = await rssRes.text()
       if (text.includes('<channel')) {
@@ -31,18 +38,11 @@ export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
     }
   } catch (_) {}
 
-  // 2. HTML fallback — try Googlebot UA first (bypasses IP blocks on eBay)
+  // 2. HTML via proxy or Googlebot UA
   const htmlUrl = `https://${domain}/sch/i.html?${params}`
-  let res = await fetch(htmlUrl, {
-    headers: { ...BASE_HEADERS, 'User-Agent': UA_CRAWLER, Accept: 'text/html,*/*', From: 'googlebot@googlebot.com' },
-    signal: AbortSignal.timeout(6000),
-  })
+  let res = await fetchViaProxy(htmlUrl, { ...BASE_HEADERS, 'User-Agent': UA_CRAWLER, Accept: 'text/html,*/*', From: 'googlebot@googlebot.com' })
   if (!res.ok) {
-    // Try browser UA as last resort
-    res = await fetch(htmlUrl, {
-      headers: { ...BASE_HEADERS, 'User-Agent': UA_BROWSER, Accept: 'text/html,*/*' },
-      signal: AbortSignal.timeout(5000),
-    })
+    res = await fetchViaProxy(htmlUrl, { ...BASE_HEADERS, 'User-Agent': UA_BROWSER, Accept: 'text/html,*/*' })
   }
   if (!res.ok) throw new Error(`eBay HTTP ${res.status}`)
   let html = await res.text()
