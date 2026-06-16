@@ -6,7 +6,7 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 async function fetchViaProxy(url: string, premium = false): Promise<Response> {
   const key = process.env.SCRAPERAPI_KEY
   if (key) {
-    let proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=gb&render=true`
+    let proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=gb`
     if (premium) proxyUrl += '&premium=true'
     return fetch(proxyUrl, { signal: AbortSignal.timeout(60000) })
   }
