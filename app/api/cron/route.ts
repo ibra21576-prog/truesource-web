@@ -34,26 +34,22 @@ export async function GET(req: Request) {
   const allUserSearchIds = new Set<string>()
   userSearchMap.forEach(ids => ids.forEach((id: string) => allUserSearchIds.add(id)))
 
+  // Collect all user searches to run in parallel
+  const userJobs: Array<{ search: any; userId: string }> = []
   const userEntries = Array.from(userSearchMap.entries())
-  for (const [userId, searchIds] of userEntries) {
-    if (!searchIds.length) continue
-
-    const { data: searches } = await supabase
-      .from('searches')
-      .select('*')
-      .in('id', searchIds)
-      .neq('enabled', false)
-
-    for (const search of searches ?? []) {
-      try {
-        const items = await fetchItems({ ...search, user_id: userId })
-        await saveNewItems(supabase, search, items)
-        processed++
-      } catch (e: any) {
-        errorDetails.push(`[user:${userId}][${search.platform}] "${search.query}": ${e.message}`)
+  await Promise.all(
+    userEntries.map(async ([userId, searchIds]) => {
+      if (!searchIds.length) return
+      const { data: searches } = await supabase
+        .from('searches')
+        .select('*')
+        .in('id', searchIds)
+        .neq('enabled', false)
+      for (const search of searches ?? []) {
+        userJobs.push({ search, userId })
       }
-    }
-  }
+    })
+  )
 
   // ── 2. Global / admin searches (not owned by any user) ───────────────────────
   const { data: allSearches } = await supabase
@@ -61,15 +57,24 @@ export async function GET(req: Request) {
     .select('*')
     .neq('enabled', false)
 
-  for (const search of (allSearches ?? []).filter(s => !allUserSearchIds.has(s.id))) {
-    try {
-      const items = await fetchItems(search)
-      await saveNewItems(supabase, search, items)
-      processed++
-    } catch (e: any) {
-      errorDetails.push(`[global][${search.platform}] "${search.query}": ${e.message}`)
-    }
-  }
+  const globalJobs = (allSearches ?? []).filter(s => !allUserSearchIds.has(s.id))
+
+  // Run ALL searches in parallel — much faster, fits in 10s Vercel limit
+  const results = await Promise.allSettled([
+    ...userJobs.map(({ search, userId }) =>
+      fetchItems({ ...search, user_id: userId })
+        .then(items => saveNewItems(supabase, search, items))
+        .then(() => { processed++ })
+        .catch(e => errorDetails.push(`[user:${userId}][${search.platform}] "${search.query}": ${e.message}`))
+    ),
+    ...globalJobs.map(search =>
+      fetchItems(search)
+        .then(items => saveNewItems(supabase, search, items))
+        .then(() => { processed++ })
+        .catch(e => errorDetails.push(`[global][${search.platform}] "${search.query}": ${e.message}`))
+    ),
+  ])
+  void results
 
   return NextResponse.json({ ok: true, processed, errors: errorDetails.length, errorDetails })
 }
