@@ -22,12 +22,27 @@ export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
   // Kijiji Canada search URL — buy & sell category, sort by newest
   const searchUrl = `https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc`
 
-  const res = await fetchViaProxy(searchUrl)
-  if (!res.ok) throw new Error(`Kijiji HTTP ${res.status}`)
-  const html = await res.text()
+  let html = ''
+  try {
+    const res = await fetchViaProxy(searchUrl)
+    if (res.status === 429) {
+      console.log('[kijiji] rate limited (429) — skipping this round')
+      return []
+    }
+    if (!res.ok) {
+      console.log(`[kijiji] HTTP ${res.status} — skipping`)
+      return []
+    }
+    html = await res.text()
+  } catch (e: any) {
+    console.log('[kijiji] fetch error:', e.message)
+    return []
+  }
 
-  if (/captcha|Access Denied|robot|challenge-platform/i.test(html))
-    throw new Error('Kijiji bot check — try again later')
+  if (/captcha|Access Denied|robot|challenge-platform/i.test(html)) {
+    console.log('[kijiji] bot check — skipping this round')
+    return []
+  }
 
   const items = parseHtml(html, domain)
   if (items.length === 0) console.log('[kijiji] no items parsed from', domain)

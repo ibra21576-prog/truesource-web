@@ -11,19 +11,24 @@ export async function fetchCraigslist(search: Search): Promise<ScrapedItem[]> {
 
   const url = `https://${domain}/search/sss?${params}`
 
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent': UA,
-      Accept: 'text/html,*/*',
-      'Accept-Language': 'en-US,en;q=0.9',
-    },
-    signal: AbortSignal.timeout(15000),
-  })
-  if (!res.ok) throw new Error(`Craigslist HTTP ${res.status}`)
-  const html = await res.text()
+  let html = ''
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': UA, Accept: 'text/html,*/*', 'Accept-Language': 'en-US,en;q=0.9' },
+      signal: AbortSignal.timeout(15000),
+    })
+    if (res.status === 429) { console.log('[craigslist] rate limited — skipping'); return [] }
+    if (!res.ok) { console.log(`[craigslist] HTTP ${res.status} — skipping`); return [] }
+    html = await res.text()
+  } catch (e: any) {
+    console.log('[craigslist] fetch error:', e.message)
+    return []
+  }
 
-  if (/captcha|blocked|Access Denied/i.test(html))
-    throw new Error('Craigslist bot check — try again later')
+  if (/captcha|blocked|Access Denied/i.test(html)) {
+    console.log('[craigslist] bot check — skipping')
+    return []
+  }
 
   const items = parseHtml(html, domain)
   if (items.length === 0) console.log('[craigslist] no items parsed from', domain)

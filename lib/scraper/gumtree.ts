@@ -23,18 +23,30 @@ export async function fetchGumtree(search: Search): Promise<ScrapedItem[]> {
     ? `https://${domain}/s-${encodeURIComponent(search.query)}/k0?sort=date`
     : `https://${domain}/search?search_category=all&q=${encodeURIComponent(search.query)}&sort=date`
 
-  const res = await fetchViaProxy(searchUrl)
-  if (!res.ok) throw new Error(`Gumtree HTTP ${res.status}`)
-  const html = await res.text()
+  let html = ''
+  try {
+    const res = await fetchViaProxy(searchUrl)
+    if (res.status === 429) {
+      console.log('[gumtree] rate limited (429) — skipping this round')
+      return []
+    }
+    if (!res.ok) {
+      console.log(`[gumtree] HTTP ${res.status} — skipping`)
+      return []
+    }
+    html = await res.text()
+  } catch (e: any) {
+    console.log('[gumtree] fetch error:', e.message)
+    return []
+  }
 
-  if (/captcha|Access Denied|robot|Pardon Our Interruption/i.test(html))
-    throw new Error('Gumtree bot check — try again later')
+  if (/captcha|Access Denied|robot|Pardon Our Interruption/i.test(html)) {
+    console.log('[gumtree] bot check — skipping this round')
+    return []
+  }
 
   const items = parseHtml(html, domain, isAU)
-  if (items.length === 0) {
-    if (/no results|0 results|nothing found/i.test(html)) return []
-    console.log('[gumtree] no items parsed from', domain)
-  }
+  if (items.length === 0) console.log('[gumtree] no items parsed from', domain)
   return items
 }
 
