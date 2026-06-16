@@ -35,7 +35,8 @@ export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
     })
     if (direct.ok) {
       const t = await direct.text()
-      if (!isBlocked(t) && t.length > 10000) { html = t }
+      // Accept page if it has real content — Kijiji may include "Access Denied" in security scripts even on valid pages
+      if (t.length > 10000) { html = t }
     }
   } catch (_) {}
 
