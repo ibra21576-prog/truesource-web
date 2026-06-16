@@ -76,17 +76,19 @@ function isBlocked(html: string) {
 }
 
 function parseJson(json: string, domain: string): ScrapedItem[] {
-  const data = JSON.parse(json)
-  const arr = Array.isArray(data) ? data : data.data || data.items || []
+  const raw = JSON.parse(json)
+  // Response is [[listings...], metadata] — take first element
+  const arr: any[] = Array.isArray(raw[0]) ? raw[0] : Array.isArray(raw) ? raw : []
   const items: ScrapedItem[] = []
   const seen = new Set<string>()
   for (const row of arr) {
     const id = String(row.PostingID || row.id || '')
     if (!id || seen.has(id)) continue
-    seen.add(id)
+    // Skip cluster entries (no title)
     const title = row.PostingTitle || row.title || ''
     if (!title || title.length < 2) continue
-    const price = row.Ask ? `$${row.Ask}` : ''
+    seen.add(id)
+    const price = row.price != null ? `$${row.price}` : row.Ask ? `$${row.Ask}` : ''
     const url = row.PostingURL || row.url || `https://${domain}/d/${id}.html`
     const image = row.ImageThumb || row.image || null
     items.push({ id, title, price, url, image, platform: 'craigslist' })
