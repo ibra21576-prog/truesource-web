@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { verifySession } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 const BUCKET = 'ts-settings'
 const ALLOWED_DOMAINS = ['www.vinted.de', 'www.vinted.at', 'www.vinted.fr', 'www.vinted.co.uk']
@@ -62,40 +63,45 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
-  // Path B: Email + password login
+  // Path B: Email + password login — routed via ScraperAPI ultra_premium (DataDome bypass)
   let accessToken = ''
   let refreshToken = ''
 
+  const SCRAPER_KEY = process.env.SCRAPERAPI_KEY ?? '733e672464368f8af2e0e57599398209'
+
   try {
-    const res = await fetch(`https://${domain}/oauth/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type':   'application/x-www-form-urlencoded',
-        'Accept':         'application/json',
-        'Accept-Language':'de-DE,de;q=0.9,en;q=0.8',
-        'User-Agent':     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Origin':         `https://${domain}`,
-        'Referer':        `https://${domain}/login`,
-        'Sec-Fetch-Site': 'same-origin',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Dest': 'empty',
-      },
-      body: new URLSearchParams({
-        grant_type: 'password',
-        username:   email,
-        password:   password,
-        client_id:  'web',
-        scope:      'user',
-      }),
-      signal: AbortSignal.timeout(15000),
-    })
+    const res = await fetch(
+      `https://api.scraperapi.com/?api_key=${SCRAPER_KEY}&url=${encodeURIComponent(`https://${domain}/oauth/token`)}&country_code=de&ultra_premium=true&keep_headers=true`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type':    'application/x-www-form-urlencoded',
+          'Accept':          'application/json',
+          'Accept-Language': 'de-DE,de;q=0.9',
+          'User-Agent':      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Origin':          `https://${domain}`,
+          'Referer':         `https://${domain}/login`,
+          'Sec-Fetch-Site':  'same-origin',
+          'Sec-Fetch-Mode':  'cors',
+          'Sec-Fetch-Dest':  'empty',
+        },
+        body: new URLSearchParams({
+          grant_type: 'password',
+          username:   email,
+          password,
+          client_id:  'web',
+          scope:      'user',
+        }),
+        signal: AbortSignal.timeout(55000),
+      }
+    )
 
     if (!res.ok) {
       const txt = await res.text().catch(() => '')
-      console.error('[vinted-connect] login failed:', res.status, txt.slice(0, 200))
+      console.error('[vinted-connect] login failed:', res.status, txt.slice(0, 300))
       const msg = res.status === 400 || res.status === 401
         ? 'E-Mail oder Passwort falsch'
-        : `Vinted Fehler (${res.status}) — bitte später nochmal versuchen`
+        : `Vinted Fehler (${res.status}) — bitte erneut versuchen`
       return NextResponse.json({ ok: false, error: msg }, { status: 400 })
     }
 
@@ -104,9 +110,11 @@ export async function POST(req: NextRequest) {
     refreshToken = data.refresh_token ?? ''
 
     if (!accessToken) {
+      console.error('[vinted-connect] no token in response:', JSON.stringify(data).slice(0, 200))
       return NextResponse.json({ ok: false, error: 'Kein Token erhalten — bitte erneut versuchen' }, { status: 400 })
     }
   } catch (e: any) {
+    console.error('[vinted-connect] exception:', e.message)
     return NextResponse.json({ ok: false, error: `Verbindungsfehler: ${e.message}` }, { status: 500 })
   }
 

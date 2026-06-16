@@ -3,17 +3,28 @@ import { stripHtml } from './utils'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
-async function fetchViaProxy(url: string, premium = false): Promise<Response> {
+async function tryDirect(url: string): Promise<{ ok: boolean; text: string }> {
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': UA, Accept: '*/*', 'Accept-Language': 'en-US,en;q=0.9' },
+      signal: AbortSignal.timeout(6000),
+    })
+    if (!res.ok) return { ok: false, text: '' }
+    const text = await res.text()
+    return { ok: true, text }
+  } catch { return { ok: false, text: '' } }
+}
+
+async function tryProxy(url: string): Promise<{ ok: boolean; text: string }> {
   const key = process.env.SCRAPERAPI_KEY
-  if (key) {
-    let proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=us`
-    if (premium) proxyUrl += '&premium=true'
-    return fetch(proxyUrl, { signal: AbortSignal.timeout(45000) })
-  }
-  return fetch(url, {
-    headers: { 'User-Agent': UA, Accept: '*/*', 'Accept-Language': 'en-US,en;q=0.9' },
-    signal: AbortSignal.timeout(15000),
-  })
+  if (!key) return { ok: false, text: '' }
+  try {
+    const proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=us`
+    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(7500) })
+    if (!res.ok) return { ok: false, text: '' }
+    const text = await res.text()
+    return { ok: true, text }
+  } catch { return { ok: false, text: '' } }
 }
 
 export async function fetchCraigslist(search: Search): Promise<ScrapedItem[]> {
@@ -22,45 +33,53 @@ export async function fetchCraigslist(search: Search): Promise<ScrapedItem[]> {
   if (search.min_price) params.set('min_price', String(search.min_price))
   if (search.max_price) params.set('max_price', String(search.max_price))
 
-  // 1. RSS — most reliable (plain XML, never bot-checked when going via proxy)
-  try {
-    const rssUrl = `https://${domain}/search/sss?${params}&format=rss`
-    const res = await fetchViaProxy(rssUrl)
-    if (res.ok) {
-      const text = await res.text()
-      if ((text.includes('<channel>') || text.includes('<rss')) && !text.includes('blocked')) {
-        const items = parseRss(text, domain)
-        if (items.length > 0) {
-          console.log(`[craigslist] RSS got ${items.length} items from ${domain}`)
-          return items
-        }
-      }
-    }
-  } catch (_) {}
+  const rssUrl = `https://${domain}/search/sss?${params}&format=rss`
 
-  // 2. HTML via premium proxy
-  let html = ''
-  try {
-    const htmlUrl = `https://${domain}/search/sss?${params}`
-    let res = await fetchViaProxy(htmlUrl)
-    if (!res.ok || (await res.clone().text()).includes('blocked')) {
-      res = await fetchViaProxy(htmlUrl, true)
+  // Try RSS direct first (Vercel IPs often not blocked, and RSS is lightweight XML)
+  const direct = await tryDirect(rssUrl)
+  if (direct.ok && (direct.text.includes('<channel>') || direct.text.includes('<rss'))) {
+    const items = parseRss(direct.text, domain)
+    if (items.length > 0) {
+      console.log(`[craigslist] direct RSS got ${items.length} items from ${domain}`)
+      return items
     }
-    if (!res.ok) { console.log(`[craigslist] HTTP ${res.status}`); return [] }
-    html = await res.text()
-  } catch (e: any) {
-    console.log('[craigslist] fetch error:', e.message)
-    return []
   }
 
-  if (/blocked|captcha|Access Denied|Just a moment/i.test(html)) {
-    console.log('[craigslist] blocked even with premium — skipping')
-    return []
+  // RSS via proxy
+  const proxy = await tryProxy(rssUrl)
+  if (proxy.ok && (proxy.text.includes('<channel>') || proxy.text.includes('<rss'))) {
+    const items = parseRss(proxy.text, domain)
+    if (items.length > 0) {
+      console.log(`[craigslist] proxy RSS got ${items.length} items from ${domain}`)
+      return items
+    }
   }
 
-  const items = parseHtml(html, domain)
-  console.log(`[craigslist] HTML got ${items.length} items from ${domain}`)
-  return items
+  // HTML direct
+  const htmlUrl = `https://${domain}/search/sss?${params}`
+  const directHtml = await tryDirect(htmlUrl)
+  if (directHtml.ok && !isBlocked(directHtml.text)) {
+    const items = parseHtml(directHtml.text, domain)
+    if (items.length > 0) {
+      console.log(`[craigslist] direct HTML got ${items.length} items from ${domain}`)
+      return items
+    }
+  }
+
+  // HTML via proxy (last resort — may timeout on Vercel hobby)
+  const proxyHtml = await tryProxy(htmlUrl)
+  if (proxyHtml.ok && !isBlocked(proxyHtml.text)) {
+    const items = parseHtml(proxyHtml.text, domain)
+    console.log(`[craigslist] proxy HTML got ${items.length} items from ${domain}`)
+    return items
+  }
+
+  console.log(`[craigslist] all attempts failed for ${domain}`)
+  return []
+}
+
+function isBlocked(html: string) {
+  return /blocked|captcha|Access Denied|Just a moment/i.test(html)
 }
 
 function parseRss(xml: string, domain: string): ScrapedItem[] {

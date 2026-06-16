@@ -3,55 +3,63 @@ import { stripHtml } from './utils'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
-async function fetchViaProxy(url: string, premium = false): Promise<Response> {
-  const key = process.env.SCRAPERAPI_KEY
-  if (key) {
-    let proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=gb`
-    if (premium) proxyUrl += '&premium=true'
-    return fetch(proxyUrl, { signal: AbortSignal.timeout(60000) })
-  }
-  return fetch(url, {
-    headers: { 'User-Agent': UA, Accept: 'text/html,*/*', 'Accept-Language': 'en-GB,en;q=0.9' },
-    signal: AbortSignal.timeout(15000),
-  })
+async function get(url: string, opts: { proxy?: boolean; countryCode?: string; timeout?: number } = {}): Promise<{ ok: boolean; text: string; status: number }> {
+  const { proxy = false, countryCode = 'gb', timeout = 7000 } = opts
+  try {
+    let fetchUrl = url
+    let headers: Record<string, string> = {
+      'User-Agent': UA,
+      Accept: 'text/html,application/json,*/*',
+      'Accept-Language': 'en-GB,en;q=0.9',
+    }
+    if (proxy) {
+      const key = process.env.SCRAPERAPI_KEY
+      if (!key) return { ok: false, text: '', status: 0 }
+      fetchUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=${countryCode}`
+      headers = {}
+    }
+    const res = await fetch(fetchUrl, { headers, signal: AbortSignal.timeout(timeout) })
+    const text = await res.text()
+    return { ok: res.ok, text, status: res.status }
+  } catch { return { ok: false, text: '', status: 0 } }
 }
 
 function isBlocked(html: string) {
-  return /captcha|Access Denied|robot|Just a moment|challenge-platform/i.test(html)
+  return /captcha|Access Denied|challenge-platform|Just a moment|are you a robot/i.test(html)
 }
 
 export async function fetchGumtree(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.gumtree.com'
   const isAU = domain.endsWith('.com.au')
-  const q = encodeURIComponent(search.query)
+  const q = search.query
 
+  // Gumtree has a JSON search API used by their frontend
+  if (!isAU) {
+    const apiItems = await fetchGumtreeApi(q, domain)
+    if (apiItems.length > 0) return apiItems
+  }
+
+  // HTML fallback
   const searchUrl = isAU
-    ? `https://${domain}/s-${q}/k0?sort=date`
-    : `https://${domain}/search?search_category=all&q=${q}&sort=date`
+    ? `https://${domain}/s-${encodeURIComponent(q)}/k0?sort=date`
+    : `https://${domain}/search?search_category=all&q=${encodeURIComponent(q)}&sort=date`
 
-  let html = ''
-  try {
-    const res = await fetchViaProxy(searchUrl)
-    if (!res.ok) {
-      console.log(`[gumtree] HTTP ${res.status} — retrying premium`)
-      const res2 = await fetchViaProxy(searchUrl, true)
-      if (!res2.ok) { console.log(`[gumtree] premium also failed ${res2.status}`); return [] }
-      html = await res2.text()
-    } else {
-      html = await res.text()
-    }
-  } catch (e: any) {
-    console.log('[gumtree] fetch error:', e.message)
+  // Try direct first (sometimes Vercel IPs are fine)
+  let r = await get(searchUrl, { timeout: 6000 })
+  if (!r.ok || isBlocked(r.text) || r.text.length < 5000) {
+    r = await get(searchUrl, { proxy: true, countryCode: 'gb', timeout: 7000 })
+  }
+  if (!r.ok || isBlocked(r.text)) {
+    r = await get(searchUrl, { proxy: true, countryCode: 'gb', timeout: 7500 })
+    // Note: using same params — proxy handles premium automatically if needed
+  }
+  if (!r.ok || isBlocked(r.text)) {
+    console.log('[gumtree] all attempts blocked')
     return []
   }
 
-  if (isBlocked(html)) {
-    console.log('[gumtree] bot check — skipping')
-    return []
-  }
-
-  // Gumtree is a Next.js app — parse __NEXT_DATA__ JSON first
-  const nextM = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
+  // Try __NEXT_DATA__ (for AU site which may be Next.js)
+  const nextM = r.text.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
   if (nextM) {
     try {
       const data = JSON.parse(nextM[1])
@@ -60,38 +68,72 @@ export async function fetchGumtree(search: Search): Promise<ScrapedItem[]> {
         console.log(`[gumtree] __NEXT_DATA__ got ${items.length} items`)
         return items
       }
-    } catch (e: any) {
-      console.log('[gumtree] __NEXT_DATA__ parse error:', e.message)
-    }
-  }
-
-  // Fallback: look for JSON blobs with listing data
-  const scriptRe = /<script[^>]*>([\s\S]*?)<\/script>/g
-  let blob: RegExpExecArray | null
-  while ((blob = scriptRe.exec(html)) !== null) {
-    const src = blob![1]
-    if (!src.includes('"listingId"') && !src.includes('"adId"')) continue
-    try {
-      const startIdx = src.indexOf('{')
-      if (startIdx === -1) continue
-      const data = JSON.parse(src.slice(startIdx))
-      const items = extractGumtreeNextData(data, domain)
-      if (items.length > 0) {
-        console.log(`[gumtree] JSON blob got ${items.length} items`)
-        return items
-      }
     } catch {}
   }
 
-  // Last resort: regex on rendered HTML
-  const items = parseHtmlFallback(html, domain)
+  // Parse HTML
+  const items = parseHtmlFallback(r.text, domain)
   console.log(`[gumtree] HTML fallback got ${items.length} items`)
+  return items
+}
+
+async function fetchGumtreeApi(query: string, domain: string): Promise<ScrapedItem[]> {
+  // Gumtree UK internal search API
+  const apiUrl = `https://${domain}/ajax/search/category/for-sale/keywords/${encodeURIComponent(query)}?sort=date&pageSize=24`
+  let r = await get(apiUrl, { timeout: 5000 })
+  if (!r.ok) r = await get(apiUrl, { proxy: true, countryCode: 'gb', timeout: 7000 })
+
+  if (r.ok && r.text.startsWith('{') || r.text.startsWith('[')) {
+    try {
+      const data = JSON.parse(r.text)
+      return extractGumtreeApiData(data, domain)
+    } catch {}
+  }
+
+  // Alternative API endpoint format
+  const api2 = `https://${domain}/api/search?q=${encodeURIComponent(query)}&category=for-sale&sort=date`
+  let r2 = await get(api2, { timeout: 5000 })
+  if (!r2.ok) r2 = await get(api2, { proxy: true, countryCode: 'gb', timeout: 7000 })
+
+  if (r2.ok && (r2.text.startsWith('{') || r2.text.startsWith('['))) {
+    try {
+      const data = JSON.parse(r2.text)
+      return extractGumtreeApiData(data, domain)
+    } catch {}
+  }
+
+  return []
+}
+
+function extractGumtreeApiData(data: any, domain: string): ScrapedItem[] {
+  const items: ScrapedItem[] = []
+  const seen = new Set<string>()
+  function walk(obj: any) {
+    if (!obj || typeof obj !== 'object') return
+    const id = String(obj.listingId || obj.adId || obj.id || '')
+    if (id && /^\d{7,}$/.test(id) && !seen.has(id)) {
+      const title = obj.title || obj.heading || obj.name || ''
+      if (title && title.length > 2) {
+        seen.add(id)
+        const price = obj.price?.display || obj.price?.amount
+          ? `${obj.price?.currency || '£'}${obj.price?.amount}`
+          : obj.priceLabel || obj.displayPrice || ''
+        const urlPath = obj.url || obj.seoUrl || ''
+        const url = urlPath.startsWith('http') ? urlPath : `https://${domain}${urlPath || `/p/${id}`}`
+        const image = obj.mainImage?.url || obj.images?.[0]?.url || obj.imageUrl || null
+        items.push({ id, title, price, url, image, platform: 'gumtree' })
+      }
+    }
+    for (const v of Array.isArray(obj) ? obj : Object.values(obj)) {
+      if (v && typeof v === 'object' && items.length < 50) walk(v)
+    }
+  }
+  walk(data)
   return items
 }
 
 function extractGumtreeNextData(obj: any, domain: string, items: ScrapedItem[] = [], seen = new Set<string>()): ScrapedItem[] {
   if (!obj || typeof obj !== 'object') return items
-  // Look for listing/ad objects
   const id = String(obj.listingId || obj.adId || obj.id || '')
   if (id && id.match(/^\d{7,}$/) && !seen.has(id)) {
     const title = obj.title || obj.heading || obj.name || ''
@@ -116,7 +158,8 @@ function extractGumtreeNextData(obj: any, domain: string, items: ScrapedItem[] =
 function parseHtmlFallback(html: string, domain: string): ScrapedItem[] {
   const items: ScrapedItem[] = []
   const seen = new Set<string>()
-  const idRe = /href="(\/(?:p|s-ad|v-[^/]+)\/[^"]*?\/(\d{7,14})[^"]*)"/g
+  // Match Gumtree listing URLs: /ad/category-name/title/some-id or /p/some-id
+  const idRe = /href="(\/(?:ad|p)\/[^"]*?\/(\d{7,14})[^"]*)"/g
   let m: RegExpExecArray | null
   while ((m = idRe.exec(html)) !== null) {
     const id = m[2]
