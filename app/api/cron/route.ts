@@ -89,7 +89,7 @@ async function saveNewItems(supabase: any, search: any, items: any[]) {
 
   const seenSet = new Set((seenRows || []).map((r: any) => r.item_id))
   const isFirst = seenSet.size === 0
-  const newItems = isFirst ? items.slice(0, 10) : items.filter(it => !seenSet.has(it.id))
+  const newItems = isFirst ? items.slice(0, 50) : items.filter(it => !seenSet.has(it.id))
 
   if (newItems.length > 0) {
     const rows = newItems.map((it: any) => ({
