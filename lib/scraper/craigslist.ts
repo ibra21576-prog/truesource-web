@@ -33,9 +33,21 @@ export async function fetchCraigslist(search: Search): Promise<ScrapedItem[]> {
   if (search.min_price) params.set('min_price', String(search.min_price))
   if (search.max_price) params.set('max_price', String(search.max_price))
 
-  const rssUrl = `https://${domain}/search/sss?${params}&format=rss`
+  // 1. Craigslist JSON API — returns structured data, often accessible without proxy
+  const jsonUrl = `https://${domain}/jsonsearch/sss/?${params}`
+  const jsonRes = await tryDirect(jsonUrl)
+  if (jsonRes.ok && jsonRes.text.startsWith('[')) {
+    try {
+      const items = parseJson(jsonRes.text, domain)
+      if (items.length > 0) {
+        console.log(`[craigslist] JSON API got ${items.length} items from ${domain}`)
+        return items
+      }
+    } catch {}
+  }
 
-  // Try RSS direct first (Vercel IPs often not blocked, and RSS is lightweight XML)
+  // 2. RSS direct
+  const rssUrl = `https://${domain}/search/sss?${params}&format=rss`
   const direct = await tryDirect(rssUrl)
   if (direct.ok && (direct.text.includes('<channel>') || direct.text.includes('<rss'))) {
     const items = parseRss(direct.text, domain)
@@ -45,7 +57,7 @@ export async function fetchCraigslist(search: Search): Promise<ScrapedItem[]> {
     }
   }
 
-  // RSS via proxy
+  // 3. RSS via proxy (needs ScraperAPI credits)
   const proxy = await tryProxy(rssUrl)
   if (proxy.ok && (proxy.text.includes('<channel>') || proxy.text.includes('<rss'))) {
     const items = parseRss(proxy.text, domain)
@@ -55,31 +67,31 @@ export async function fetchCraigslist(search: Search): Promise<ScrapedItem[]> {
     }
   }
 
-  // HTML direct
-  const htmlUrl = `https://${domain}/search/sss?${params}`
-  const directHtml = await tryDirect(htmlUrl)
-  if (directHtml.ok && !isBlocked(directHtml.text)) {
-    const items = parseHtml(directHtml.text, domain)
-    if (items.length > 0) {
-      console.log(`[craigslist] direct HTML got ${items.length} items from ${domain}`)
-      return items
-    }
-  }
-
-  // HTML via proxy (last resort — may timeout on Vercel hobby)
-  const proxyHtml = await tryProxy(htmlUrl)
-  if (proxyHtml.ok && !isBlocked(proxyHtml.text)) {
-    const items = parseHtml(proxyHtml.text, domain)
-    console.log(`[craigslist] proxy HTML got ${items.length} items from ${domain}`)
-    return items
-  }
-
   console.log(`[craigslist] all attempts failed for ${domain}`)
   return []
 }
 
 function isBlocked(html: string) {
   return /blocked|captcha|Access Denied|Just a moment/i.test(html)
+}
+
+function parseJson(json: string, domain: string): ScrapedItem[] {
+  const data = JSON.parse(json)
+  const arr = Array.isArray(data) ? data : data.data || data.items || []
+  const items: ScrapedItem[] = []
+  const seen = new Set<string>()
+  for (const row of arr) {
+    const id = String(row.PostingID || row.id || '')
+    if (!id || seen.has(id)) continue
+    seen.add(id)
+    const title = row.PostingTitle || row.title || ''
+    if (!title || title.length < 2) continue
+    const price = row.Ask ? `$${row.Ask}` : ''
+    const url = row.PostingURL || row.url || `https://${domain}/d/${id}.html`
+    const image = row.ImageThumb || row.image || null
+    items.push({ id, title, price, url, image, platform: 'craigslist' })
+  }
+  return items
 }
 
 function parseRss(xml: string, domain: string): ScrapedItem[] {

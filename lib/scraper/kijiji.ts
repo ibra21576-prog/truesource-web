@@ -49,7 +49,15 @@ export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
     }
   }
 
-  if (!html || isBlocked(html)) {
+  if (!html) {
+    console.log('[kijiji] no html — skipping')
+    return []
+  }
+
+  // If __NEXT_DATA__ is present and many listing URLs found, page loaded fine — ignore isBlocked
+  const hasNextData = html.includes('__NEXT_DATA__')
+  const urlMatches = (html.match(/\/v-[^/]+\/[^/]+\/[^/]+\/\d{7,}/g) || []).length
+  if (!hasNextData && urlMatches < 5 && isBlocked(html)) {
     console.log('[kijiji] blocked — skipping')
     return []
   }
