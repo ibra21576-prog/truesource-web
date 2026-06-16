@@ -66,9 +66,10 @@ export async function fetchGumtree(search: Search): Promise<ScrapedItem[]> {
   }
 
   // Fallback: look for JSON blobs with listing data
-  const jsonBlobs = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)]
-  for (const blob of jsonBlobs) {
-    const src = blob[1]
+  const scriptRe = /<script[^>]*>([\s\S]*?)<\/script>/g
+  let blob: RegExpExecArray | null
+  while ((blob = scriptRe.exec(html)) !== null) {
+    const src = blob![1]
     if (!src.includes('"listingId"') && !src.includes('"adId"')) continue
     try {
       const startIdx = src.indexOf('{')
