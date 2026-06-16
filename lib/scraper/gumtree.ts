@@ -3,11 +3,12 @@ import { stripHtml } from './utils'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
-async function fetchViaProxy(url: string): Promise<Response> {
+async function fetchViaProxy(url: string, premium = false): Promise<Response> {
   const key = process.env.SCRAPERAPI_KEY
   if (key) {
-    const proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=gb`
-    return fetch(proxyUrl, { signal: AbortSignal.timeout(30000) })
+    let proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=gb`
+    if (premium) proxyUrl += '&premium=true'
+    return fetch(proxyUrl, { signal: AbortSignal.timeout(45000) })
   }
   return fetch(url, {
     headers: { 'User-Agent': UA, Accept: 'text/html,*/*', 'Accept-Language': 'en-GB,en;q=0.9' },
@@ -25,15 +26,13 @@ export async function fetchGumtree(search: Search): Promise<ScrapedItem[]> {
 
   let html = ''
   try {
-    const res = await fetchViaProxy(searchUrl)
-    if (res.status === 429) {
-      console.log('[gumtree] rate limited (429) — skipping this round')
-      return []
+    let res = await fetchViaProxy(searchUrl)
+    // On rate limit or bot check, retry with premium residential proxy
+    if (res.status === 429 || res.status === 403) {
+      console.log(`[gumtree] ${res.status} — retrying with premium proxy`)
+      res = await fetchViaProxy(searchUrl, true)
     }
-    if (!res.ok) {
-      console.log(`[gumtree] HTTP ${res.status} — skipping`)
-      return []
-    }
+    if (!res.ok) { console.log(`[gumtree] HTTP ${res.status} — skipping`); return [] }
     html = await res.text()
   } catch (e: any) {
     console.log('[gumtree] fetch error:', e.message)
@@ -41,7 +40,15 @@ export async function fetchGumtree(search: Search): Promise<ScrapedItem[]> {
   }
 
   if (/captcha|Access Denied|robot|Pardon Our Interruption/i.test(html)) {
-    console.log('[gumtree] bot check — skipping this round')
+    console.log('[gumtree] bot check — retrying with premium proxy')
+    try {
+      const res = await fetchViaProxy(searchUrl, true)
+      if (res.ok) html = await res.text()
+    } catch {}
+  }
+
+  if (!html || /captcha|Access Denied|robot|Pardon Our Interruption/i.test(html)) {
+    console.log('[gumtree] still blocked after premium — skipping')
     return []
   }
 

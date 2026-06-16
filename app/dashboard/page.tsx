@@ -11,7 +11,10 @@ interface Item {
 interface Search { id: string; query: string; platform: string; domain: string; enabled: boolean }
 interface Me { userId: string; username: string; memberSince?: string }
 
-const PLAT_COLOR: Record<string, string> = { vinted: '#14b8a6', kleinanzeigen: '#f97316' }
+const PLAT_COLOR: Record<string, string> = {
+  vinted: '#14b8a6', ebay: '#f59e0b', kleinanzeigen: '#f97316',
+  gumtree: '#00b140', kijiji: '#6d28d9', craigslist: '#7c3aed',
+}
 const FEED_INTERVAL  = 5 * 1000
 const SCRAPE_INTERVAL = 30 * 1000
 

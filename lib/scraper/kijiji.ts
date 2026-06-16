@@ -3,11 +3,12 @@ import { stripHtml } from './utils'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
-async function fetchViaProxy(url: string): Promise<Response> {
+async function fetchViaProxy(url: string, premium = false): Promise<Response> {
   const key = process.env.SCRAPERAPI_KEY
   if (key) {
-    const proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=ca`
-    return fetch(proxyUrl, { signal: AbortSignal.timeout(30000) })
+    let proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=ca`
+    if (premium) proxyUrl += '&premium=true'
+    return fetch(proxyUrl, { signal: AbortSignal.timeout(45000) })
   }
   return fetch(url, {
     headers: { 'User-Agent': UA, Accept: 'text/html,*/*', 'Accept-Language': 'en-CA,en;q=0.9' },
@@ -24,15 +25,12 @@ export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
 
   let html = ''
   try {
-    const res = await fetchViaProxy(searchUrl)
-    if (res.status === 429) {
-      console.log('[kijiji] rate limited (429) — skipping this round')
-      return []
+    let res = await fetchViaProxy(searchUrl)
+    if (res.status === 429 || res.status === 403) {
+      console.log(`[kijiji] ${res.status} — retrying with premium proxy`)
+      res = await fetchViaProxy(searchUrl, true)
     }
-    if (!res.ok) {
-      console.log(`[kijiji] HTTP ${res.status} — skipping`)
-      return []
-    }
+    if (!res.ok) { console.log(`[kijiji] HTTP ${res.status} — skipping`); return [] }
     html = await res.text()
   } catch (e: any) {
     console.log('[kijiji] fetch error:', e.message)
@@ -40,7 +38,15 @@ export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
   }
 
   if (/captcha|Access Denied|robot|challenge-platform/i.test(html)) {
-    console.log('[kijiji] bot check — skipping this round')
+    console.log('[kijiji] bot check — retrying with premium proxy')
+    try {
+      const res = await fetchViaProxy(searchUrl, true)
+      if (res.ok) html = await res.text()
+    } catch {}
+  }
+
+  if (!html || /captcha|Access Denied|robot|challenge-platform/i.test(html)) {
+    console.log('[kijiji] still blocked after premium — skipping')
     return []
   }
 
