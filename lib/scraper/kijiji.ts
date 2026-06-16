@@ -16,119 +16,88 @@ async function fetchViaProxy(url: string, premium = false): Promise<Response> {
   })
 }
 
+function isBlocked(html: string) {
+  return /captcha|Access Denied|robot|challenge-platform|Just a moment/i.test(html)
+}
+
 export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.kijiji.ca'
   const q = encodeURIComponent(search.query)
-
-  // Kijiji Canada search URL — buy & sell category, sort by newest
   const searchUrl = `https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc`
 
-  let html = ''
-  try {
-    let res = await fetchViaProxy(searchUrl)
-    if (res.status === 429 || res.status === 403) {
-      console.log(`[kijiji] ${res.status} — retrying with premium proxy`)
-      res = await fetchViaProxy(searchUrl, true)
-    }
-    if (!res.ok) { console.log(`[kijiji] HTTP ${res.status} — skipping`); return [] }
-    html = await res.text()
-  } catch (e: any) {
-    console.log('[kijiji] fetch error:', e.message)
-    return []
+  let html = await tryFetch(searchUrl, false)
+  if (!html || isBlocked(html)) {
+    console.log('[kijiji] blocked — retrying with premium proxy')
+    html = await tryFetch(searchUrl, true)
   }
-
-  if (/captcha|Access Denied|robot|challenge-platform/i.test(html)) {
-    console.log('[kijiji] bot check — retrying with premium proxy')
-    try {
-      const res = await fetchViaProxy(searchUrl, true)
-      if (res.ok) html = await res.text()
-    } catch {}
-  }
-
-  if (!html || /captcha|Access Denied|robot|challenge-platform/i.test(html)) {
-    console.log('[kijiji] still blocked after premium — skipping')
+  if (!html || isBlocked(html)) {
+    console.log('[kijiji] still blocked — skipping')
     return []
   }
 
   const items = parseHtml(html, domain)
-  if (items.length === 0) console.log('[kijiji] no items parsed from', domain)
+  console.log(`[kijiji] got ${items.length} items from ${domain}`)
   return items
+}
+
+async function tryFetch(url: string, premium: boolean): Promise<string> {
+  try {
+    const res = await fetchViaProxy(url, premium)
+    if (!res.ok) { console.log(`[kijiji] HTTP ${res.status}`); return '' }
+    return await res.text()
+  } catch (e: any) {
+    console.log('[kijiji] fetch error:', e.message)
+    return ''
+  }
 }
 
 function parseHtml(html: string, domain: string): ScrapedItem[] {
   const items: ScrapedItem[] = []
   const seen = new Set<string>()
 
-  // Kijiji wraps each listing in <div data-listing-id="..."> or <li data-listing-id="...">
-  const blockRe = /<(?:div|li|article)[^>]*\bdata-listing-id="(\d+)"[^>]*>([\s\S]*?)<\/(?:div|li|article)>/g
+  // Kijiji item URLs: /v-category/location/title/ID
+  const idRe = /href="(\/v-[^/]+\/[^/]+\/[^/]+\/(\d{7,14}))"/g
   let m: RegExpExecArray | null
 
-  while ((m = blockRe.exec(html)) !== null) {
-    const id = m[1]
+  while ((m = idRe.exec(html)) !== null) {
+    const path = m[1]
+    const id   = m[2]
     if (seen.has(id)) continue
 
-    const block = m[0]
-    // Skip top-ads and third-party ads
-    if (/\b(top-feature|top-ad|third-party|thirdpartyad)\b/i.test(block)) continue
+    const win = html.slice(Math.max(0, m.index - 300), Math.min(html.length, m.index + 3000))
+
+    // Skip promoted
+    if (/\b(top-feature|top-ad|thirdparty|organic-search)\b/i.test(win)) continue
 
     seen.add(id)
 
-    // URL — Kijiji items: /v-category/location/title/ID
-    let url = `https://${domain}/v-buy-sell/canada/${id}`
-    const urlM = block.match(/href="(\/v-[^"]+\/\d{7,14})"/)
-    if (urlM) url = `https://${domain}${urlM[1]}`
+    const url = `https://${domain}${path}`
 
     // Title
     let title = ''
-    const titleM = block.match(/<[^>]+class="[^"]*title[^"]*"[^>]*>([\s\S]*?)<\/[^>]+>/i)
-              || block.match(/<h\d[^>]*>([\s\S]*?)<\/h\d>/i)
-    if (titleM) title = stripHtml(titleM[1]).replace(/\s+/g, ' ').trim()
+    const h3M = win.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i) || win.match(/<h4[^>]*>([\s\S]*?)<\/h4>/i)
+    if (h3M) title = stripHtml(h3M[1]).replace(/\s+/g, ' ').trim()
+    if (!title || title.length < 2) {
+      const altM = win.match(/alt="([^"]{3,120})"/)
+      if (altM) title = altM[1].trim()
+    }
     if (!title || title.length < 2) continue
 
     // Price
     let price = ''
-    const priceM = block.match(/<[^>]+class="[^"]*price[^"]*"[^>]*>([\s\S]*?)<\/[^>]+>/i)
+    const priceM = win.match(/<[^>]+class="[^"]*price[^"]*"[^>]*>([\s\S]*?)<\/[^>]+>/i)
     if (priceM) {
       price = stripHtml(priceM[1]).replace(/\s+/g, ' ').trim()
     } else {
-      const pm = block.match(/\$\s*[\d,]+(?:\.\d{2})?/)
+      const pm = win.match(/\$\s*[\d,]+(?:\.\d{2})?/)
       if (pm) price = pm[0].trim()
     }
 
     // Image
-    let image: string | null = null
-    const imgM = block.match(/src="(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i)
-              || block.match(/data-src="(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i)
-    if (imgM) image = imgM[1]
+    const imgM = win.match(/(?:src|data-src)="(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i)
+    const image = imgM ? imgM[1] : null
 
     items.push({ id, title, price, url, image, platform: 'kijiji' })
-  }
-
-  // Fallback via URL pattern
-  if (items.length === 0) {
-    const urlRe = /href="(\/v-[^/]+\/[^/]+\/[^/]+\/(\d{7,14}))"/g
-    let um: RegExpExecArray | null
-    while ((um = urlRe.exec(html)) !== null) {
-      const id = um[2]
-      if (seen.has(id)) continue
-      seen.add(id)
-
-      const win = html.slice(Math.max(0, um.index - 500), Math.min(html.length, um.index + 2000))
-      const titleM = win.match(/<h\d[^>]*>([\s\S]*?)<\/h\d>/i)
-      const title = titleM ? stripHtml(titleM[1]).replace(/\s+/g, ' ').trim() : ''
-      if (!title || title.length < 2) continue
-
-      const pm = win.match(/\$\s*[\d,]+(?:\.\d{2})?/)
-      const imgM = win.match(/src="(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i)
-
-      items.push({
-        id, title,
-        price: pm ? pm[0].trim() : '',
-        url: `https://${domain}${um[1]}`,
-        image: imgM ? imgM[1] : null,
-        platform: 'kijiji',
-      })
-    }
   }
 
   return items

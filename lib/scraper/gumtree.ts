@@ -16,126 +16,92 @@ async function fetchViaProxy(url: string, premium = false): Promise<Response> {
   })
 }
 
+function isBlocked(html: string) {
+  return /captcha|Access Denied|robot|Pardon Our Interruption|Just a moment/i.test(html)
+}
+
 export async function fetchGumtree(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.gumtree.com'
-  const isAU   = domain.endsWith('.com.au')
+  const isAU = domain.endsWith('.com.au')
+  const q = encodeURIComponent(search.query)
 
   const searchUrl = isAU
-    ? `https://${domain}/s-${encodeURIComponent(search.query)}/k0?sort=date`
-    : `https://${domain}/search?search_category=all&q=${encodeURIComponent(search.query)}&sort=date`
+    ? `https://${domain}/s-${q}/k0?sort=date`
+    : `https://${domain}/search?search_category=all&q=${q}&sort=date`
 
-  let html = ''
-  try {
-    let res = await fetchViaProxy(searchUrl)
-    // On rate limit or bot check, retry with premium residential proxy
-    if (res.status === 429 || res.status === 403) {
-      console.log(`[gumtree] ${res.status} — retrying with premium proxy`)
-      res = await fetchViaProxy(searchUrl, true)
-    }
-    if (!res.ok) { console.log(`[gumtree] HTTP ${res.status} — skipping`); return [] }
-    html = await res.text()
-  } catch (e: any) {
-    console.log('[gumtree] fetch error:', e.message)
+  let html = await tryFetch(searchUrl, false)
+  if (!html || isBlocked(html)) {
+    console.log('[gumtree] blocked — retrying with premium proxy')
+    html = await tryFetch(searchUrl, true)
+  }
+  if (!html || isBlocked(html)) {
+    console.log('[gumtree] still blocked — skipping')
     return []
   }
 
-  if (/captcha|Access Denied|robot|Pardon Our Interruption/i.test(html)) {
-    console.log('[gumtree] bot check — retrying with premium proxy')
-    try {
-      const res = await fetchViaProxy(searchUrl, true)
-      if (res.ok) html = await res.text()
-    } catch {}
-  }
-
-  if (!html || /captcha|Access Denied|robot|Pardon Our Interruption/i.test(html)) {
-    console.log('[gumtree] still blocked after premium — skipping')
-    return []
-  }
-
-  const items = parseHtml(html, domain, isAU)
-  if (items.length === 0) console.log('[gumtree] no items parsed from', domain)
+  const items = parseHtml(html, domain)
+  console.log(`[gumtree] got ${items.length} items from ${domain}`)
   return items
 }
 
-function parseHtml(html: string, domain: string, isAU: boolean): ScrapedItem[] {
+async function tryFetch(url: string, premium: boolean): Promise<string> {
+  try {
+    const res = await fetchViaProxy(url, premium)
+    if (!res.ok) { console.log(`[gumtree] HTTP ${res.status}`); return '' }
+    return await res.text()
+  } catch (e: any) {
+    console.log('[gumtree] fetch error:', e.message)
+    return ''
+  }
+}
+
+function parseHtml(html: string, domain: string): ScrapedItem[] {
   const items: ScrapedItem[] = []
   const seen = new Set<string>()
 
-  // Match listing blocks — Gumtree wraps each ad in <article> or <li data-q="search-result">
-  const blockRe = isAU
-    ? /<(?:article|li)[^>]*\bdata-listing-id="(\d+)"[^>]*>([\s\S]*?)<\/(?:article|li)>/g
-    : /<(?:article|li)[^>]*\bdata-q="search-result"[^>]*>([\s\S]*?)<\/(?:article|li)>/g
-
+  // Extract listing ID from URL patterns: /p/.../ID or /s-ad/.../ID or /v-.../ID
+  const idRe = /href="(\/(?:p|s-ad|v-[^/]+)\/[^"]*?\/(\d{7,14})[^"]*)"/g
   let m: RegExpExecArray | null
-  while ((m = blockRe.exec(html)) !== null) {
-    const block = m[0]
 
-    // ID from data-listing-id or from the item URL
-    let id = isAU ? m[1] : ''
-    if (!id) {
-      const idM = block.match(/\/(?:p|s-ad)\/[^/]+\/(\d{7,14})/)
-      if (idM) id = idM[1]
-    }
-    if (!id || seen.has(id)) continue
+  while ((m = idRe.exec(html)) !== null) {
+    const path = m[1]
+    const id   = m[2]
+    if (seen.has(id)) continue
+
+    const win = html.slice(Math.max(0, m.index - 300), Math.min(html.length, m.index + 3000))
+
+    // Skip promoted/sponsored
+    if (/\b(top-ad|featured|sponsored|is-top)\b/i.test(win)) continue
+
     seen.add(id)
 
-    // Skip promoted/sponsored listings
-    if (/\b(is-top-ad|featured-ad|sponsored|top-ad)\b/i.test(block)) continue
+    const url = `https://${domain}${path}`
 
-    // URL
-    let url = `https://${domain}`
-    const urlM = block.match(/href="(\/(?:p|s-ad)\/[^"]+\/\d{7,14}[^"]*)"/)
-    if (urlM) url += urlM[1]
-    else url += isAU ? `/s-ad/${id}` : `/p/${id}`
-
-    // Title
+    // Title: h2/h3 content, or aria-label, or alt text
     let title = ''
-    const titleM = block.match(/<h\d[^>]*class="[^"]*listing-title[^"]*"[^>]*>([\s\S]*?)<\/h\d>/i)
-              || block.match(/<h\d[^>]*>([\s\S]*?)<\/h\d>/i)
-    if (titleM) title = stripHtml(titleM[1]).replace(/\s+/g, ' ').trim()
+    const h2M  = win.match(/<h[23][^>]*>([\s\S]*?)<\/h[23]>/i)
+    if (h2M) title = stripHtml(h2M[1]).replace(/\s+/g, ' ').trim()
+    if (!title || title.length < 2) {
+      const altM = win.match(/alt="([^"]{3,120})"/)
+      if (altM) title = altM[1].trim()
+    }
     if (!title || title.length < 2) continue
 
     // Price
     let price = ''
-    const priceM = block.match(/<[^>]+class="[^"]*(?:listing-price|ad-price|price)[^"]*"[^>]*>([\s\S]*?)<\/[^>]+>/i)
+    const priceM = win.match(/<[^>]+class="[^"]*price[^"]*"[^>]*>([\s\S]*?)<\/[^>]+>/i)
     if (priceM) {
       price = stripHtml(priceM[1]).replace(/\s+/g, ' ').trim()
     } else {
-      const pm = block.match(/(?:£|A\$|\$)\s*[\d,]+(?:\.\d{2})?/)
+      const pm = win.match(/(?:£|A\$|\$)\s*[\d,]+(?:\.\d{2})?/)
       if (pm) price = pm[0].trim()
     }
 
     // Image
-    let image: string | null = null
-    const imgM = block.match(/(?:src|data-src)="(https?:\/\/(?:i\.ebayimg\.com|[^"]+gumtree[^"]+|[^"]+\/images\/[^"]+))"/i)
-              || block.match(/src="(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i)
-    if (imgM) image = imgM[1]
+    const imgM = win.match(/(?:src|data-src)="(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i)
+    const image = imgM ? imgM[1] : null
 
     items.push({ id, title, price, url, image, platform: 'gumtree' })
-  }
-
-  // Fallback: parse from URL pattern if block regex found nothing
-  if (items.length === 0) {
-    const urlRe = /href="(\/(?:p|s-ad)\/[^"]+\/(\d{7,14})[^"]*)"/g
-    let um: RegExpExecArray | null
-    while ((um = urlRe.exec(html)) !== null) {
-      const id = um[2]
-      if (seen.has(id)) continue
-      seen.add(id)
-
-      const win = html.slice(Math.max(0, um.index - 500), Math.min(html.length, um.index + 2000))
-      const titleM = win.match(/<h\d[^>]*>([\s\S]*?)<\/h\d>/i)
-      const title = titleM ? stripHtml(titleM[1]).replace(/\s+/g, ' ').trim() : ''
-      if (!title || title.length < 2) continue
-
-      const pm = win.match(/(?:£|A\$|\$)\s*[\d,]+(?:\.\d{2})?/)
-      const price = pm ? pm[0].trim() : ''
-
-      const imgM = win.match(/src="(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i)
-      const image = imgM ? imgM[1] : null
-
-      items.push({ id, title, price, url: `https://${domain}${um[1]}`, image, platform: 'gumtree' })
-    }
   }
 
   return items
