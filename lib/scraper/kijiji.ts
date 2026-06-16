@@ -63,19 +63,11 @@ export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
     return []
   }
 
-  // Kijiji is Next.js — parse __NEXT_DATA__ first
-  const nextM = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
-  if (nextM) {
-    try {
-      const data = JSON.parse(nextM[1])
-      const items = extractKijijiData(data, domain)
-      if (items.length > 0) {
-        console.log(`[kijiji] __NEXT_DATA__ got ${items.length} items`)
-        return items
-      }
-    } catch (e: any) {
-      console.log('[kijiji] __NEXT_DATA__ parse error:', e.message)
-    }
+  // Kijiji embeds Schema.org JSON-LD with all listing data (title, image, price, url)
+  const jsonLdItems = parseJsonLd(html, domain)
+  if (jsonLdItems.length > 0) {
+    console.log(`[kijiji] JSON-LD got ${jsonLdItems.length} items`)
+    return jsonLdItems
   }
 
   // Fallback: parse URLs from HTML
@@ -84,28 +76,33 @@ export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
   return items
 }
 
-function extractKijijiData(obj: any, domain: string, items: ScrapedItem[] = [], seen = new Set<string>()): ScrapedItem[] {
-  if (!obj || typeof obj !== 'object') return items
-
-  // Kijiji listing objects have adId or id + title + price
-  const adId = String(obj.adId || obj.id || '')
-  if (adId && adId.match(/^\d{7,}$/) && !seen.has(adId)) {
-    const title = obj.title || obj.heading || ''
-    if (title && title.length > 2) {
-      seen.add(adId)
-      const priceAmount = obj.price?.amount || obj.price?.displayAmount || obj.price?.value || ''
-      const price = priceAmount ? `$${priceAmount}` : obj.price?.priceLabel || ''
-      const urlPath = obj.seoUrl || obj.url || ''
-      const url = urlPath.startsWith('http') ? urlPath : `https://${domain}${urlPath || `/v-ad/${adId}`}`
-      const image = obj.imageUrl || obj.images?.[0]?.url || obj.thumbnailUrl || null
-      items.push({ id: adId, title, price, url, image, platform: 'kijiji' })
-    }
-  }
-
-  for (const v of Array.isArray(obj) ? obj : Object.values(obj)) {
-    if (v && typeof v === 'object' && items.length < 50) {
-      extractKijijiData(v, domain, items, seen)
-    }
+function parseJsonLd(html: string, domain: string): ScrapedItem[] {
+  const items: ScrapedItem[] = []
+  const seen = new Set<string>()
+  const re = /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi
+  let m: RegExpExecArray | null
+  while ((m = re.exec(html)) !== null) {
+    try {
+      const data = JSON.parse(m[1])
+      const list = data['@type'] === 'ItemList' ? data.itemListElement : null
+      if (!Array.isArray(list)) continue
+      for (const entry of list) {
+        const it = entry.item || entry
+        const urlStr: string = it.url || ''
+        const idM = urlStr.match(/\/(\d{7,14})(?:\/|$)/)
+        if (!idM) continue
+        const id = idM[1]
+        if (seen.has(id)) continue
+        seen.add(id)
+        const title: string = it.name || ''
+        if (!title || title.length < 2) continue
+        const priceStr = it.offers?.price ? `$${Number(it.offers.price).toFixed(2).replace('.00', '')}` : ''
+        const currency = it.offers?.priceCurrency || 'CAD'
+        const price = priceStr + (currency !== 'CAD' ? ` ${currency}` : '')
+        items.push({ id, title, price, url: urlStr, image: it.image || null, platform: 'kijiji' })
+      }
+      if (items.length > 0) return items
+    } catch {}
   }
   return items
 }
