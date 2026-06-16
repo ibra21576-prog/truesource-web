@@ -5,14 +5,26 @@ const UA_BROWSER = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
 const UA_CRAWLER = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
 const BASE_HEADERS = { 'Accept-Language': 'de-DE,de;q=0.9,en;q=0.8', 'Cache-Control': 'no-cache' }
 
-async function fetchViaProxy(url: string, headers: Record<string, string>): Promise<Response> {
+function isBotCheck(html: string) {
+  return /captcha|Pardon Our Interruption|robot\.detected|Bitte entschuldigen Sie die St/i.test(html)
+}
+
+async function fetchViaProxy(url: string, premium = false): Promise<Response> {
   const key = process.env.SCRAPERAPI_KEY
   if (key) {
-    // Route through ScraperAPI to bypass eBay IP blocks
-    const proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=de`
-    return fetch(proxyUrl, { signal: AbortSignal.timeout(30000) })
+    let proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=de`
+    if (premium) proxyUrl += '&premium=true'
+    return fetch(proxyUrl, { signal: AbortSignal.timeout(45000) })
   }
-  return fetch(url, { headers, signal: AbortSignal.timeout(8000) })
+  return fetch(url, { headers: { ...BASE_HEADERS, 'User-Agent': UA_BROWSER }, signal: AbortSignal.timeout(8000) })
+}
+
+function parseHtml_all(html: string, domain: string): ScrapedItem[] {
+  const j = parseJson(html, domain)
+  if (j.length > 0) return j
+  const n = parseHtmlNew(html, domain)
+  if (n.length > 0) return n
+  return parseHtml(html, domain)
 }
 
 export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
@@ -23,53 +35,59 @@ export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
     ...(search.max_price ? { _udhi: String(search.max_price) } : {}),
   })
 
-  // 1. Try RSS (works without proxy on some IPs)
+  // 1. RSS — most reliable, rarely bot-blocked
   try {
     const rssParams = new URLSearchParams(params)
     rssParams.set('_rss', '1')
     const rssUrl = `https://${domain}/sch/i.html?${rssParams}`
-    const rssRes = await fetchViaProxy(rssUrl, { ...BASE_HEADERS, 'User-Agent': UA_BROWSER, Accept: 'application/rss+xml,text/xml,*/*' })
+    const rssRes = await fetchViaProxy(rssUrl)
     if (rssRes.ok) {
       const text = await rssRes.text()
-      if (text.includes('<channel')) {
+      if (text.includes('<channel') && !isBotCheck(text)) {
         const items = parseRss(text, domain)
         if (items.length > 0) return items
       }
     }
   } catch (_) {}
 
-  // 2. HTML via proxy or Googlebot UA
+  // 2. HTML scrape — regular proxy first, then premium on bot check
   const htmlUrl = `https://${domain}/sch/i.html?${params}`
-  let res = await fetchViaProxy(htmlUrl, { ...BASE_HEADERS, 'User-Agent': UA_CRAWLER, Accept: 'text/html,*/*', From: 'googlebot@googlebot.com' })
-  if (!res.ok) {
-    res = await fetchViaProxy(htmlUrl, { ...BASE_HEADERS, 'User-Agent': UA_BROWSER, Accept: 'text/html,*/*' })
-  }
-  if (!res.ok) throw new Error(`eBay HTTP ${res.status}`)
-  let html = await res.text()
 
-  // GDPR page → retry with Googlebot
-  const isConsent = /cookieConsent|gdpr-consent|acceptCookies/i.test(html) && html.length < 80000
-  if (isConsent) {
-    res = await fetch(htmlUrl, {
-      headers: { ...BASE_HEADERS, 'User-Agent': UA_CRAWLER, Accept: 'text/html,*/*' },
-      signal: AbortSignal.timeout(15000),
-    })
-    if (!res.ok) throw new Error(`eBay HTTP ${res.status}`)
-    html = await res.text()
+  let html = ''
+  try {
+    const res = await fetchViaProxy(htmlUrl)
+    if (res.ok) html = await res.text()
+  } catch (_) {}
+
+  // GDPR consent page → retry
+  if (/cookieConsent|gdpr-consent|acceptCookies/i.test(html) && html.length < 80000) {
+    try {
+      const res = await fetchViaProxy(htmlUrl)
+      if (res.ok) html = await res.text()
+    } catch (_) {}
   }
 
-  if (/captcha|Pardon Our Interruption|robot\.detected/i.test(html))
-    throw new Error('eBay bot check — try again later')
+  // Bot check on regular proxy → retry with premium residential proxy
+  if (!html || isBotCheck(html)) {
+    console.log('[ebay] bot check on regular proxy — retrying with premium')
+    try {
+      const res = await fetchViaProxy(htmlUrl, true)
+      if (res.ok) html = await res.text()
+    } catch (_) {}
+  }
 
-  // Try embedded JSON first
-  const jsonItems = parseJson(html, domain)
-  if (jsonItems.length > 0) return jsonItems
+  // Still blocked → silently return empty so cron keeps running
+  if (!html || isBotCheck(html)) {
+    console.log('[ebay] bot check persists after premium retry — skipping this round')
+    return []
+  }
 
-  const items = parseHtml(html, domain)
+  const items = parseHtml_all(html, domain)
   if (items.length === 0) {
     const trulyEmpty = /0 Ergebnisse f|No exact matches found|0 results found/i.test(html)
-    if (trulyEmpty) throw new Error('Keine eBay-Treffer für dieses Suchwort')
-    throw new Error('eBay lieferte keine Artikel — öffne ebay.de einmal im Browser')
+    if (trulyEmpty) return []
+    console.log('[ebay] no items parsed — HTML structure may have changed')
+    return []
   }
   return items
 }
@@ -132,6 +150,65 @@ function extractFromJson(obj: any, domain: string, items: ScrapedItem[] = [], se
   }
   for (const v of (Array.isArray(obj) ? obj : Object.values(obj))) {
     if (v && typeof v === 'object') extractFromJson(v, domain, items, seen)
+  }
+  return items
+}
+
+function parseHtmlNew(html: string, domain: string): ScrapedItem[] {
+  // Parser for eBay's 2025+ HTML with unquoted attributes and data-listingid
+  const items: ScrapedItem[] = []
+  const seen = new Set<string>()
+
+  // Split on item boundaries by data-listingid
+  const blockRe = /data-listingid=(\d{8,18})/g
+  let m: RegExpExecArray | null
+  while ((m = blockRe.exec(html)) !== null) {
+    const id = m[1]
+    if (seen.has(id)) continue
+
+    // Window: 200 chars before (for context) and 9000 after (full card — price can be far)
+    const win = html.slice(Math.max(0, m.index - 200), Math.min(html.length, m.index + 9000))
+
+    // Skip to next item boundary to avoid spilling into next card
+    const nextBoundary = win.indexOf('data-listingid=', 300)
+    const card = nextBoundary > 0 ? win.slice(0, nextBoundary) : win
+
+    // Title: image alt text (most reliable in this structure)
+    let title = ''
+    const altM = card.match(/alt="([^"]{3,150})"/)
+    if (altM) {
+      const t = altM[1].replace(/^\s*(Neues Angebot|New Listing)\s*/i, '').trim()
+      if (t && !/^(Bild|Image|Photo|Icon|Logo)/i.test(t)) title = t
+    }
+    if (!title) {
+      // Fallback: aria-label on watch button (prefixed with "beobachten ")
+      const ariaM = card.match(/aria-label="beobachten ([^"]{3,150})"/)
+      if (ariaM) title = ariaM[1].trim()
+    }
+    if (!title) continue // skip placeholder items with no title
+    // Filter out generic eBay shop/ad titles
+    if (/^(Shop on eBay|Visit store|eBay Shop|Jetzt shoppen)/i.test(title)) continue
+
+    // Price: s-card__price span or generic EUR match
+    let price = ''
+    const priceSpan = card.match(/s-card__price[^>]*>([^<]+)</)
+    if (priceSpan) {
+      price = priceSpan[1].replace(/\s+/g, ' ').trim()
+    } else {
+      const pm = card.match(/(?:EUR|€)\s*[\d.,]+|[\d.,]+\s*(?:EUR|€)/)
+      if (pm) price = pm[0].replace(/\s+/g, ' ').trim()
+    }
+
+    // URL: unquoted href=https://...
+    const urlM = card.match(/href=(https?:\/\/(?:www\.)?ebay\.\w+\/itm\/\d+)/)
+    const url = urlM ? urlM[1] : `https://${domain}/itm/${id}`
+
+    // Image
+    const imgM = card.match(/(https?:\/\/i\.ebayimg\.com[^\s"'<>]+)/)
+    const image = imgM ? imgM[1] : null
+
+    seen.add(id)
+    items.push({ id, title, price, url, image, platform: 'ebay' })
   }
   return items
 }

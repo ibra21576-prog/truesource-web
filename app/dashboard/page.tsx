@@ -12,32 +12,22 @@ interface Search { id: string; query: string; platform: string; domain: string; 
 interface Me { userId: string; username: string; memberSince?: string }
 
 const PLAT_COLOR: Record<string, string> = { vinted: '#14b8a6', kleinanzeigen: '#f97316' }
-const FEED_INTERVAL  = 15 * 1000
-const SCRAPE_INTERVAL = 1 * 60 * 1000
+const FEED_INTERVAL  = 5 * 1000
+const SCRAPE_INTERVAL = 30 * 1000
 
-function SetupGuide({ vintedLinked, hasSearches }: { vintedLinked: boolean | null; hasSearches: boolean }) {
-  const step1Done = vintedLinked === true
-  const step2Done = hasSearches
-
+function SetupGuide({ hasSearches }: { hasSearches: boolean }) {
   const steps = [
     {
-      num: 1, done: step1Done,
-      title: 'Connect your Vinted account',
-      desc: 'Enter your email + password once. Done in 10 seconds.',
-      action: { label: 'Connect now →', href: '/settings' },
-      icon: <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
-    },
-    {
-      num: 2, done: step2Done,
+      num: 1, done: hasSearches,
       title: 'Add a search',
       desc: 'What are you looking for? e.g. "PlayStation 5", "Nike Air Max 90", "iPhone 15".',
       action: { label: 'Create search →', href: '/searches' },
       icon: <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
     },
     {
-      num: 3, done: false,
+      num: 2, done: false,
       title: 'Listings appear automatically',
-      desc: 'TrueSource scans every 5 minutes and shows new listings here — no button needed.',
+      desc: 'TrueSource scans Vinted, eBay & Kleinanzeigen every minute — new deals show up here instantly.',
       action: null,
       icon: <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
     },
@@ -144,9 +134,8 @@ export default function DashboardPage() {
   const [loading,      setLoading]      = useState(true)
   const [scraping,     setScraping]     = useState<Record<string, boolean>>({})
   const [errors,       setErrors]       = useState<Record<string, string>>({})
-  const [me,           setMe]           = useState<Me | null>(null)
-  const [vintedLinked, setVintedLinked] = useState<boolean | null>(null)
-  const [nextScan,     setNextScan]     = useState(SCRAPE_INTERVAL / 1000)
+  const [me,       setMe]       = useState<Me | null>(null)
+  const [nextScan, setNextScan] = useState(SCRAPE_INTERVAL / 1000)
   const searchesRef = useRef<Search[]>([])
 
   const loadFeed = useCallback(async () => {
@@ -163,11 +152,6 @@ export default function DashboardPage() {
       searchesRef.current = active
     }
   }, [])
-
-  async function refreshVintedStatus() {
-    const d = await fetch('/api/vinted-connect').then(r => r.ok ? r.json() : null)
-    if (d) setVintedLinked(Object.values(d).some((s: any) => s.connected))
-  }
 
   async function scrapeOne(searchId: string) {
     setScraping(s => ({ ...s, [searchId]: true }))
@@ -193,7 +177,6 @@ export default function DashboardPage() {
   useEffect(() => {
     loadFeed(); loadSearches()
     fetch('/api/me').then(r => r.ok ? r.json() : null).then(setMe)
-    refreshVintedStatus()
 
     const feedIv = setInterval(loadFeed, FEED_INTERVAL)
     const scrapeIv = setInterval(() => {
@@ -216,6 +199,7 @@ export default function DashboardPage() {
   const anyLoading = Object.values(scraping).some(Boolean)
 
   function fmtCountdown(s: number) {
+    if (s < 60) return `${s}s`
     const m = Math.floor(s / 60)
     const sec = s % 60
     return `${m}:${String(sec).padStart(2, '0')}`
@@ -259,10 +243,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Quick connect if not linked */}
-        {vintedLinked === false && (
-          <QuickConnectBanner onConnected={() => { refreshVintedStatus(); loadSearches().then(() => scrapeAll()) }} />
-        )}
+        {/* Vinted works with guest session — no connect banner needed */}
 
         {/* Header row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -334,11 +315,6 @@ export default function DashboardPage() {
                     {s.query}
                     <span style={{ color: 'var(--text3)', fontSize: 11 }}>· {s.platform}</span>
                   </button>
-                  {needsLogin && (
-                    <p style={{ fontSize: 11, color: 'var(--accent)', marginTop: 3 }}>
-                      Not connected — <a href="/settings" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'underline' }}>connect Vinted</a>
-                    </p>
-                  )}
                   {err && !needsLogin && (
                     <p style={{ fontSize: 11, color: 'var(--danger)', marginTop: 3 }}>{err}</p>
                   )}
@@ -355,10 +331,14 @@ export default function DashboardPage() {
             <p style={{ color: 'var(--text3)', fontSize: 14 }}>Loading feed…</p>
           </div>
         ) : items.length === 0 ? (
-          <SetupGuide vintedLinked={vintedLinked} hasSearches={searches.length > 0} />
+          <SetupGuide hasSearches={searches.length > 0} />
         ) : (
-          <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {items.map(item => <ItemCard key={item.id} item={item} />)}
+          <div className="stagger" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
+            gap: 14,
+          }}>
+            {items.map(item => <ItemCard key={item.id} item={item} variant="grid" />)}
           </div>
         )}
       </div>

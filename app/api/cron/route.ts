@@ -42,7 +42,7 @@ export async function GET(req: Request) {
       .from('searches')
       .select('*')
       .in('id', searchIds)
-      .eq('enabled', true)
+      .neq('enabled', false)
 
     for (const search of searches ?? []) {
       try {
@@ -59,7 +59,7 @@ export async function GET(req: Request) {
   const { data: allSearches } = await supabase
     .from('searches')
     .select('*')
-    .eq('enabled', true)
+    .neq('enabled', false)
 
   for (const search of (allSearches ?? []).filter(s => !allUserSearchIds.has(s.id))) {
     try {

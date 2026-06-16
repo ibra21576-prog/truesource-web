@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('searches')
-    .insert({ query, platform, domain, min_price: min_price || null, max_price: max_price || null })
+    .insert({ query, platform, domain, min_price: min_price || null, max_price: max_price || null, enabled: true })
     .select()
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
