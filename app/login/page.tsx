@@ -16,22 +16,23 @@ function LoginContent() {
   const params = useSearchParams()
   const router = useRouter()
   const error  = params.get('error')
-  const [isIframe, setIsIframe] = useState(false)
+  // Server detected iframe via Sec-Fetch-Dest header
+  const serverIframe = params.get('iframe') === '1'
+  const [isIframe, setIsIframe] = useState(serverIframe)
 
   useEffect(() => {
-    const inFrame = window.self !== window.top
-    setIsIframe(inFrame)
-    if (inFrame) {
-      // Listen for auth token from popup
-      const handler = (e: MessageEvent) => {
-        if (e.data?.type === 'truesource_auth' && e.data?.token) {
-          sessionStorage.setItem('ts_token', e.data.token)
-          router.push(`/dashboard?t=${encodeURIComponent(e.data.token)}`)
-        }
+    // Also detect client-side (catches cases server header missed)
+    try { if (window.self !== window.top) setIsIframe(true) } catch { setIsIframe(true) }
+
+    // Always listen for auth token from popup
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'truesource_auth' && e.data?.token) {
+        sessionStorage.setItem('ts_token', e.data.token)
+        router.push(`/dashboard?t=${encodeURIComponent(e.data.token)}`)
       }
-      window.addEventListener('message', handler)
-      return () => window.removeEventListener('message', handler)
     }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
   }, [router])
 
   function openPopup() {

@@ -12,7 +12,12 @@ export async function middleware(req: NextRequest) {
   // Accept session from cookie OR URL param ?t= (iframe mode — cookies blocked)
   const token = req.cookies.get('session')?.value || req.nextUrl.searchParams.get('t') || ''
   if (!token) {
-    return NextResponse.redirect(new URL('/login', req.url))
+    // Detect iframe via Sec-Fetch-Dest header — pass ?iframe=1 so login page knows
+    const dest = req.headers.get('Sec-Fetch-Dest') || ''
+    const isFrame = dest === 'iframe' || dest === 'frame'
+    const loginUrl = new URL('/login', req.url)
+    if (isFrame) loginUrl.searchParams.set('iframe', '1')
+    return NextResponse.redirect(loginUrl)
   }
 
   // Verify JWT using Web Crypto API (Edge-compatible)
