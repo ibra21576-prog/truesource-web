@@ -1,7 +1,7 @@
 'use client'
 import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
 
 const ERROR_MESSAGES: Record<string, string> = {
   no_access:         "Your subscription is not active. Purchase access to continue.",
@@ -14,7 +14,32 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 function LoginContent() {
   const params = useSearchParams()
+  const router = useRouter()
   const error  = params.get('error')
+  const [isIframe, setIsIframe] = useState(false)
+
+  useEffect(() => {
+    const inFrame = window.self !== window.top
+    setIsIframe(inFrame)
+    if (inFrame) {
+      // Listen for auth token from popup
+      const handler = (e: MessageEvent) => {
+        if (e.data?.type === 'truesource_auth' && e.data?.token) {
+          sessionStorage.setItem('ts_token', e.data.token)
+          router.push(`/dashboard?t=${encodeURIComponent(e.data.token)}`)
+        }
+      }
+      window.addEventListener('message', handler)
+      return () => window.removeEventListener('message', handler)
+    }
+  }, [router])
+
+  function openPopup() {
+    const w = 520, h = 640
+    const left = window.screenX + (window.outerWidth - w) / 2
+    const top = window.screenY + (window.outerHeight - h) / 2
+    window.open('/api/auth/whop?popup=1', 'whop_login', `width=${w},height=${h},left=${left},top=${top}`)
+  }
 
   return (
     <div style={{
@@ -68,6 +93,21 @@ function LoginContent() {
           </div>
         )}
 
+        {isIframe ? (
+          <button onClick={openPopup} style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            padding: '13px 20px', borderRadius: 12, fontWeight: 700, fontSize: 15,
+            background: '#FA4616', color: '#fff', border: 'none', cursor: 'pointer',
+            boxShadow: '0 0 28px rgba(250,70,22,0.4)',
+          }}>
+            <svg width="22" height="12" viewBox="0 0 1000 515" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M158.881 -0.00366211C93.2014 -0.00366211 47.9251 28.989 13.6619 61.7749C13.6619 61.7749 -0.173169 74.965 0.00164277 75.3669L143.897 220.129L287.766 75.3669C260.521 37.6314 209.152 -0.00366211 158.881 -0.00366211Z" fill="white"/>
+              <path d="M514.191 -0.00354004C448.513 -0.00354004 403.236 28.9891 368.971 61.7751C368.971 61.7751 356.336 74.6134 355.763 75.3671L177.903 254.322L321.574 398.857L643.077 75.3671C615.831 37.6316 564.488 -0.00354004 514.191 -0.00354004Z" fill="white"/>
+              <path d="M870.479 -0.00354004C804.798 -0.00354004 759.524 28.9891 725.259 61.7751C725.259 61.7751 712.098 74.7138 711.6 75.3671L355.806 433.351L393.466 471.237C451.73 529.852 547.101 529.852 605.365 471.237L998.914 75.3671H999.365C972.119 37.6316 920.773 -0.00354004 870.479 -0.00354004Z" fill="white"/>
+            </svg>
+            Connect to Whop
+          </button>
+        ) : (
         <a href="/api/auth/whop" style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
           padding: '13px 20px', borderRadius: 12, fontWeight: 700, fontSize: 15,
@@ -82,6 +122,7 @@ function LoginContent() {
           </svg>
           Connect to Whop
         </a>
+        )}
 
         <div style={{ textAlign: 'center' }}>
           <p style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>

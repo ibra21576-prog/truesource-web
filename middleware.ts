@@ -9,7 +9,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  const token = req.cookies.get('session')?.value
+  // Accept session from cookie OR URL param ?t= (iframe mode — cookies blocked)
+  const token = req.cookies.get('session')?.value || req.nextUrl.searchParams.get('t') || ''
   if (!token) {
     return NextResponse.redirect(new URL('/login', req.url))
   }

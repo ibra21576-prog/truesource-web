@@ -103,6 +103,21 @@ export async function GET(req: NextRequest) {
 
     // 5) Create 24h JWT session with username + memberSince
     const session = await createSession(String(userId), displayName, memberSince)
+    const isPopup = req.cookies.get('auth_popup')?.value === '1'
+
+    if (isPopup) {
+      // Popup mode (iframe login) — return HTML that sends token to parent via postMessage
+      const res = new NextResponse(`<!DOCTYPE html><html><body><script>
+        window.opener && window.opener.postMessage({type:'truesource_auth',token:${JSON.stringify(session)}}, '*');
+        window.close();
+      </script><p>Logging in...</p></body></html>`, {
+        headers: { 'Content-Type': 'text/html' },
+      })
+      res.cookies.delete('pkce_verifier')
+      res.cookies.delete('auth_popup')
+      return res
+    }
+
     const res = NextResponse.redirect(new URL('/dashboard', req.url))
     res.cookies.delete('pkce_verifier')
     res.cookies.set('session', session, {

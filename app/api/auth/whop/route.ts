@@ -10,7 +10,8 @@ function base64urlEncode(buffer: ArrayBuffer): string {
     .replace(/=/g, '')
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const isPopup = new URL(req.url).searchParams.get('popup') === '1'
   const verifierBytes = new Uint8Array(32)
   crypto.getRandomValues(verifierBytes)
   const codeVerifier = base64urlEncode(verifierBytes.buffer)
@@ -46,5 +47,14 @@ export async function GET() {
     maxAge:   60 * 10,
     path:     '/',
   })
+  if (isPopup) {
+    res.cookies.set('auth_popup', '1', {
+      httpOnly: true,
+      secure:   process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge:   60 * 10,
+      path:     '/',
+    })
+  }
   return res
 }
