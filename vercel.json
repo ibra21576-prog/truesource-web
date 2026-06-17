@@ -4,5 +4,20 @@
       "path": "/api/cron",
       "schedule": "0 8 * * *"
     }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "ALLOWALL"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors *"
+        }
+      ]
+    }
   ]
 }
