@@ -22,12 +22,13 @@ export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.kijiji.ca'
   const q = encodeURIComponent(search.query)
 
-  // Fetch 3 pages in parallel — Kijiji uses page= param
-  const pages = await Promise.all([
-    fetchPage(`https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc`),
+  // Fetch page 1, then pages 2+3 in parallel (stagger to avoid rate limit)
+  const page1 = await fetchPage(`https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc`)
+  const [page2, page3] = await Promise.all([
     fetchPage(`https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc&page=2`),
     fetchPage(`https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc&page=3`),
   ])
+  const pages = [page1, page2, page3]
 
   const allItems: ScrapedItem[] = []
   const seen = new Set<string>()
