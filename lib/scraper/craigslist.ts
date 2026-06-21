@@ -27,12 +27,41 @@ async function tryProxy(url: string): Promise<{ ok: boolean; text: string }> {
   } catch { return { ok: false, text: '' } }
 }
 
+// Default cities to scrape when only one domain is specified
+const DEFAULT_CITIES = [
+  'newyork.craigslist.org',
+  'losangeles.craigslist.org',
+  'chicago.craigslist.org',
+  'sfbay.craigslist.org',
+  'toronto.craigslist.org',
+]
+
 export async function fetchCraigslist(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'newyork.craigslist.org'
   const params = new URLSearchParams({ query: search.query, sort: 'date' })
   if (search.min_price) params.set('min_price', String(search.min_price))
   if (search.max_price) params.set('max_price', String(search.max_price))
 
+  // If using default domain, scrape multiple cities in parallel for more results
+  const domains = domain === 'newyork.craigslist.org' ? DEFAULT_CITIES : [domain]
+
+  if (domains.length > 1) {
+    const results = await Promise.all(domains.map(d => fetchSingleCity(d, params)))
+    const seen = new Set<string>()
+    const all: ScrapedItem[] = []
+    for (const items of results) {
+      for (const item of items) {
+        if (!seen.has(item.id)) { seen.add(item.id); all.push(item) }
+      }
+    }
+    console.log(`[craigslist] ${all.length} items across ${domains.length} cities`)
+    return all
+  }
+
+  return fetchSingleCity(domain, params)
+}
+
+async function fetchSingleCity(domain: string, params: URLSearchParams): Promise<ScrapedItem[]> {
   // 1. Craigslist JSON API — returns structured data, often accessible without proxy
   const jsonUrl = `https://${domain}/jsonsearch/sss/?${params}`
   const jsonRes = await tryDirect(jsonUrl)
