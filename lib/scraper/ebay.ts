@@ -35,7 +35,34 @@ export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
     ...(search.max_price ? { _udhi: String(search.max_price) } : {}),
   })
 
-  // 1. RSS — most reliable, rarely bot-blocked
+  // 1. RSS direct (no proxy) — eBay RSS is much less rate-limited than HTML
+  try {
+    const rssParams = new URLSearchParams(params)
+    rssParams.set('_rss', '1')
+    const rssUrl = `https://${domain}/sch/i.html?${rssParams}`
+    const rssRes = await fetch(rssUrl, {
+      headers: {
+        'User-Agent': UA_BROWSER,
+        Accept: 'application/rss+xml,application/xml,text/xml,*/*',
+        'Accept-Language': 'de-DE,de;q=0.9,en;q=0.8',
+      },
+      signal: AbortSignal.timeout(8000),
+    })
+    if (rssRes.ok) {
+      const text = await rssRes.text()
+      if ((text.includes('<channel') || text.includes('<rss')) && !isBotCheck(text)) {
+        const items = parseRss(text, domain)
+        if (items.length > 0) {
+          console.log(`[ebay] direct RSS got ${items.length} items`)
+          return items
+        }
+      }
+    }
+  } catch (e: any) {
+    console.log(`[ebay] direct RSS error: ${e.message}`)
+  }
+
+  // 2. RSS via proxy (falls back to ScraperAPI if available)
   try {
     const rssParams = new URLSearchParams(params)
     rssParams.set('_rss', '1')
@@ -45,12 +72,15 @@ export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
       const text = await rssRes.text()
       if (text.includes('<channel') && !isBotCheck(text)) {
         const items = parseRss(text, domain)
-        if (items.length > 0) return items
+        if (items.length > 0) {
+          console.log(`[ebay] proxy RSS got ${items.length} items`)
+          return items
+        }
       }
     }
   } catch (_) {}
 
-  // 2. HTML scrape — regular proxy first, then premium on bot check
+  // 3. HTML scrape via proxy
   const htmlUrl = `https://${domain}/sch/i.html?${params}`
 
   let html = ''
@@ -59,26 +89,15 @@ export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
     if (res.ok) html = await res.text()
   } catch (_) {}
 
-  // GDPR consent page → retry
-  if (/cookieConsent|gdpr-consent|acceptCookies/i.test(html) && html.length < 80000) {
-    try {
-      const res = await fetchViaProxy(htmlUrl)
-      if (res.ok) html = await res.text()
-    } catch (_) {}
-  }
-
-  // Bot check on regular proxy → retry with premium residential proxy
   if (!html || isBotCheck(html)) {
-    console.log('[ebay] bot check on regular proxy — retrying with premium')
     try {
       const res = await fetchViaProxy(htmlUrl, true)
       if (res.ok) html = await res.text()
     } catch (_) {}
   }
 
-  // Still blocked → silently return empty so cron keeps running
   if (!html || isBotCheck(html)) {
-    console.log('[ebay] bot check persists after premium retry — skipping this round')
+    console.log('[ebay] all attempts failed — skipping this round')
     return []
   }
 

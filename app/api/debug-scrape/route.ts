@@ -6,6 +6,8 @@ import { fetchGumtree } from '@/lib/scraper/gumtree'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 10
 
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const platform = searchParams.get('platform') || 'all'
@@ -23,19 +25,19 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  if (platform === 'kijiji-raw' || platform === 'all') {
-    // Raw HTML check — how does direct Vercel fetch look?
-    const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-    const url = `https://www.kijiji.ca/b-buy-sell/canada/${encodeURIComponent(query)}/k0c10l0?sortingOrder=dateDesc`
+  if (platform === 'kijiji-raw') {
+    // Raw single page test
     try {
-      const r = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'text/html,*/*', 'Accept-Language': 'en-CA,en;q=0.9' }, signal: AbortSignal.timeout(7000) })
+      const r = await fetch(`https://www.kijiji.ca/b-buy-sell/canada/${encodeURIComponent(query)}/k0c10l0?sortingOrder=dateDesc`, {
+        headers: { 'User-Agent': UA, Accept: 'text/html,*/*', 'Accept-Language': 'en-CA,en;q=0.9' },
+        signal: AbortSignal.timeout(7000),
+      })
       const t = await r.text()
       results.kijijiRaw = {
         status: r.status, length: t.length,
-        hasNextData: t.includes('__NEXT_DATA__'),
-        urlMatches: (t.match(/\/v-[^/]+\/[^/]+\/[^/]+\/\d{7,}/g) || []).length,
-        hasAccessDenied: t.includes('Access Denied'),
-        hasCaptcha: t.toLowerCase().includes('captcha'),
+        hasJsonLd: t.includes('application/ld+json'),
+        hasItemList: t.includes('"ItemList"'),
+        jsonLdCount: (t.match(/application\/ld\+json/g) || []).length,
       }
     } catch (e: any) { results.kijijiRaw = { error: e.message } }
   }

@@ -5,47 +5,53 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 async function fetchPage(url: string): Promise<string> {
   try {
     const res = await fetch(url, {
-      headers: { 'User-Agent': UA, Accept: 'text/html,*/*', 'Accept-Language': 'en-CA,en;q=0.9' },
-      signal: AbortSignal.timeout(7000),
+      headers: {
+        'User-Agent': UA,
+        Accept: 'text/html,application/xhtml+xml,*/*;q=0.9',
+        'Accept-Language': 'en-CA,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'no-cache',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+      },
+      signal: AbortSignal.timeout(8000),
     })
-    if (!res.ok) return ''
+    if (!res.ok) {
+      console.log(`[kijiji] HTTP ${res.status} for ${url}`)
+      return ''
+    }
     const t = await res.text()
-    return t.length > 10000 ? t : ''
-  } catch { return '' }
+    return t.length > 5000 ? t : ''
+  } catch (e: any) {
+    console.log(`[kijiji] fetch error: ${e.message}`)
+    return ''
+  }
 }
 
 function isBlocked(html: string) {
-  return /captcha|Just a moment|are you a robot/i.test(html)
+  return /captcha|Just a moment|are you a robot|Checking your browser/i.test(html)
 }
 
 export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.kijiji.ca'
   const q = encodeURIComponent(search.query)
 
-  // Fetch page 1, then pages 2+3 in parallel (stagger to avoid rate limit)
-  const page1 = await fetchPage(`https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc`)
-  const [page2, page3] = await Promise.all([
-    fetchPage(`https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc&page=2`),
-    fetchPage(`https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc&page=3`),
-  ])
-  const pages = [page1, page2, page3]
+  const url = `https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc`
+  const html = await fetchPage(url)
 
-  const allItems: ScrapedItem[] = []
-  const seen = new Set<string>()
-
-  for (const html of pages) {
-    if (!html || isBlocked(html)) continue
-    const items = parseJsonLd(html, domain)
-    for (const item of items) {
-      if (!seen.has(item.id)) {
-        seen.add(item.id)
-        allItems.push(item)
-      }
-    }
+  if (!html) {
+    console.log('[kijiji] empty response from page')
+    return []
+  }
+  if (isBlocked(html)) {
+    console.log('[kijiji] blocked by bot check')
+    return []
   }
 
-  console.log(`[kijiji] ${allItems.length} items across 3 pages`)
-  return allItems
+  const items = parseJsonLd(html, domain)
+  console.log(`[kijiji] ${items.length} items from page 1`)
+  return items
 }
 
 function parseJsonLd(html: string, domain: string): ScrapedItem[] {
@@ -68,7 +74,8 @@ function parseJsonLd(html: string, domain: string): ScrapedItem[] {
         seen.add(id)
         const title: string = it.name || ''
         if (!title || title.length < 2) continue
-        const priceStr = it.offers?.price ? `$${Number(it.offers.price).toFixed(2).replace('.00', '')}` : ''
+        const priceRaw = it.offers?.price
+        const priceStr = priceRaw ? `$${Number(priceRaw).toFixed(0)}` : ''
         items.push({ id, title, price: priceStr, url: urlStr, image: it.image || null, platform: 'kijiji' })
       }
       if (items.length > 0) return items
