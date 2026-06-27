@@ -21,6 +21,27 @@ const P: Record<string, { label: string; color: string }> = {
   craigslist:    { label: 'Craigslist',    color: '#7c3aed' },
 }
 
+const IMG_HOSTS = [
+  'media.kijiji.ca',
+  'images.craigslist.org',
+  'img.kleinanzeigen.de',
+  'i.ebayimg.com',
+  'images1.vinted.com', 'images2.vinted.com', 'images3.vinted.com',
+  'photos.ztat.net',
+  'img.gumtree.com', 'thumbs.gumtree.com',
+]
+
+function proxyImg(url: string | null | undefined): string | null {
+  if (!url) return null
+  try {
+    const h = new URL(url).hostname
+    if (IMG_HOSTS.some(d => h === d || h.endsWith('.' + d))) {
+      return `/api/img?url=${encodeURIComponent(url)}`
+    }
+  } catch {}
+  return url
+}
+
 function resolveUrl(url: string | undefined, domain: string): string {
   if (!url) return '#'
   if (url.startsWith('http')) return url
@@ -29,8 +50,10 @@ function resolveUrl(url: string | undefined, domain: string): string {
 
 export default function ItemCard({ item, variant = 'list' }: { item: Item; variant?: 'list' | 'grid' }) {
   const p = P[item.platform] ?? P.vinted
-  const isNew = item.first_scan === false
+  // first_scan = true means brand-new listing (never seen before)
+  const isNew = item.first_scan === true
   const href = resolveUrl(item.url, item.domain || (item.platform === 'ebay' ? 'www.ebay.de' : item.platform === 'kleinanzeigen' ? 'www.kleinanzeigen.de' : 'www.vinted.de'))
+  const imgSrc = proxyImg(item.image)
 
   if (variant === 'grid') {
     return (
@@ -68,13 +91,15 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
           borderBottom: '1px solid var(--border)',
           flexShrink: 0,
         }}>
-          {item.image
+          {imgSrc
             ? <img
-                src={item.image}
+                src={imgSrc}
                 alt=""
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                referrerPolicy="no-referrer"
-                onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                onError={e => {
+                  const img = e.target as HTMLImageElement
+                  img.style.display = 'none'
+                }}
               />
             : <div style={{
                 position: 'absolute', inset: 0,
@@ -144,7 +169,7 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
     )
   }
 
-  // List variant (default — used on dashboard)
+  // List variant
   return (
     <a
       href={href}
@@ -182,12 +207,11 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
         border: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        {item.image
+        {imgSrc
           ? <img
-              src={item.image}
+              src={imgSrc}
               alt=""
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              referrerPolicy="no-referrer"
               onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
             />
           : <svg width="20" height="20" fill="none" stroke="var(--border2)" strokeWidth="1.5" viewBox="0 0 24 24">

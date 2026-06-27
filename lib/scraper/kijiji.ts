@@ -75,7 +75,10 @@ function parseJsonLd(html: string, domain: string): ScrapedItem[] {
         const title: string = it.name || ''
         if (!title || title.length < 2) continue
         const priceRaw = it.offers?.price
-        const priceStr = priceRaw ? `$${Number(priceRaw).toFixed(0)}` : ''
+        const priceNum = priceRaw ? Number(priceRaw) : NaN
+        const priceStr = !isNaN(priceNum) && priceNum > 0
+          ? `$${priceNum % 1 === 0 ? priceNum : priceNum.toFixed(2)}`
+          : ''
         items.push({ id, title, price: priceStr, url: urlStr, image: it.image || null, platform: 'kijiji' })
       }
       if (items.length > 0) return items
