@@ -6,6 +6,9 @@ export const dynamic = 'force-dynamic'
 
 const BUCKET = 'ts-settings'
 
+// Max searches to process per cron call — prevents Vercel 10s timeout
+const BATCH_SIZE = 30
+
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization')
   if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -13,80 +16,93 @@ export async function GET(req: Request) {
   }
 
   const supabase = createServiceClient()
-  let processed = 0
   const errorDetails: string[] = []
 
-  // ── 1. Per-user searches ─────────────────────────────────────────────────────
-  const { data: userFolders } = await supabase.storage.from(BUCKET).list('user-data')
+  // ── 1. Load all enabled searches ─────────────────────────────────────────────
+  const { data: allSearches } = await supabase
+    .from('searches')
+    .select('*')
+    .neq('enabled', false)
 
-  const userSearchMap = new Map<string, string[]>()
-  await Promise.all(
-    (userFolders ?? []).map(async folder => {
-      try {
-        const { data } = await supabase.storage.from(BUCKET).download(`user-data/${folder.name}/search-ids.json`)
-        if (data) userSearchMap.set(folder.name, JSON.parse(await data.text()))
-      } catch {}
-    })
-  )
+  const searches: any[] = allSearches ?? []
+  if (searches.length === 0) {
+    return NextResponse.json({ ok: true, processed: 0, skipped: 0, errors: 0, errorDetails: [] })
+  }
 
-  const allUserSearchIds = new Set<string>()
-  userSearchMap.forEach(ids => ids.forEach((id: string) => allUserSearchIds.add(id)))
-
-  const userJobs: Array<{ search: any; userId: string }> = []
-  const userEntries = Array.from(userSearchMap.entries())
-  await Promise.all(
-    userEntries.map(async ([userId, searchIds]) => {
-      if (!searchIds.length) return
-      const { data: searches } = await supabase
-        .from('searches')
-        .select('*')
-        .in('id', searchIds)
-        .neq('enabled', false)
-      for (const search of searches ?? []) {
-        userJobs.push({ search, userId })
-      }
-    })
-  )
-
-  // ── 2. Global / admin searches ───────────────────────────────────────────────
-  const { data: allSearches } = await supabase.from('searches').select('*').neq('enabled', false)
-  const globalJobs = (allSearches ?? []).filter(s => !allUserSearchIds.has(s.id))
-
-  // ── 3. Run all searches in parallel ─────────────────────────────────────────
-  const results = await Promise.allSettled([
-    ...userJobs.map(({ search, userId }) =>
-      fetchItems({ ...search, user_id: userId })
-        .then(items => saveItems(supabase, search, items))
-        .then(() => { processed++ })
-        .catch(e => errorDetails.push(`[user:${userId}][${search.platform}] "${search.query}": ${e.message}`))
-    ),
-    ...globalJobs.map(search =>
-      fetchItems(search)
-        .then(items => saveItems(supabase, search, items))
-        .then(() => { processed++ })
-        .catch(e => errorDetails.push(`[global][${search.platform}] "${search.query}": ${e.message}`))
-    ),
-  ])
-  void results
-
-  // ── 4. Clean up listings older than 24h (sold / expired) ────────────────────
+  // ── 2. Batch cursor — rotate through all searches across cron calls ───────────
+  // Each cron call processes BATCH_SIZE searches starting at `offset`
+  // The offset is stored in Supabase storage and increments each call
+  let offset = 0
   try {
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-    await supabase.from('items').delete().lt('found_at', cutoff)
+    const { data } = await supabase.storage.from(BUCKET).download('cron-state.json')
+    if (data) offset = (JSON.parse(await data.text()).offset ?? 0) % searches.length
   } catch {}
 
-  return NextResponse.json({ ok: true, processed, errors: errorDetails.length, errorDetails })
+  const batch = []
+  for (let i = 0; i < Math.min(BATCH_SIZE, searches.length); i++) {
+    batch.push(searches[(offset + i) % searches.length])
+  }
+  const nextOffset = (offset + batch.length) % searches.length
+
+  // Save next offset (fire-and-forget)
+  supabase.storage.from(BUCKET)
+    .upload('cron-state.json', Buffer.from(JSON.stringify({ offset: nextOffset, updatedAt: Date.now() })), {
+      contentType: 'application/json', upsert: true,
+    })
+    .catch(() => {})
+
+  // ── 3. Deduplicate by (platform + query + domain) ────────────────────────────
+  // If 100 customers all search "iPhone" on Kijiji, scrape only ONCE
+  // then save results to ALL matching search IDs
+  const uniqueKey = (s: any) => `${s.platform}|${(s.query || '').toLowerCase().trim()}|${s.domain || ''}`
+
+  const grouped = new Map<string, any[]>()
+  for (const s of batch) {
+    const key = uniqueKey(s)
+    if (!grouped.has(key)) grouped.set(key, [])
+    grouped.get(key)!.push(s)
+  }
+
+  // ── 4. Run one scrape per unique (platform, query, domain) in parallel ────────
+  let processed = 0
+  const scrapeJobs = Array.from(grouped.entries()).map(async ([, group]) => {
+    const representative = group[0]
+    try {
+      const items = await fetchItems(representative)
+      // Save results for ALL searches in this group (all customers who monitor this)
+      await Promise.all(group.map(search => saveItems(supabase, search, items)))
+      processed += group.length
+    } catch (e: any) {
+      errorDetails.push(`[${representative.platform}] "${representative.query}": ${e.message}`)
+    }
+  })
+
+  await Promise.allSettled(scrapeJobs)
+
+  // ── 5. Clean up items older than 24h ─────────────────────────────────────────
+  supabase.from('items')
+    .delete()
+    .lt('found_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+    .then(() => {})
+    .catch(() => {})
+
+  return NextResponse.json({
+    ok: true,
+    processed,
+    unique_scrapes: grouped.size,
+    batch_size: batch.length,
+    total_searches: searches.length,
+    offset_next: nextOffset,
+    errors: errorDetails.length,
+    errorDetails,
+  })
 }
 
-// Upsert ALL scraped items every run — updates found_at so the live feed
-// always reflects what is currently listed on each platform.
-// Items no longer posted will age out and get deleted after 24h.
 async function saveItems(supabase: any, search: any, items: any[]) {
   if (!items.length) return
 
   const now = new Date().toISOString()
 
-  // Track which IDs we've never seen before (to mark as first_scan)
   const { data: seenRows } = await supabase
     .from('seen_ids')
     .select('item_id')
@@ -103,13 +119,11 @@ async function saveItems(supabase: any, search: any, items: any[]) {
     url:        it.url,
     image:      it.image,
     found_at:   now,
-    first_scan: !seenSet.has(it.id),  // true = brand new listing
+    first_scan: !seenSet.has(it.id),
   }))
 
   await Promise.all([
-    // Upsert all — on conflict update found_at + price (prices can change)
     supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id' }),
-    // Track every seen ID so we know "first_scan" correctly next time
     supabase.from('seen_ids').upsert(
       items.map((it: any) => ({ search_id: search.id, item_id: it.id })),
       { ignoreDuplicates: true }

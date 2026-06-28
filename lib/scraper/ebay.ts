@@ -10,11 +10,34 @@ function isBotCheck(html: string) {
 }
 
 async function fetchViaProxy(url: string, premium = false): Promise<Response> {
+  // Webshare rotating proxy ($5/month) — set PROXY_URL=http://user:pass@p.webshare.io:80
+  const proxyUrl = process.env.PROXY_URL
+  if (proxyUrl) {
+    // Route through Webshare HTTP proxy via URL-encoded format
+    const encoded = `${proxyUrl.replace(/\/$/, '')}/${encodeURIComponent(url)}`
+    // Use ScraperAPI-compatible format if SCRAPERAPI_KEY is also set
+    const scraperKey = process.env.SCRAPERAPI_KEY
+    if (scraperKey) {
+      let u = `https://api.scraperapi.com/?api_key=${scraperKey}&url=${encodeURIComponent(url)}&country_code=de`
+      if (premium) u += '&premium=true'
+      return fetch(u, { signal: AbortSignal.timeout(30000) })
+    }
+    // Direct Webshare proxy via fetch with proxy header
+    return fetch(url, {
+      headers: {
+        ...BASE_HEADERS,
+        'User-Agent': UA_BROWSER,
+        'X-Proxy-Url': proxyUrl,
+      },
+      signal: AbortSignal.timeout(15000),
+    })
+  }
+  // ScraperAPI fallback (legacy)
   const key = process.env.SCRAPERAPI_KEY
   if (key) {
-    let proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=de`
-    if (premium) proxyUrl += '&premium=true'
-    return fetch(proxyUrl, { signal: AbortSignal.timeout(45000) })
+    let u = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=de`
+    if (premium) u += '&premium=true'
+    return fetch(u, { signal: AbortSignal.timeout(30000) })
   }
   return fetch(url, { headers: { ...BASE_HEADERS, 'User-Agent': UA_BROWSER }, signal: AbortSignal.timeout(8000) })
 }
