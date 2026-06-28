@@ -1,5 +1,6 @@
 import { ScrapedItem, Search } from './types'
 import { formatPrice, stripHtml } from './utils'
+import { proxyFetch, hasProxy } from './proxy'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
@@ -92,20 +93,15 @@ function isBotCheck(html: string) {
 }
 
 async function fetchViaProxy(url: string): Promise<Response> {
-  const proxyUrl = process.env.PROXY_URL
-  if (proxyUrl) {
-    return fetch(url, {
-      headers: { 'User-Agent': UA, 'X-Proxy-Url': proxyUrl },
-      signal: AbortSignal.timeout(15000),
-    })
-  }
+  // ScraperAPI (legacy) takes priority if a key is set; otherwise tunnel the raw
+  // request through the residential PROXY_URL (or direct if neither is set).
   const key = process.env.SCRAPERAPI_KEY
   if (key) {
     return fetch(`https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=de`, {
       signal: AbortSignal.timeout(30000),
     })
   }
-  return fetch(url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(8000) })
+  return proxyFetch(url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(12000) })
 }
 
 export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
@@ -123,18 +119,19 @@ export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
     ...(search.max_price ? { _udhi: String(search.max_price) } : {}),
   })
 
-  // 2. Direct RSS (no proxy) — works sometimes without ScraperAPI
+  // 2. RSS — through residential proxy if PROXY_URL is set (eBay blocks
+  //    datacenter IPs), else direct (works occasionally).
   try {
     const rssParams = new URLSearchParams(params)
     rssParams.set('_rss', '1')
     const rssUrl = `https://${domain}/sch/i.html?${rssParams}`
-    const rssRes = await fetch(rssUrl, {
+    const rssRes = await proxyFetch(rssUrl, {
       headers: {
         'User-Agent': UA,
         Accept: 'application/rss+xml,application/xml,text/xml,*/*',
         'Accept-Language': 'de-DE,de;q=0.9',
       },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(12000),
     })
     if (rssRes.ok) {
       const text = await rssRes.text()
@@ -146,7 +143,7 @@ export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
   } catch (e: any) { console.log(`[ebay] direct RSS: ${e.message}`) }
 
   // 3. Proxy HTML (if proxy configured)
-  if (process.env.PROXY_URL || process.env.SCRAPERAPI_KEY) {
+  if (hasProxy() || process.env.SCRAPERAPI_KEY) {
     try {
       const htmlUrl = `https://${domain}/sch/i.html?${params}`
       const res = await fetchViaProxy(htmlUrl)

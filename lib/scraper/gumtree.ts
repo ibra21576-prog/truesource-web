@@ -1,31 +1,22 @@
 import { ScrapedItem, Search } from './types'
 import { stripHtml } from './utils'
+import { proxyFetch, hasProxy } from './proxy'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 const UA_MOBILE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
 
-async function get(url: string, opts: { mobile?: boolean; proxy?: boolean; timeout?: number; json?: boolean } = {}): Promise<{ ok: boolean; text: string; status: number }> {
-  const { mobile = false, proxy = false, timeout = 7000 } = opts
+async function get(url: string, opts: { mobile?: boolean; timeout?: number; json?: boolean } = {}): Promise<{ ok: boolean; text: string; status: number }> {
+  const { mobile = false, timeout = 7000 } = opts
   try {
-    let fetchUrl = url
     const headers: Record<string, string> = {
       'User-Agent': mobile ? UA_MOBILE : UA,
       Accept: opts.json ? 'application/json, */*' : 'text/html,application/json,*/*',
       'Accept-Language': 'en-GB,en;q=0.9',
       ...(opts.json ? { 'X-Requested-With': 'XMLHttpRequest' } : {}),
     }
-    if (proxy) {
-      const key = process.env.SCRAPERAPI_KEY
-      const proxyUrl = process.env.PROXY_URL
-      if (proxyUrl) {
-        headers['X-Proxy-Url'] = proxyUrl
-      } else if (key) {
-        fetchUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=gb`
-      } else {
-        return { ok: false, text: '', status: 0 }
-      }
-    }
-    const res = await fetch(fetchUrl, { headers, signal: AbortSignal.timeout(timeout) })
+    // proxyFetch tunnels through PROXY_URL (residential) when set, else direct.
+    // Gumtree blocks datacenter IPs, so a residential proxy is what makes it work.
+    const res = await proxyFetch(url, { headers, signal: AbortSignal.timeout(timeout) })
     const text = await res.text()
     return { ok: res.ok, text, status: res.status }
   } catch { return { ok: false, text: '', status: 0 } }
@@ -79,11 +70,7 @@ async function fetchGumtreeUK(query: string, domain: string): Promise<ScrapedIte
   // Approach 2: HTML scrape — UK-wide, sorted by date, no location filter
   // distance=-1 or no search_location means UK-wide on Gumtree UK
   const searchUrl = `https://${domain}/search?search_category=all&q=${q}&sort=date&search_location=uk`
-  let r = await get(searchUrl, { timeout: 7000 })
-  if (!r.ok || isBlocked(r.text)) {
-    // Try proxy
-    r = await get(searchUrl, { proxy: true, timeout: 8000 })
-  }
+  const r = await get(searchUrl, { timeout: 8000 })
 
   if (r.ok && !isBlocked(r.text)) {
     // Try __NEXT_DATA__ first

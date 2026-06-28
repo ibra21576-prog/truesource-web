@@ -1,4 +1,5 @@
 import { ScrapedItem, Search } from './types'
+import { proxyFetch } from './proxy'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 // Public API key used by leboncoin's own web frontend
@@ -25,7 +26,7 @@ export async function fetchLeboncoin(search: Search): Promise<ScrapedItem[]> {
   }
 
   try {
-    const res = await fetch('https://api.leboncoin.fr/finder/search', {
+    const res = await proxyFetch('https://api.leboncoin.fr/finder/search', {
       method: 'POST',
       headers: {
         'User-Agent': UA,
