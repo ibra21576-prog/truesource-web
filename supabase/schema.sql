@@ -11,8 +11,13 @@ create table if not exists searches (
   min_price  numeric,
   max_price  numeric,
   enabled    boolean not null default true,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  last_scraped_at timestamptz   -- used by the cron scheduler for fair rotation at scale
 );
+
+-- If upgrading an existing DB, run this once:
+-- alter table searches add column if not exists last_scraped_at timestamptz;
+create index if not exists searches_last_scraped on searches (last_scraped_at nulls first);
 
 -- Found items (feed + archive)
 create table if not exists items (

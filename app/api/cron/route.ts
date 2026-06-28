@@ -4,7 +4,21 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-const BUCKET = 'ts-settings'
+// ─── Self-limiting scheduler ─────────────────────────────────────────────────
+// Scales from 10 to hundreds of customers without code changes:
+//  • Dedupe by (platform|query|domain) so 400 customers searching "iPhone" = 1 scrape
+//  • Process oldest-scraped searches first (fair rotation)
+//  • Stop launching new work once the time budget is hit — leftovers run next minute
+//  • Small scale → everything every minute. Large scale → automatic rotation.
+//
+// Requires (optional) a `last_scraped_at timestamptz` column on `searches` for
+// perfect rotation. Works without it too (degrades to DB-order, still budget-capped).
+
+const TIME_BUDGET_MS = 7000          // leave headroom under Vercel's 10s limit
+const CHUNK = 25                     // max concurrent scrapes per wave
+const MIN_INTERVAL_MS: Record<string, number> = {
+  ebay: 180_000,                     // eBay API quota → at most every 3 min per unique search
+}
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization')
@@ -12,10 +26,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const started = Date.now()
   const supabase = createServiceClient()
   const errorDetails: string[] = []
 
-  // Load all enabled searches
   const { data: allSearches } = await supabase
     .from('searches')
     .select('*')
@@ -23,59 +37,75 @@ export async function GET(req: Request) {
 
   const searches: any[] = allSearches ?? []
   if (searches.length === 0) {
-    return NextResponse.json({ ok: true, processed: 0, scrapes: 0, errors: 0 })
+    return NextResponse.json({ ok: true, processed: 0, unique: 0 })
   }
 
-  // Per-platform cooldown via minute-modulo (no DB needed):
-  // - eBay Finding API: 5000 calls/day limit → scrape every 3 min = ~480/day per unique search → fits ~10 unique eBay searches
-  // - All other platforms: every minute (unlimited)
-  const minute = new Date().getMinutes()
-  const PLATFORM_INTERVAL: Record<string, number> = {
-    ebay: 3,  // every 3rd minute
-  }
-
-  // Deduplicate by (platform + query + domain) — if 10 customers all search
-  // "iPhone" on Kijiji, scrape once and save for all of them simultaneously
-  const grouped = new Map<string, any[]>()
+  // 1. Dedupe into unique scrape groups; a group's freshness = its oldest member.
+  type Group = { key: string; platform: string; rep: any; members: any[]; lastScraped: number }
+  const groups = new Map<string, Group>()
   for (const s of searches) {
-    const interval = PLATFORM_INTERVAL[s.platform] ?? 1
-    if (minute % interval !== 0) continue  // skip this platform this minute
     const key = `${s.platform}|${(s.query || '').toLowerCase().trim()}|${s.domain || ''}`
-    if (!grouped.has(key)) grouped.set(key, [])
-    grouped.get(key)!.push(s)
+    const ts = s.last_scraped_at ? new Date(s.last_scraped_at).getTime() : 0
+    const g = groups.get(key)
+    if (g) { g.members.push(s); g.lastScraped = Math.min(g.lastScraped, ts) }
+    else groups.set(key, { key, platform: s.platform, rep: s, members: [s], lastScraped: ts })
   }
 
-  // Run ALL unique (platform+query+domain) combos in parallel — no batching
-  // With 10 customers this is ~20-40 unique scrapes, fits easily in 10s
+  // 2. Keep only groups whose per-platform cooldown has elapsed, oldest first.
+  const now = Date.now()
+  const eligible = Array.from(groups.values())
+    .filter(g => now - g.lastScraped >= (MIN_INTERVAL_MS[g.platform] ?? 0))
+    .sort((a, b) => a.lastScraped - b.lastScraped)
+
+  // 3. Process in waves until the time budget runs out (leftovers run next minute).
   let processed = 0
-  const jobs = Array.from(grouped.entries()).map(async ([, group]) => {
-    const rep = group[0]
+  let scrapedGroups = 0
+  const doneSearchIds: string[] = []
+  for (let i = 0; i < eligible.length; i += CHUNK) {
+    if (Date.now() - started > TIME_BUDGET_MS) break
+    const wave = eligible.slice(i, i + CHUNK)
+    await Promise.allSettled(wave.map(async (g) => {
+      try {
+        const items = await fetchItems(g.rep)
+        await Promise.all(g.members.map(s => saveItems(supabase, s, items)))
+        g.members.forEach(s => doneSearchIds.push(s.id))
+        processed += g.members.length
+        scrapedGroups += 1
+      } catch (e: any) {
+        errorDetails.push(`[${g.platform}] "${g.rep.query}": ${e.message}`)
+      }
+    }))
+  }
+
+  // 4. Stamp last_scraped_at so the next run rotates to the next-oldest searches.
+  //    Tolerant of the column not existing yet (older DBs) — just skip silently.
+  if (doneSearchIds.length) {
     try {
-      const items = await fetchItems(rep)
-      // Save to ALL customers who monitor this search simultaneously
-      await Promise.all(group.map(search => saveItems(supabase, search, items)))
-      processed += group.length
-    } catch (e: any) {
-      errorDetails.push(`[${rep.platform}] "${rep.query}": ${e.message}`)
-    }
-  })
+      await supabase.from('searches')
+        .update({ last_scraped_at: new Date().toISOString() })
+        .in('id', doneSearchIds)
+    } catch {}
+  }
 
-  await Promise.allSettled(jobs)
-
-  // Clean up items older than 24h (sold/expired listings) — fire and forget
-  try {
-    await supabase.from('items')
-      .delete()
-      .lt('found_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-  } catch {}
+  // 5. Cleanup old items — only every 10th minute to save the time budget.
+  if (new Date().getMinutes() % 10 === 0) {
+    try {
+      await supabase.from('items')
+        .delete()
+        .lt('found_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+    } catch {}
+  }
 
   return NextResponse.json({
     ok: true,
-    processed,
-    unique_scrapes: grouped.size,
-    total_searches: searches.length,
+    processed,                              // customer-searches saved this run
+    unique_groups: groups.size,             // distinct scrapes that exist
+    eligible: eligible.length,              // how many were due this run
+    scraped_groups: scrapedGroups,          // how many actually ran within budget
+    rotating: scrapedGroups < eligible.length, // true once load exceeds one run → rotation kicked in
+    ms: Date.now() - started,
     errors: errorDetails.length,
-    errorDetails,
+    errorDetails: errorDetails.slice(0, 10),
   })
 }
 
