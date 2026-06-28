@@ -102,6 +102,19 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
     } catch {}
   }
 
+  // 6. Heartbeat — proves the cycle actually ran and when. Read by /api/status to
+  //    distinguish "trigger isn't firing" from "no new listings to show".
+  try {
+    const beat = JSON.stringify({
+      at: new Date().toISOString(),
+      processed,
+      unique_groups: groups.size,
+      errors: errorDetails.length,
+    })
+    await supabase.storage.from('ts-settings')
+      .upload('heartbeat.json', new Blob([beat], { type: 'application/json' }), { upsert: true })
+  } catch {}
+
   return {
     ok: true,
     processed,
