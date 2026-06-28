@@ -33,6 +33,43 @@ const ACCESSORY_TERMS = [
   'leer','leerverpackung','karton','ersatzteil','spare','parts','bastler','defekt','broken',
 ]
 
+// "Wanted"/buying ads — sellers want to BUY, not sell. They clutter the deal feed
+// and usually have no price. Patterns are deliberately specific to avoid hitting
+// real sale listings (e.g. "Need for Speed Most Wanted" must NOT match).
+const WANTED_PATTERNS: RegExp[] = [
+  /\b(we|i)\s+buy\b/i,
+  /\b(i|we)\s+will\s+buy\b/i,
+  /\bwill\s+buy\b/i,
+  /\bwe\s+(pay|purchase)\b/i,
+  /\bcash\s+(for|paid)\b/i,
+  /\$\$+\s*for\b/i,
+  /\bpaying\s+cash\b/i,
+  /\btop\s+dollar\b/i,
+  /\binstant\s+cash\b/i,
+  /\b(want|wanted|looking|wanting)\s+to\s+buy\b/i,
+  /\bwtb\b/i,
+  /\blooking\s+for\b/i,
+  /\b(sell|sale)\s+(us|me|to\s+us)\b/i,
+  /\bbuying\s+your\b/i,
+  // German
+  /\b(ich\s+kaufe|wir\s+kaufen)\b/i,
+  /\bankauf\b/i,
+  /\bsuche\b/i,
+  /\bgesucht\b/i,
+  // French
+  /\b(recherche|cherche|achète|achete)\b/i,
+  // Dutch
+  /\b(gevraagd|gezocht)\b/i,
+  /\bik\s+koop\b/i,
+  // Spanish / Italian
+  /\b(compro|busco|cerco|se\s+busca)\b/i,
+]
+
+export function isWantedAd(title: string): boolean {
+  if (!title) return false
+  return WANTED_PATTERNS.some(re => re.test(title))
+}
+
 export function matchesProduct(title: string, query: string, platform = ''): boolean {
   if (!title || !query) return true
   if (platform === 'ebay') return true
