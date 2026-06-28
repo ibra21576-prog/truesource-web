@@ -2,6 +2,8 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'   // never serve a cached heartbeat read
+export const revalidate = 0
 
 // Read-only health view: when did the scrape cycle last run, and how fresh is the
 // data. Helps tell apart "the trigger isn't firing" from "no new listings yet".
@@ -11,7 +13,7 @@ export async function GET() {
 
   // Last scrape-cycle heartbeat
   try {
-    const { data } = await supabase.storage.from('ts-settings').download('heartbeat.json')
+    const { data } = await supabase.storage.from('ts-settings').download('heartbeat2.json')
     if (data) {
       const beat = JSON.parse(await data.text())
       out.lastScrape = beat
