@@ -4,8 +4,121 @@ import { proxyFetch, hasProxy } from './proxy'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
-// eBay Finding API (free, 5000 calls/day, no IP restrictions)
-// Register at https://developer.ebay.com → get App ID → set EBAY_APP_ID in Vercel env vars
+// ─── eBay Browse API (modern, OAuth, free, long-term supported) ──────────────
+// Needs EBAY_APP_ID (Client ID) + EBAY_CERT_ID (Client Secret) from a production
+// keyset at https://developer.ebay.com. Works from any IP, no proxy.
+const DOMAIN_TO_MARKETPLACE: Record<string, string> = {
+  'www.ebay.de':     'EBAY_DE',
+  'www.ebay.at':     'EBAY_AT',
+  'www.ebay.fr':     'EBAY_FR',
+  'www.ebay.be':     'EBAY_BE',
+  'www.ebay.nl':     'EBAY_NL',
+  'www.ebay.es':     'EBAY_ES',
+  'www.ebay.it':     'EBAY_IT',
+  'www.ebay.pl':     'EBAY_PL',
+  'www.ebay.co.uk':  'EBAY_GB',
+  'www.ebay.ch':     'EBAY_CH',
+  'www.ebay.com':    'EBAY_US',
+  'www.ebay.ca':     'EBAY_CA',
+  'www.ebay.com.au': 'EBAY_AU',
+}
+const MARKETPLACE_CURRENCY: Record<string, string> = {
+  EBAY_GB: 'GBP', EBAY_US: 'USD', EBAY_CA: 'CAD', EBAY_AU: 'AUD',
+  EBAY_CH: 'CHF', EBAY_PL: 'PLN',
+}
+
+// OAuth client-credentials token, cached across invocations (valid ~2h)
+let tokenCache: { token: string; exp: number } | null = null
+
+async function getBrowseToken(appId: string, certId: string): Promise<string | null> {
+  if (tokenCache && tokenCache.exp > Date.now() + 60_000) return tokenCache.token
+  try {
+    const basic = Buffer.from(`${appId}:${certId}`).toString('base64')
+    const res = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${basic}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'grant_type=client_credentials&scope=' + encodeURIComponent('https://api.ebay.com/oauth/api_scope'),
+      signal: AbortSignal.timeout(8000),
+    })
+    if (!res.ok) { console.log(`[ebay] OAuth token HTTP ${res.status}`); return null }
+    const d = await res.json()
+    if (!d.access_token) return null
+    tokenCache = { token: d.access_token, exp: Date.now() + (d.expires_in || 7200) * 1000 }
+    return d.access_token
+  } catch (e: any) {
+    console.log(`[ebay] OAuth error: ${e.message}`)
+    return null
+  }
+}
+
+async function fetchBrowseApi(search: Search): Promise<ScrapedItem[]> {
+  const appId = process.env.EBAY_APP_ID
+  const certId = process.env.EBAY_CERT_ID
+  if (!appId || !certId) return []
+
+  const domain = search.domain || 'www.ebay.de'
+  const marketplace = DOMAIN_TO_MARKETPLACE[domain] || 'EBAY_DE'
+  const token = await getBrowseToken(appId, certId)
+  if (!token) return []
+
+  const params = new URLSearchParams({
+    q: search.query,
+    limit: '50',
+    sort: 'newlyListed',
+  })
+  // Price filter (Browse API filter syntax)
+  if (search.min_price || search.max_price) {
+    const cur = MARKETPLACE_CURRENCY[marketplace] || 'EUR'
+    const lo = search.min_price ?? ''
+    const hi = search.max_price ?? ''
+    const range = search.min_price && search.max_price ? `[${lo}..${hi}]`
+      : search.min_price ? `[${lo}]` : `[..${hi}]`
+    params.set('filter', `price:${range},priceCurrency:${cur}`)
+  }
+
+  try {
+    const res = await fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?${params}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-EBAY-C-MARKETPLACE-ID': marketplace,
+        Accept: 'application/json',
+      },
+      signal: AbortSignal.timeout(9000),
+    })
+    if (!res.ok) {
+      if (res.status === 401) tokenCache = null // force refresh next round
+      console.log(`[ebay] Browse API HTTP ${res.status}`)
+      return []
+    }
+    const data = await res.json()
+    const summaries: any[] = data.itemSummaries || []
+    const items: ScrapedItem[] = []
+    const seen = new Set<string>()
+    for (const it of summaries) {
+      const id = String(it.legacyItemId || it.itemId || '')
+      const title = it.title
+      if (!id || !title || seen.has(id)) continue
+      seen.add(id)
+      const url = it.itemWebUrl || `https://${domain}/itm/${id}`
+      const priceVal = it.price?.value
+      const currency = it.price?.currency || 'EUR'
+      const price = priceVal ? formatPrice(priceVal, currency) : ''
+      let image: string | null = it.image?.imageUrl || it.thumbnailImages?.[0]?.imageUrl || null
+      if (image) image = image.replace(/l\d+\.(jpg|jpeg|png|webp)$/i, 'l500.$1')
+      items.push({ id, title, price, url, image, platform: 'ebay' })
+    }
+    console.log(`[ebay] Browse API got ${items.length} items (${marketplace})`)
+    return items
+  } catch (e: any) {
+    console.log(`[ebay] Browse API error: ${e.message}`)
+    return []
+  }
+}
+
+// ─── eBay Finding API (legacy fallback, may be deprecated) ───────────────────
 const DOMAIN_TO_GLOBAL_ID: Record<string, string> = {
   'www.ebay.de':     'EBAY-DE',
   'www.ebay.at':     'EBAY-AT',
@@ -107,8 +220,14 @@ async function fetchViaProxy(url: string): Promise<Response> {
 export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.ebay.de'
 
-  // 1. eBay Finding API (free, no proxy needed) — primary method
-  if (process.env.EBAY_APP_ID) {
+  // 1. eBay Browse API (OAuth, modern, free) — primary method
+  if (process.env.EBAY_APP_ID && process.env.EBAY_CERT_ID) {
+    const items = await fetchBrowseApi(search)
+    if (items.length > 0) return items
+  }
+
+  // 1b. Finding API (legacy) — only if Browse creds aren't both present
+  if (process.env.EBAY_APP_ID && !process.env.EBAY_CERT_ID) {
     const items = await fetchFindingApi(search)
     if (items.length > 0) return items
   }

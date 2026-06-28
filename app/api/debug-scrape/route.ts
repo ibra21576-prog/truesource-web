@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
 
   const env = {
     EBAY_APP_ID: !!process.env.EBAY_APP_ID,
+    EBAY_CERT_ID: !!process.env.EBAY_CERT_ID,
     SCRAPERAPI_KEY: !!process.env.SCRAPERAPI_KEY,
     PROXY_URL: !!process.env.PROXY_URL,
   }
