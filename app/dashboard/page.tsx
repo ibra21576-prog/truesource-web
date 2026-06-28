@@ -163,7 +163,7 @@ export default function DashboardPage() {
     setDismissed(prev => {
       const next = new Set(prev)
       next.add(itemId)
-      try { localStorage.setItem('ts_dismissed', JSON.stringify([...next])) } catch {}
+      try { localStorage.setItem('ts_dismissed', JSON.stringify(Array.from(next))) } catch {}
       return next
     })
   }

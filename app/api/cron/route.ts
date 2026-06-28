@@ -62,11 +62,12 @@ export async function GET(req: Request) {
 
   await Promise.allSettled(jobs)
 
-  // Clean up items older than 24h (sold/expired listings)
-  supabase.from('items')
-    .delete()
-    .lt('found_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-    .then(() => {}).catch(() => {})
+  // Clean up items older than 24h (sold/expired listings) — fire and forget
+  try {
+    await supabase.from('items')
+      .delete()
+      .lt('found_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+  } catch {}
 
   return NextResponse.json({
     ok: true,
