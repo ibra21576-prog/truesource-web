@@ -87,11 +87,13 @@ function parseJsonLd(html: string, domain: string): ScrapedItem[] {
         const priceStr = !isNaN(priceNum) && priceNum > 0
           ? `$${priceNum % 1 === 0 ? priceNum : priceNum.toFixed(2)}`
           : ''
+        // Kijiji's media API uses size rules like kijijica-960-jpg. The old
+        // galleryLargeV2 rule 404s on these URLs, so request a high-res JPEG.
         let image: string | null = it.image || null
         if (image) {
           image = image.includes('rule=')
-            ? image.replace(/rule=[^&]+/, 'rule=galleryLargeV2')
-            : image + (image.includes('?') ? '&' : '?') + 'rule=galleryLargeV2'
+            ? image.replace(/rule=[^&]+/, 'rule=kijijica-960-jpg')
+            : image + (image.includes('?') ? '&' : '?') + 'rule=kijijica-960-jpg'
         }
         items.push({ id, title, price: priceStr, url: urlStr, image, platform: 'kijiji' })
       }

@@ -113,11 +113,18 @@ async function saveItems(supabase: any, search: any, items: any[]) {
   if (!items.length) return
   const now = new Date().toISOString()
 
+  // Which item_ids have we already stored for this search?
   const { data: seenRows } = await supabase
     .from('seen_ids').select('item_id').eq('search_id', search.id)
   const seenSet = new Set((seenRows || []).map((r: any) => r.item_id))
 
-  const rows = items.map((it: any) => ({
+  // Only INSERT genuinely new listings with found_at = now. Existing listings
+  // keep their original found_at so the "X min ago" age stays truthful instead
+  // of resetting to "just now" on every scrape.
+  const newItems = items.filter((it: any) => !seenSet.has(it.id))
+  if (newItems.length === 0) return
+
+  const rows = newItems.map((it: any) => ({
     search_id:  search.id,
     item_id:    it.id,
     platform:   it.platform,
@@ -127,13 +134,14 @@ async function saveItems(supabase: any, search: any, items: any[]) {
     url:        it.url,
     image:      it.image,
     found_at:   now,
-    first_scan: !seenSet.has(it.id),
+    first_scan: true,
   }))
 
   await Promise.all([
-    supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id' }),
+    // ignoreDuplicates: never overwrite an existing row (protects found_at)
+    supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id', ignoreDuplicates: true }),
     supabase.from('seen_ids').upsert(
-      items.map((it: any) => ({ search_id: search.id, item_id: it.id })),
+      newItems.map((it: any) => ({ search_id: search.id, item_id: it.id })),
       { ignoreDuplicates: true }
     ),
   ])

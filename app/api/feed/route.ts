@@ -32,10 +32,11 @@ export async function GET(req: NextRequest) {
 
   const supabase = createServiceClient()
 
-  // Show items seen in the last 30 min (current scan) or fall back to 2h
-  // This makes the feed "live" — it always reflects what's currently listed
-  const cutoff30m = new Date(Date.now() - 30 * 60 * 1000).toISOString()
-  const cutoff2h  = new Date(Date.now() -  2 * 60 * 60 * 1000).toISOString()
+  // found_at is the first-discovery time (immutable). Show listings discovered in
+  // the last 3h so the feed stays full with truthful "X min ago" ages, widening
+  // to 12h then all-time only if a quiet search has nothing recent.
+  const cutoffPrimary = new Date(Date.now() -  3 * 60 * 60 * 1000).toISOString()
+  const cutoffWide    = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
 
   let searchIds: string[] | null = null
   if (!isAdmin) {
@@ -61,12 +62,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Try last 30 min first (most recent cron run)
-    let data = await queryItems(cutoff30m)
+    // Listings discovered in the last 3h
+    let data = await queryItems(cutoffPrimary)
 
-    // If empty (cron hasn't run yet or just failed), show last 2h
+    // If empty (quiet search), widen to 12h
     if (data.length === 0) {
-      data = await queryItems(cutoff2h)
+      data = await queryItems(cutoffWide)
     }
 
     // If still empty, show all time (first run, no cutoff)

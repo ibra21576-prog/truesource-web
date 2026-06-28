@@ -56,8 +56,10 @@ function resolveUrl(url: string | undefined, domain: string): string {
 
 export default function ItemCard({ item, variant = 'list' }: { item: Item; variant?: 'list' | 'grid' }) {
   const p = P[item.platform] ?? P.vinted
-  // first_scan = true means brand-new listing (never seen before)
-  const isNew = item.first_scan === true
+  // "New" is derived from age, not a stored flag: a listing is new for its first
+  // 5 minutes after discovery, then quietly becomes a normal item.
+  const ageMs = Date.now() - new Date(item.found_at).getTime()
+  const isNew = ageMs < 5 * 60_000
   const href = resolveUrl(item.url, item.domain || (item.platform === 'ebay' ? 'www.ebay.de' : item.platform === 'kleinanzeigen' ? 'www.kleinanzeigen.de' : 'www.vinted.de'))
   const imgSrc = proxyImg(item.image)
 
