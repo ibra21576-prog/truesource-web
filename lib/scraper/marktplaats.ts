@@ -4,19 +4,17 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 
 export async function fetchMarktplaats(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.marktplaats.nl'
+  // Minimal param set — extra category/distance params can trigger empty responses.
+  // `query` (not `q`) is the correct keyword param for the lrp API.
   const params = new URLSearchParams({
-    q: search.query,
-    l1CategoryId: '0',
-    l2CategoryId: '0',
-    postcode: '',
-    searchDistance: '0',
+    query: search.query,
     sortBy: 'SORT_INDEX',
     sortOrder: 'DECREASING',
     offset: '0',
     limit: '30',
   })
-  if (search.min_price) params.set('priceFrom', String(search.min_price * 100))
-  if (search.max_price) params.set('priceTo', String(search.max_price * 100))
+  if (search.min_price) params.set('PriceCentsFrom', String(search.min_price * 100))
+  if (search.max_price) params.set('PriceCentsTo', String(search.max_price * 100))
 
   const apiUrl = `https://${domain}/lrp/api/search?${params}`
 
@@ -49,16 +47,33 @@ export async function fetchMarktplaats(search: Search): Promise<ScrapedItem[]> {
       const title = l.title || ''
       if (!title || title.length < 2) continue
 
-      // Price: priceValue is in cents or full euros depending on endpoint
+      // Price lives in priceInfo.priceCents (in CENTS). priceType can be FIXED,
+      // BIDDING, SEE_DESCRIPTION (priceCents 0), RESERVED, FAST_BID, etc.
       let price = ''
-      if (l.price?.priceValue != null) {
-        const n = Number(l.price.priceValue)
-        // Marktplaats API returns price in euros (not cents)
-        price = n > 0 ? `€${n % 1 === 0 ? n : n.toFixed(2)}` : ''
+      const cents = l.priceInfo?.priceCents
+      const ptype = l.priceInfo?.priceType
+      if (typeof cents === 'number' && cents > 0) {
+        const euros = cents / 100
+        price = `€${euros % 1 === 0 ? euros : euros.toFixed(2)}`
+      } else if (ptype === 'MIN_BID' || ptype === 'BIDDING' || ptype === 'FAST_BID') {
+        price = 'Bieden'
+      } else if (ptype === 'RESERVED') {
+        price = 'Gereserveerd'
+      } else if (ptype === 'FREE') {
+        price = 'Gratis'
       }
 
-      const pictures: any[] = l.pictures || l.media || []
-      const image = pictures[0]?.mediumUrl || pictures[0]?.extraLargeUrl || pictures[0]?.largeUrl || null
+      // Images are in imageUrls[] as protocol-relative strings (//images.marktplaats.com/...)
+      const imageUrls: string[] = l.imageUrls || []
+      let image: string | null = null
+      if (imageUrls.length > 0) {
+        image = imageUrls[0]
+        if (image.startsWith('//')) image = 'https:' + image
+      } else {
+        const pictures: any[] = l.pictures || []
+        image = pictures[0]?.extraExtraLargeUrl || pictures[0]?.largeUrl || pictures[0]?.mediumUrl || null
+        if (image && image.startsWith('//')) image = 'https:' + image
+      }
 
       const url = l.vipUrl
         ? (l.vipUrl.startsWith('http') ? l.vipUrl : `https://${domain}${l.vipUrl}`)
