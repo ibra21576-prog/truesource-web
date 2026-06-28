@@ -15,12 +15,9 @@ async function fetchPage(url: string): Promise<string> {
         'Sec-Fetch-Mode': 'navigate',
         'Sec-Fetch-Site': 'none',
       },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(7000),
     })
-    if (!res.ok) {
-      console.log(`[kijiji] HTTP ${res.status} for ${url}`)
-      return ''
-    }
+    if (!res.ok) { console.log(`[kijiji] HTTP ${res.status}`); return '' }
     const t = await res.text()
     return t.length > 5000 ? t : ''
   } catch (e: any) {
@@ -36,22 +33,26 @@ function isBlocked(html: string) {
 export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.kijiji.ca'
   const q = encodeURIComponent(search.query)
+  const base = `https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc`
 
-  const url = `https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc`
-  const html = await fetchPage(url)
+  // Fetch pages 1 and 2 in parallel for double the items
+  const [html1, html2] = await Promise.all([
+    fetchPage(base),
+    fetchPage(`${base}&page=2`),
+  ])
 
-  if (!html) {
-    console.log('[kijiji] empty response from page')
-    return []
+  const allItems: ScrapedItem[] = []
+  const seen = new Set<string>()
+
+  for (const html of [html1, html2]) {
+    if (!html || isBlocked(html)) continue
+    for (const item of parseJsonLd(html, domain)) {
+      if (!seen.has(item.id)) { seen.add(item.id); allItems.push(item) }
+    }
   }
-  if (isBlocked(html)) {
-    console.log('[kijiji] blocked by bot check')
-    return []
-  }
 
-  const items = parseJsonLd(html, domain)
-  console.log(`[kijiji] ${items.length} items from page 1`)
-  return items
+  console.log(`[kijiji] ${allItems.length} items from 2 pages`)
+  return allItems
 }
 
 function parseJsonLd(html: string, domain: string): ScrapedItem[] {
@@ -79,7 +80,6 @@ function parseJsonLd(html: string, domain: string): ScrapedItem[] {
         const priceStr = !isNaN(priceNum) && priceNum > 0
           ? `$${priceNum % 1 === 0 ? priceNum : priceNum.toFixed(2)}`
           : ''
-        // Ensure large image: set rule=galleryLargeV2
         let image: string | null = it.image || null
         if (image) {
           image = image.includes('rule=')

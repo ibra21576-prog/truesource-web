@@ -6,9 +6,6 @@ export const dynamic = 'force-dynamic'
 
 const BUCKET = 'ts-settings'
 
-// Max searches to process per cron call — prevents Vercel 10s timeout
-const BATCH_SIZE = 30
-
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization')
   if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -18,7 +15,7 @@ export async function GET(req: Request) {
   const supabase = createServiceClient()
   const errorDetails: string[] = []
 
-  // ── 1. Load all enabled searches ─────────────────────────────────────────────
+  // Load all enabled searches
   const { data: allSearches } = await supabase
     .from('searches')
     .select('*')
@@ -26,73 +23,46 @@ export async function GET(req: Request) {
 
   const searches: any[] = allSearches ?? []
   if (searches.length === 0) {
-    return NextResponse.json({ ok: true, processed: 0, skipped: 0, errors: 0, errorDetails: [] })
+    return NextResponse.json({ ok: true, processed: 0, scrapes: 0, errors: 0 })
   }
 
-  // ── 2. Batch cursor — rotate through all searches across cron calls ───────────
-  // Each cron call processes BATCH_SIZE searches starting at `offset`
-  // The offset is stored in Supabase storage and increments each call
-  let offset = 0
-  try {
-    const { data } = await supabase.storage.from(BUCKET).download('cron-state.json')
-    if (data) offset = (JSON.parse(await data.text()).offset ?? 0) % searches.length
-  } catch {}
-
-  const batch = []
-  for (let i = 0; i < Math.min(BATCH_SIZE, searches.length); i++) {
-    batch.push(searches[(offset + i) % searches.length])
-  }
-  const nextOffset = (offset + batch.length) % searches.length
-
-  // Save next offset (fire-and-forget)
-  supabase.storage.from(BUCKET)
-    .upload('cron-state.json', Buffer.from(JSON.stringify({ offset: nextOffset, updatedAt: Date.now() })), {
-      contentType: 'application/json', upsert: true,
-    })
-    .catch(() => {})
-
-  // ── 3. Deduplicate by (platform + query + domain) ────────────────────────────
-  // If 100 customers all search "iPhone" on Kijiji, scrape only ONCE
-  // then save results to ALL matching search IDs
-  const uniqueKey = (s: any) => `${s.platform}|${(s.query || '').toLowerCase().trim()}|${s.domain || ''}`
-
+  // Deduplicate by (platform + query + domain) — if 10 customers all search
+  // "iPhone" on Kijiji, scrape once and save for all of them simultaneously
   const grouped = new Map<string, any[]>()
-  for (const s of batch) {
-    const key = uniqueKey(s)
+  for (const s of searches) {
+    const key = `${s.platform}|${(s.query || '').toLowerCase().trim()}|${s.domain || ''}`
     if (!grouped.has(key)) grouped.set(key, [])
     grouped.get(key)!.push(s)
   }
 
-  // ── 4. Run one scrape per unique (platform, query, domain) in parallel ────────
+  // Run ALL unique (platform+query+domain) combos in parallel — no batching
+  // With 10 customers this is ~20-40 unique scrapes, fits easily in 10s
   let processed = 0
-  const scrapeJobs = Array.from(grouped.entries()).map(async ([, group]) => {
-    const representative = group[0]
+  const jobs = Array.from(grouped.entries()).map(async ([, group]) => {
+    const rep = group[0]
     try {
-      const items = await fetchItems(representative)
-      // Save results for ALL searches in this group (all customers who monitor this)
+      const items = await fetchItems(rep)
+      // Save to ALL customers who monitor this search simultaneously
       await Promise.all(group.map(search => saveItems(supabase, search, items)))
       processed += group.length
     } catch (e: any) {
-      errorDetails.push(`[${representative.platform}] "${representative.query}": ${e.message}`)
+      errorDetails.push(`[${rep.platform}] "${rep.query}": ${e.message}`)
     }
   })
 
-  await Promise.allSettled(scrapeJobs)
+  await Promise.allSettled(jobs)
 
-  // ── 5. Clean up items older than 24h ─────────────────────────────────────────
+  // Clean up items older than 24h (sold/expired listings)
   supabase.from('items')
     .delete()
     .lt('found_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-    .then(() => {})
-    .catch(() => {})
+    .then(() => {}).catch(() => {})
 
   return NextResponse.json({
     ok: true,
     processed,
     unique_scrapes: grouped.size,
-    batch_size: batch.length,
     total_searches: searches.length,
-    offset_next: nextOffset,
     errors: errorDetails.length,
     errorDetails,
   })
@@ -100,13 +70,10 @@ export async function GET(req: Request) {
 
 async function saveItems(supabase: any, search: any, items: any[]) {
   if (!items.length) return
-
   const now = new Date().toISOString()
 
   const { data: seenRows } = await supabase
-    .from('seen_ids')
-    .select('item_id')
-    .eq('search_id', search.id)
+    .from('seen_ids').select('item_id').eq('search_id', search.id)
   const seenSet = new Set((seenRows || []).map((r: any) => r.item_id))
 
   const rows = items.map((it: any) => ({
