@@ -27,14 +27,20 @@ async function fetchPage(url: string): Promise<string> {
 }
 
 function isBlocked(html: string) {
-  return /captcha|Just a moment|are you a robot|Checking your browser/i.test(html)
+  // Real Kijiji listing pages are huge (400KB+) and legitimately contain the word
+  // "captcha" in hidden anti-bot widgets. Only treat as blocked if the page is a
+  // small Cloudflare/challenge interstitial.
+  if (html.length > 60000) return false
+  return /Just a moment|Checking your browser|cf-challenge|Access denied|Pardon Our Interruption|Attention Required/i.test(html)
 }
 
 export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.kijiji.ca'
   const q = encodeURIComponent(search.query)
-  // All categories, all of Canada (l0 = Canada-wide, no category filter)
-  const base = `https://${domain}/b-canada/${q}/k0l0?sortingOrder=dateDesc`
+  // Buy & Sell across ALL of Canada. l0 = Canada-wide (no city filter),
+  // c10 = Buy & Sell category. This page renders Schema.org JSON-LD; the
+  // all-category /b-canada/ URL does NOT, so we keep c10 here.
+  const base = `https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc`
 
   // Fetch pages 1 and 2 in parallel for double the items
   const [html1, html2] = await Promise.all([
