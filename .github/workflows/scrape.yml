@@ -1,0 +1,30 @@
+name: Scrape trigger
+
+# Keeps the scraper running 24/7 for free, independent of cron-job.org.
+# GitHub's smallest schedule granularity is 5 minutes, so each run loops and
+# pings the cron endpoint once a minute for ~5 minutes — giving roughly
+# every-minute coverage. The repo is public, so Actions minutes are unlimited.
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {}
+
+# Don't pile up overlapping runs; a fresh schedule supersedes a lingering one.
+concurrency:
+  group: scrape-trigger
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping cron every 60s for ~5 minutes
+        env:
+          CRON_URL: https://truesource-web-pink.vercel.app/api/cron?key=${{ secrets.CRON_SECRET }}
+        run: |
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 40 "$CRON_URL" || echo "000")
+            echo "ping $i -> HTTP $code at $(date -u +%H:%M:%S)"
+            if [ "$i" -lt 5 ]; then sleep 60; fi
+          done
