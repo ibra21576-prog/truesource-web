@@ -26,10 +26,20 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: true, processed: 0, scrapes: 0, errors: 0 })
   }
 
+  // Per-platform cooldown via minute-modulo (no DB needed):
+  // - eBay Finding API: 5000 calls/day limit → scrape every 3 min = ~480/day per unique search → fits ~10 unique eBay searches
+  // - All other platforms: every minute (unlimited)
+  const minute = new Date().getMinutes()
+  const PLATFORM_INTERVAL: Record<string, number> = {
+    ebay: 3,  // every 3rd minute
+  }
+
   // Deduplicate by (platform + query + domain) — if 10 customers all search
   // "iPhone" on Kijiji, scrape once and save for all of them simultaneously
   const grouped = new Map<string, any[]>()
   for (const s of searches) {
+    const interval = PLATFORM_INTERVAL[s.platform] ?? 1
+    if (minute % interval !== 0) continue  // skip this platform this minute
     const key = `${s.platform}|${(s.query || '').toLowerCase().trim()}|${s.domain || ''}`
     if (!grouped.has(key)) grouped.set(key, [])
     grouped.get(key)!.push(s)
