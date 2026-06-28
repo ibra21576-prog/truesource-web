@@ -13,36 +13,49 @@ function localePath(domain: string): string {
 
 export async function fetchShpock(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.shpock.com'
-  const loc = localePath(domain)
   const q = encodeURIComponent(search.query)
 
   // Shpock is a Next.js app; the /results route embeds an Apollo GraphQL cache
-  // in __NEXT_DATA__ with all listings server-rendered.
-  const pageUrl = `https://www.shpock.com/${loc}/results?q=${q}`
-  try {
-    const res = await fetch(pageUrl, {
-      headers: {
-        'User-Agent': UA,
-        Accept: 'text/html,application/xhtml+xml,*/*;q=0.9',
-        'Accept-Language': 'en-GB,en;q=0.9,de;q=0.8',
-      },
-      signal: AbortSignal.timeout(8000),
-    })
-    if (!res.ok) { console.log(`[shpock] HTTP ${res.status}`); return [] }
-    const html = await res.text()
-    const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
-    if (!m) { console.log('[shpock] no __NEXT_DATA__'); return [] }
-    const data = JSON.parse(m[1])
-    const apollo = data?.props?.pageProps?.apolloState
-    if (!apollo) { console.log('[shpock] no apolloState'); return [] }
+  // in __NEXT_DATA__ with all listings server-rendered. Try the domain's locale
+  // first, then fall back to en-gb (widest catalogue) and de-de.
+  const locales = Array.from(new Set([localePath(domain), 'en-gb', 'de-de']))
 
-    const items = parseApolloState(apollo)
-    console.log(`[shpock] ${items.length} items`)
-    return applyPriceFilter(items, search)
-  } catch (e: any) {
-    console.log(`[shpock] error: ${e.message}`)
-    return []
+  for (const loc of locales) {
+    const pageUrl = `https://www.shpock.com/${loc}/results?q=${q}`
+    try {
+      const res = await fetch(pageUrl, {
+        headers: {
+          'User-Agent': UA,
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-GB,en;q=0.9,de;q=0.8',
+          'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+          'Sec-Ch-Ua-Mobile': '?0',
+          'Sec-Ch-Ua-Platform': '"Windows"',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1',
+        },
+        signal: AbortSignal.timeout(8000),
+      })
+      if (!res.ok) { console.log(`[shpock] ${loc} HTTP ${res.status}`); continue }
+      const html = await res.text()
+      const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
+      if (!m) { console.log(`[shpock] ${loc} no __NEXT_DATA__`); continue }
+      const data = JSON.parse(m[1])
+      const apollo = data?.props?.pageProps?.apolloState
+      if (!apollo) { console.log(`[shpock] ${loc} no apolloState`); continue }
+      const items = parseApolloState(apollo)
+      if (items.length > 0) {
+        console.log(`[shpock] ${loc} got ${items.length} items`)
+        return applyPriceFilter(items, search)
+      }
+    } catch (e: any) {
+      console.log(`[shpock] ${loc} error: ${e.message}`)
+    }
   }
+  return []
 }
 
 function parseApolloState(apollo: Record<string, any>): ScrapedItem[] {
