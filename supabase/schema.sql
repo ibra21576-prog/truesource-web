@@ -31,9 +31,12 @@ create table if not exists items (
   url        text,
   image      text,
   found_at   timestamptz not null default now(),
+  posted_at  timestamptz,   -- real marketplace post time (when the platform exposes it)
   first_scan boolean not null default false,
   constraint items_search_item unique (search_id, item_id)
 );
+-- If upgrading an existing DB, run this once:
+-- alter table items add column if not exists posted_at timestamptz;
 create index if not exists items_found_at on items (found_at desc);
 create index if not exists items_search_id on items (search_id);
 

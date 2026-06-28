@@ -1,7 +1,7 @@
 interface Item {
   id: string; item_id: string; platform: string; domain: string
   title?: string; price?: string; url?: string; image?: string | null
-  found_at: string; first_scan?: boolean; search_query?: string
+  found_at: string; posted_at?: string | null; first_scan?: boolean; search_query?: string
 }
 
 function timeAgo(ts: string) {
@@ -56,9 +56,10 @@ function resolveUrl(url: string | undefined, domain: string): string {
 
 export default function ItemCard({ item, variant = 'list' }: { item: Item; variant?: 'list' | 'grid' }) {
   const p = P[item.platform] ?? P.vinted
-  // "New" is derived from age, not a stored flag: a listing is new for its first
-  // 5 minutes after discovery, then quietly becomes a normal item.
-  const ageMs = Date.now() - new Date(item.found_at).getTime()
+  // Prefer the real marketplace post time; fall back to when we discovered it.
+  const effectiveTime = item.posted_at || item.found_at
+  // "New" is derived from age: fresh for its first 5 minutes, then a normal item.
+  const ageMs = Date.now() - new Date(effectiveTime).getTime()
   const isNew = ageMs < 5 * 60_000
   const href = resolveUrl(item.url, item.domain || (item.platform === 'ebay' ? 'www.ebay.de' : item.platform === 'kleinanzeigen' ? 'www.kleinanzeigen.de' : 'www.vinted.de'))
   const imgSrc = proxyImg(item.image)
@@ -169,7 +170,7 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
               <svg width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
-              {timeAgo(item.found_at)}
+              {timeAgo(effectiveTime)}
             </span>
           </div>
         </div>
@@ -283,7 +284,7 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
             <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
-            {timeAgo(item.found_at)}
+            {timeAgo(effectiveTime)}
           </span>
         </div>
       </div>

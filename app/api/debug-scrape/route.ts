@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
         ok: items.length > 0,
         count: items.length,
         ms: Date.now() - t0,
-        sample: items.slice(0, 2).map(i => ({ title: i.title?.slice(0, 45), price: i.price, hasImg: !!i.image })),
+        sample: items.slice(0, 2).map(i => ({ title: i.title?.slice(0, 45), price: i.price, hasImg: !!i.image, postedAt: (i as any).postedAt || null })),
       }
     } catch (e: any) {
       results[platform] = { ok: false, count: 0, ms: Date.now() - t0, error: e.message }

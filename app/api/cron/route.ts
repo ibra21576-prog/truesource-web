@@ -134,15 +134,38 @@ async function saveItems(supabase: any, search: any, items: any[]) {
     url:        it.url,
     image:      it.image,
     found_at:   now,
+    posted_at:  it.postedAt || null,   // real marketplace post time when available
     first_scan: true,
   }))
 
   await Promise.all([
-    // ignoreDuplicates: never overwrite an existing row (protects found_at)
-    supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id', ignoreDuplicates: true }),
+    insertItems(supabase, rows),
     supabase.from('seen_ids').upsert(
       newItems.map((it: any) => ({ search_id: search.id, item_id: it.id })),
       { ignoreDuplicates: true }
     ),
   ])
+}
+
+// Robust insert: uses the optional posted_at column when present, transparently
+// falls back to inserting without it on DBs that haven't run the migration yet.
+let hasPostedAtColumn: boolean | null = null
+
+async function insertItems(supabase: any, rows: any[]) {
+  const opts = { onConflict: 'search_id,item_id', ignoreDuplicates: true }
+  if (hasPostedAtColumn === false) {
+    return supabase.from('items').upsert(rows.map(stripPostedAt), opts)
+  }
+  const res = await supabase.from('items').upsert(rows, opts)
+  if (res.error && /posted_at/i.test(res.error.message || '')) {
+    hasPostedAtColumn = false
+    return supabase.from('items').upsert(rows.map(stripPostedAt), opts)
+  }
+  if (!res.error) hasPostedAtColumn = true
+  return res
+}
+
+function stripPostedAt(row: any) {
+  const { posted_at, ...rest } = row
+  return rest
 }

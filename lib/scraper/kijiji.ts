@@ -53,13 +53,65 @@ export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
 
   for (const html of [html1, html2]) {
     if (!html || isBlocked(html)) continue
-    for (const item of parseJsonLd(html, domain)) {
+    // Prefer __APOLLO_STATE__ (richer: real post date, more items, images).
+    // Fall back to JSON-LD if the page structure changes.
+    let parsed = parseApolloState(html, domain)
+    if (parsed.length === 0) parsed = parseJsonLd(html, domain)
+    for (const item of parsed) {
       if (!seen.has(item.id)) { seen.add(item.id); allItems.push(item) }
     }
   }
 
   console.log(`[kijiji] ${allItems.length} items from 2 pages`)
   return allItems
+}
+
+function fixRule(url: string | null | undefined): string | null {
+  if (!url) return null
+  return url.includes('rule=')
+    ? url.replace(/rule=[^&]+/, 'rule=kijijica-960-jpg')
+    : url + (url.includes('?') ? '&' : '?') + 'rule=kijijica-960-jpg'
+}
+
+function parseApolloState(html: string, domain: string): ScrapedItem[] {
+  const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
+  if (!m) return []
+  let apollo: Record<string, any>
+  try {
+    apollo = JSON.parse(m[1])?.props?.pageProps?.__APOLLO_STATE__
+  } catch { return [] }
+  if (!apollo) return []
+
+  const items: ScrapedItem[] = []
+  for (const [key, v] of Object.entries(apollo)) {
+    if (!key.startsWith('StandardListing:')) continue
+    if (!v || typeof v !== 'object') continue
+    const id = String(v.id || key.split(':')[1] || '')
+    const title: string = v.title || ''
+    if (!id || !title || title.length < 2) continue
+
+    // Price: StandardAmountPrice.amount is in CENTS. NonAmountPrice = CONTACT/SWAP/etc.
+    let price = ''
+    const pr = v.price || {}
+    if (pr.__typename === 'StandardAmountPrice' && typeof pr.amount === 'number') {
+      const dollars = pr.amount / 100
+      price = `$${dollars % 1 === 0 ? dollars : dollars.toFixed(2)}`
+    } else if (pr.type === 'FREE') {
+      price = 'Free'
+    } else if (pr.type === 'SWAP_TRADE') {
+      price = 'Swap/Trade'
+    }
+
+    const image = fixRule((v.imageUrls || [])[0] || null)
+    const url: string = v.url
+      ? (v.url.startsWith('http') ? v.url : `https://${domain}${v.url}`)
+      : `https://${domain}/v-x/${id}`
+    // sortingDate = most recent listing activity (matches Kijiji's date sort)
+    const postedAt: string | null = v.sortingDate || v.activationDate || null
+
+    items.push({ id, title, price, url, image, platform: 'kijiji', postedAt })
+  }
+  return items
 }
 
 function parseJsonLd(html: string, domain: string): ScrapedItem[] {

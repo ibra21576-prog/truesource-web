@@ -6,7 +6,7 @@ import ItemCard from '@/components/ItemCard'
 interface Item {
   id: string; item_id: string; platform: string; domain: string
   title?: string; price?: string; url?: string; image?: string | null
-  found_at: string; first_scan?: boolean; searches?: { query: string }; search_query?: string
+  found_at: string; posted_at?: string | null; first_scan?: boolean; searches?: { query: string }; search_query?: string
 }
 interface Search { id: string; query: string; platform: string; domain: string; enabled: boolean }
 interface Me { userId: string; username: string; memberSince?: string }
@@ -287,8 +287,8 @@ export default function DashboardPage() {
       return pb - pa
     })
 
-  // "New" = discovered in the last 5 minutes (age-based, matches ItemCard)
-  const isFresh = (it: Item) => Date.now() - new Date(it.found_at).getTime() < 5 * 60_000
+  // "New" = posted (or discovered) in the last 5 minutes (matches ItemCard)
+  const isFresh = (it: Item) => Date.now() - new Date(it.posted_at || it.found_at).getTime() < 5 * 60_000
   const newToday = items.filter(isFresh).length
 
   function fmtCountdown(s: number) {

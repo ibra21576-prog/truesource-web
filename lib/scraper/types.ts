@@ -16,4 +16,7 @@ export interface ScrapedItem {
   url: string
   image: string | null
   platform: string
+  // Real listing/post time from the marketplace (ISO string), when available.
+  // Falls back to discovery time for display when absent.
+  postedAt?: string | null
 }
