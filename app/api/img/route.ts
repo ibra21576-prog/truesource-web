@@ -38,8 +38,17 @@ export async function GET(req: NextRequest) {
   const allowed = ALLOWED.some(d => parsed.hostname === d || parsed.hostname.endsWith('.' + d))
   if (!allowed) return new NextResponse('forbidden', { status: 403 })
 
+  // Kijiji's media API 404s on the legacy galleryLargeV2 rule. Normalise any
+  // Kijiji image rule to a valid high-res JPEG so old DB rows render too.
+  let target = raw
+  if (parsed.hostname === 'media.kijiji.ca') {
+    target = parsed.searchParams.has('rule')
+      ? raw.replace(/rule=[^&]+/, 'rule=kijijica-960-jpg')
+      : raw + (raw.includes('?') ? '&' : '?') + 'rule=kijijica-960-jpg'
+  }
+
   try {
-    const res = await fetch(raw, {
+    const res = await fetch(target, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
