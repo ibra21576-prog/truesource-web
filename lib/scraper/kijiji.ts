@@ -79,7 +79,14 @@ function parseJsonLd(html: string, domain: string): ScrapedItem[] {
         const priceStr = !isNaN(priceNum) && priceNum > 0
           ? `$${priceNum % 1 === 0 ? priceNum : priceNum.toFixed(2)}`
           : ''
-        items.push({ id, title, price: priceStr, url: urlStr, image: it.image || null, platform: 'kijiji' })
+        // Ensure large image: set rule=galleryLargeV2
+        let image: string | null = it.image || null
+        if (image) {
+          image = image.includes('rule=')
+            ? image.replace(/rule=[^&]+/, 'rule=galleryLargeV2')
+            : image + (image.includes('?') ? '&' : '?') + 'rule=galleryLargeV2'
+        }
+        items.push({ id, title, price: priceStr, url: urlStr, image, platform: 'kijiji' })
       }
       if (items.length > 0) return items
     } catch {}

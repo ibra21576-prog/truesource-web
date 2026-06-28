@@ -117,9 +117,13 @@ function parseJson(json: string, domain: string): ScrapedItem[] {
     const title = row.PostingTitle || row.title || ''
     if (!title || title.length < 2) continue
     seen.add(id)
-    const price = row.price != null ? `$${row.price}` : row.Ask ? `$${row.Ask}` : ''
+    const price = row.price != null && row.price > 0 ? `$${row.price}` : row.Ask ? `$${row.Ask}` : ''
     const url = row.PostingURL || row.url || `https://${domain}/d/${id}.html`
-    const image = row.ImageThumb || row.image || null
+    // Upgrade thumbnail to 600x450 full size (CL stores multiple sizes with same hash)
+    const rawThumb = row.ImageThumb || row.image || null
+    const image = rawThumb
+      ? rawThumb.replace(/_\d+x\d+c?(\.\w+)$/, '_600x450$1')
+      : null
     items.push({ id, title, price, url, image, platform: 'craigslist' })
   }
   return items
