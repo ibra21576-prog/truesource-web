@@ -66,14 +66,53 @@ const CRAIGSLIST_DOMAINS = [
   { value: 'sydney.craigslist.org',     label: '🇦🇺 Sydney' },
 ]
 
-const PLATFORMS = [
-  { value: 'vinted',        label: 'Vinted' },
-  { value: 'ebay',          label: 'eBay' },
-  { value: 'kleinanzeigen', label: 'Kleinanzeigen' },
-  { value: 'gumtree',       label: 'Gumtree' },
-  { value: 'kijiji',        label: 'Kijiji' },
-  { value: 'craigslist',    label: 'Craigslist' },
+const SHPOCK_DOMAINS = [
+  { value: 'www.shpock.com',    label: '🇩🇪 shpock.com — DE/AT/CH' },
 ]
+
+const MARKTPLAATS_DOMAINS = [
+  { value: 'www.marktplaats.nl', label: '🇳🇱 marktplaats.nl — Nederland' },
+]
+
+const LEBONCOIN_DOMAINS = [
+  { value: 'www.leboncoin.fr', label: '🇫🇷 leboncoin.fr — France' },
+]
+
+const PLATFORMS = [
+  { value: 'vinted',        label: 'Vinted',        flag: '👗' },
+  { value: 'ebay',          label: 'eBay',          flag: '🛒' },
+  { value: 'kleinanzeigen', label: 'Kleinanz.',     flag: '📌' },
+  { value: 'shpock',        label: 'Shpock',        flag: '📦' },
+  { value: 'marktplaats',   label: 'Marktplaats',  flag: '🇳🇱' },
+  { value: 'leboncoin',     label: 'Leboncoin',    flag: '🇫🇷' },
+  { value: 'craigslist',    label: 'Craigslist',   flag: '🇺🇸' },
+  { value: 'kijiji',        label: 'Kijiji',       flag: '🇨🇦' },
+  { value: 'gumtree',       label: 'Gumtree',      flag: '🇬🇧' },
+]
+
+const DEFAULT_DOMAINS: Record<string, string> = {
+  vinted: 'www.vinted.de',
+  ebay: 'www.ebay.de',
+  kleinanzeigen: 'www.kleinanzeigen.de',
+  gumtree: 'www.gumtree.com',
+  kijiji: 'www.kijiji.ca',
+  craigslist: 'newyork.craigslist.org',
+  shpock: 'www.shpock.com',
+  marktplaats: 'www.marktplaats.nl',
+  leboncoin: 'www.leboncoin.fr',
+}
+
+const DOMAIN_OPTIONS: Record<string, { value: string; label: string }[] | null> = {
+  vinted: VINTED_DOMAINS,
+  ebay: EBAY_DOMAINS,
+  gumtree: GUMTREE_DOMAINS,
+  kijiji: KIJIJI_DOMAINS,
+  craigslist: CRAIGSLIST_DOMAINS,
+  shpock: SHPOCK_DOMAINS,
+  marktplaats: MARKTPLAATS_DOMAINS,
+  leboncoin: LEBONCOIN_DOMAINS,
+  kleinanzeigen: null,
+}
 
 function currencyForDomain(domain: string): string {
   if (domain.endsWith('.co.uk'))  return '£'
@@ -98,12 +137,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
 
   function handlePlatformChange(p: string) {
     setPlatform(p)
-    if (p === 'vinted') setDomain('www.vinted.de')
-    else if (p === 'ebay') setDomain('www.ebay.de')
-    else if (p === 'gumtree') setDomain('www.gumtree.com')
-    else if (p === 'kijiji') setDomain('www.kijiji.ca')
-    else if (p === 'craigslist') setDomain('newyork.craigslist.org')
-    else setDomain('www.kleinanzeigen.de')
+    setDomain(DEFAULT_DOMAINS[p] || 'www.' + p + '.com')
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -124,7 +158,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
   }
 
   const currency = currencyForDomain(domain)
-  const domainOptions = platform === 'vinted' ? VINTED_DOMAINS : platform === 'ebay' ? EBAY_DOMAINS : platform === 'gumtree' ? GUMTREE_DOMAINS : platform === 'kijiji' ? KIJIJI_DOMAINS : platform === 'craigslist' ? CRAIGSLIST_DOMAINS : null
+  const domainOptions = DOMAIN_OPTIONS[platform]
 
   return (
     <form onSubmit={handleSubmit} style={{
@@ -134,8 +168,6 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
       borderRadius: 12,
       padding: 24,
     }}>
-
-      {/* Header */}
       <div>
         <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: 'var(--text)', letterSpacing: '-0.01em' }}>
           Create New Search
@@ -163,16 +195,13 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
         </div>
       </div>
 
-      {/* Platform — segmented control */}
+      {/* Platform grid — 3 columns */}
       <div>
         <label className="label">Platform</label>
         <div style={{
-          display: 'flex',
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 8,
-          padding: 3,
-          gap: 2,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 6,
         }}>
           {PLATFORMS.map(opt => {
             const active = platform === opt.value
@@ -182,18 +211,20 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
                 type="button"
                 onClick={() => handlePlatformChange(opt.value)}
                 style={{
-                  flex: 1, padding: '7px 8px', borderRadius: 6,
-                  fontSize: 13, fontWeight: 500,
+                  padding: '8px 4px', borderRadius: 8,
+                  fontSize: 12, fontWeight: 500,
                   cursor: 'pointer',
                   fontFamily: 'Geist, -apple-system, system-ui, sans-serif',
-                  border: 'none',
+                  border: active ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
                   transition: 'all 0.15s ease',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                   ...(active
-                    ? { background: 'var(--card)', color: 'var(--text)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }
-                    : { background: 'transparent', color: 'var(--text3)' }
+                    ? { background: 'rgba(20,184,166,0.08)', color: 'var(--accent)' }
+                    : { background: 'var(--surface)', color: 'var(--text2)' }
                   ),
                 }}>
-                {opt.label}
+                <span style={{ fontSize: 16 }}>{opt.flag}</span>
+                <span>{opt.label}</span>
               </button>
             )
           })}
@@ -202,7 +233,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
 
       {/* Country / Domain */}
       <div>
-        <label className="label">Country</label>
+        <label className="label">Country / Region</label>
         {domainOptions
           ? <select value={domain} onChange={e => setDomain(e.target.value)}>
               {domainOptions.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
@@ -251,7 +282,6 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
         </div>
       </div>
 
-      {/* Error */}
       {error && (
         <div style={{
           background: 'rgba(239,68,68,0.06)',
@@ -269,7 +299,6 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
         </div>
       )}
 
-      {/* Submit */}
       <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', paddingTop: 11, paddingBottom: 11 }}>
         {loading
           ? <>

@@ -14,6 +14,7 @@ interface Me { userId: string; username: string; memberSince?: string }
 const PLAT_COLOR: Record<string, string> = {
   vinted: '#14b8a6', ebay: '#f59e0b', kleinanzeigen: '#f97316',
   gumtree: '#00b140', kijiji: '#6d28d9', craigslist: '#7c3aed',
+  shpock: '#e91e8c', marktplaats: '#d32f2f', leboncoin: '#1565c0',
 }
 const FEED_INTERVAL  = 5 * 1000
 const SCRAPE_INTERVAL = 30 * 1000

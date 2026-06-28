@@ -13,6 +13,12 @@ const P: Record<string, { label: string }> = {
   vinted:        { label: 'Vinted' },
   ebay:          { label: 'eBay' },
   kleinanzeigen: { label: 'Kleinanzeigen' },
+  gumtree:       { label: 'Gumtree' },
+  kijiji:        { label: 'Kijiji' },
+  craigslist:    { label: 'Craigslist' },
+  shpock:        { label: 'Shpock' },
+  marktplaats:   { label: 'Marktplaats' },
+  leboncoin:     { label: 'Leboncoin' },
 }
 
 export default function SearchesPage() {

@@ -19,6 +19,9 @@ const P: Record<string, { label: string; color: string }> = {
   gumtree:       { label: 'Gumtree',       color: '#00b140' },
   kijiji:        { label: 'Kijiji',        color: '#6d28d9' },
   craigslist:    { label: 'Craigslist',    color: '#7c3aed' },
+  shpock:        { label: 'Shpock',        color: '#e91e8c' },
+  marktplaats:   { label: 'Marktplaats',   color: '#d32f2f' },
+  leboncoin:     { label: 'Leboncoin',     color: '#1565c0' },
 }
 
 const IMG_HOSTS = [
@@ -29,6 +32,9 @@ const IMG_HOSTS = [
   'images1.vinted.com', 'images2.vinted.com', 'images3.vinted.com',
   'photos.ztat.net',
   'img.gumtree.com', 'thumbs.gumtree.com',
+  'img.shpock.com', 'media.shpock.com',
+  'img.marktplaats.com', 'images.marktplaats.com',
+  'img.leboncoin.fr', 'origin-image.leboncoin.fr',
 ]
 
 function proxyImg(url: string | null | undefined): string | null {

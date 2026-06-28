@@ -14,8 +14,13 @@ const ALLOWED = [
   'images3.vinted.com',
   'photos.ztat.net',
   'img.gumtree.com',
-  'i.ebayimg.com',
   'thumbs.gumtree.com',
+  'img.shpock.com',
+  'media.shpock.com',
+  'img.marktplaats.com',
+  'images.marktplaats.com',
+  'img.leboncoin.fr',
+  'origin-image.leboncoin.fr',
 ]
 
 export async function GET(req: NextRequest) {
