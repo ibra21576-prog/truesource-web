@@ -124,7 +124,10 @@ function parseJson(json: string, domain: string): ScrapedItem[] {
     const image = rawThumb
       ? rawThumb.replace(/_\d+x\d+c?(\.\w+)$/, '_600x450$1')
       : null
-    items.push({ id, title, price, url, image, platform: 'craigslist' })
+    // PostedDate is a Unix epoch (seconds) — the real listing time
+    const epoch = Number(row.PostedDate)
+    const postedAt = epoch > 0 ? new Date(epoch * 1000).toISOString() : null
+    items.push({ id, title, price, url, image, platform: 'craigslist', postedAt })
   }
   return items
 }

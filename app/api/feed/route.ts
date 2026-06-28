@@ -32,11 +32,11 @@ export async function GET(req: NextRequest) {
 
   const supabase = createServiceClient()
 
-  // found_at is the first-discovery time (immutable). Show listings discovered in
-  // the last 3h so the feed stays full with truthful "X min ago" ages, widening
-  // to 12h then all-time only if a quiet search has nothing recent.
-  const cutoffPrimary = new Date(Date.now() -  3 * 60 * 60 * 1000).toISOString()
-  const cutoffWide    = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
+  // found_at carries the listing's real post time. Show items posted in the last
+  // 24h (newest first) so the feed is full of genuinely recent deals with truthful
+  // ages, widening to 7d only if a quiet search has nothing recent.
+  const cutoffPrimary = new Date(Date.now() -      24 * 60 * 60 * 1000).toISOString()
+  const cutoffWide    = new Date(Date.now() -  7 * 24 * 60 * 60 * 1000).toISOString()
 
   let searchIds: string[] | null = null
   if (!isAdmin) {

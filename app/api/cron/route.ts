@@ -87,12 +87,13 @@ export async function GET(req: Request) {
     } catch {}
   }
 
-  // 5. Cleanup old items — only every 10th minute to save the time budget.
+  // 5. Cleanup — drop listings posted more than 7 days ago (found_at is now the
+  //    real post time). Runs only every 10th minute to protect the time budget.
   if (new Date().getMinutes() % 10 === 0) {
     try {
       await supabase.from('items')
         .delete()
-        .lt('found_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .lt('found_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
     } catch {}
   }
 
@@ -118,9 +119,11 @@ async function saveItems(supabase: any, search: any, items: any[]) {
     .from('seen_ids').select('item_id').eq('search_id', search.id)
   const seenSet = new Set((seenRows || []).map((r: any) => r.item_id))
 
-  // Only INSERT genuinely new listings with found_at = now. Existing listings
-  // keep their original found_at so the "X min ago" age stays truthful instead
-  // of resetting to "just now" on every scrape.
+  // Only INSERT genuinely new listings. found_at carries the listing's REAL post
+  // time when the platform exposes it (Kijiji sortingDate, Craigslist PostedDate…),
+  // otherwise the discovery time. This makes "X min ago" truthful and diverse
+  // instead of every item from one scrape sharing the same timestamp — and needs
+  // no extra DB column or migration.
   const newItems = items.filter((it: any) => !seenSet.has(it.id))
   if (newItems.length === 0) return
 
@@ -133,39 +136,16 @@ async function saveItems(supabase: any, search: any, items: any[]) {
     price:      it.price,
     url:        it.url,
     image:      it.image,
-    found_at:   now,
-    posted_at:  it.postedAt || null,   // real marketplace post time when available
+    found_at:   it.postedAt || now,
     first_scan: true,
   }))
 
   await Promise.all([
-    insertItems(supabase, rows),
+    // ignoreDuplicates: never overwrite an existing row (protects found_at)
+    supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id', ignoreDuplicates: true }),
     supabase.from('seen_ids').upsert(
       newItems.map((it: any) => ({ search_id: search.id, item_id: it.id })),
       { ignoreDuplicates: true }
     ),
   ])
-}
-
-// Robust insert: uses the optional posted_at column when present, transparently
-// falls back to inserting without it on DBs that haven't run the migration yet.
-let hasPostedAtColumn: boolean | null = null
-
-async function insertItems(supabase: any, rows: any[]) {
-  const opts = { onConflict: 'search_id,item_id', ignoreDuplicates: true }
-  if (hasPostedAtColumn === false) {
-    return supabase.from('items').upsert(rows.map(stripPostedAt), opts)
-  }
-  const res = await supabase.from('items').upsert(rows, opts)
-  if (res.error && /posted_at/i.test(res.error.message || '')) {
-    hasPostedAtColumn = false
-    return supabase.from('items').upsert(rows.map(stripPostedAt), opts)
-  }
-  if (!res.error) hasPostedAtColumn = true
-  return res
-}
-
-function stripPostedAt(row: any) {
-  const { posted_at, ...rest } = row
-  return rest
 }
