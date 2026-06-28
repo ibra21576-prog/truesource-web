@@ -33,7 +33,8 @@ function isBlocked(html: string) {
 export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.kijiji.ca'
   const q = encodeURIComponent(search.query)
-  const base = `https://${domain}/b-buy-sell/canada/${q}/k0c10l0?sortingOrder=dateDesc`
+  // All categories, all of Canada (l0 = Canada-wide, no category filter)
+  const base = `https://${domain}/b-canada/${q}/k0l0?sortingOrder=dateDesc`
 
   // Fetch pages 1 and 2 in parallel for double the items
   const [html1, html2] = await Promise.all([
