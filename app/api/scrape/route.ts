@@ -1,5 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { fetchItems } from '@/lib/scraper'
+import { saveNewItems } from '@/lib/scraper/save'
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySession } from '@/lib/session'
 
@@ -33,30 +34,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const items = await fetchItems(searchWithUser)
-
-    const { data: seenRows } = await supabase.from('seen_ids').select('item_id').eq('search_id', searchId)
-    const seenSet = new Set((seenRows || []).map((r: any) => r.item_id))
-    const isFirst = seenSet.size === 0
-    const newItems = isFirst ? items.slice(0, 10) : items.filter(it => !seenSet.has(it.id))
-
-    if (newItems.length > 0) {
-      const rows = newItems.map(it => ({
-        search_id:  searchId,
-        item_id:    it.id,
-        platform:   it.platform,
-        domain:     search.domain,
-        title:      it.title,
-        price:      it.price,
-        url:        it.url,
-        image:      it.image,
-        first_scan: isFirst,
-      }))
-      await Promise.all([
-        supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id', ignoreDuplicates: true }),
-        supabase.from('seen_ids').upsert(items.map(it => ({ search_id: searchId, item_id: it.id })), { ignoreDuplicates: true }),
-      ])
-    }
-    return NextResponse.json({ ok: true, found: items.length, new: newItems.length })
+    // Same persistence path as the cron — real post time in found_at, dedup, etc.
+    const saved = await saveNewItems(supabase, search, items)
+    return NextResponse.json({ ok: true, found: items.length, new: saved })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }

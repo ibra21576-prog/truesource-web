@@ -1,5 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { fetchItems } from '@/lib/scraper'
+import { saveNewItems } from '@/lib/scraper/save'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -67,7 +68,7 @@ export async function GET(req: Request) {
     await Promise.allSettled(wave.map(async (g) => {
       try {
         const items = await fetchItems(g.rep)
-        await Promise.all(g.members.map(s => saveItems(supabase, s, items)))
+        await Promise.all(g.members.map(s => saveNewItems(supabase, s, items)))
         g.members.forEach(s => doneSearchIds.push(s.id))
         processed += g.members.length
         scrapedGroups += 1
@@ -108,44 +109,4 @@ export async function GET(req: Request) {
     errors: errorDetails.length,
     errorDetails: errorDetails.slice(0, 10),
   })
-}
-
-async function saveItems(supabase: any, search: any, items: any[]) {
-  if (!items.length) return
-  const now = new Date().toISOString()
-
-  // Which item_ids have we already stored for this search?
-  const { data: seenRows } = await supabase
-    .from('seen_ids').select('item_id').eq('search_id', search.id)
-  const seenSet = new Set((seenRows || []).map((r: any) => r.item_id))
-
-  // Only INSERT genuinely new listings. found_at carries the listing's REAL post
-  // time when the platform exposes it (Kijiji sortingDate, Craigslist PostedDate…),
-  // otherwise the discovery time. This makes "X min ago" truthful and diverse
-  // instead of every item from one scrape sharing the same timestamp — and needs
-  // no extra DB column or migration.
-  const newItems = items.filter((it: any) => !seenSet.has(it.id))
-  if (newItems.length === 0) return
-
-  const rows = newItems.map((it: any) => ({
-    search_id:  search.id,
-    item_id:    it.id,
-    platform:   it.platform,
-    domain:     search.domain,
-    title:      it.title,
-    price:      it.price,
-    url:        it.url,
-    image:      it.image,
-    found_at:   it.postedAt || now,
-    first_scan: true,
-  }))
-
-  await Promise.all([
-    // ignoreDuplicates: never overwrite an existing row (protects found_at)
-    supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id', ignoreDuplicates: true }),
-    supabase.from('seen_ids').upsert(
-      newItems.map((it: any) => ({ search_id: search.id, item_id: it.id })),
-      { ignoreDuplicates: true }
-    ),
-  ])
 }
