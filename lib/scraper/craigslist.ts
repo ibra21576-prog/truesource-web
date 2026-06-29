@@ -27,13 +27,34 @@ async function tryProxy(url: string): Promise<{ ok: boolean; text: string }> {
   } catch { return { ok: false, text: '' } }
 }
 
-// Default cities to scrape when only one domain is specified
+// Country-wide coverage: the biggest US + Canadian metros. Craigslist is
+// city-based with no nationwide search, so we fan out across the major markets
+// in parallel (fast JSON API) to approximate "the whole country".
 const DEFAULT_CITIES = [
+  // USA — major metros coast to coast
   'newyork.craigslist.org',
   'losangeles.craigslist.org',
   'chicago.craigslist.org',
   'sfbay.craigslist.org',
+  'sandiego.craigslist.org',
+  'seattle.craigslist.org',
+  'boston.craigslist.org',
+  'washingtondc.craigslist.org',
+  'dallas.craigslist.org',
+  'houston.craigslist.org',
+  'atlanta.craigslist.org',
+  'miami.craigslist.org',
+  'philadelphia.craigslist.org',
+  'phoenix.craigslist.org',
+  'denver.craigslist.org',
+  'portland.craigslist.org',
+  'austin.craigslist.org',
+  'minneapolis.craigslist.org',
+  // Canada — major metros
   'toronto.craigslist.org',
+  'vancouver.craigslist.org',
+  'montreal.craigslist.org',
+  'calgary.craigslist.org',
 ]
 
 export async function fetchCraigslist(search: Search): Promise<ScrapedItem[]> {
