@@ -145,6 +145,7 @@ export default function DashboardPage() {
   const [soundOn,      setSoundOn]      = useState(false)
   const [notifPerm,    setNotifPerm]    = useState<NotificationPermission>('default')
   const [newCount,     setNewCount]     = useState(0)
+  const [srvAgo,       setSrvAgo]       = useState<number | null>(null)  // seconds since server last scraped
 
   const searchesRef  = useRef<Search[]>([])
   const knownIdsRef  = useRef<Set<string>>(new Set())
@@ -157,6 +158,19 @@ export default function DashboardPage() {
       if (saved) setDismissed(new Set(JSON.parse(saved)))
     } catch {}
     if (typeof Notification !== 'undefined') setNotifPerm(Notification.permission)
+  }, [])
+
+  // Poll the server-side scrape heartbeat so the user can SEE it's running 24/7
+  useEffect(() => {
+    const pull = async () => {
+      try {
+        const r = await fetch('/api/status')
+        if (r.ok) { const d = await r.json(); setSrvAgo(d.secondsSinceLastScrape ?? null) }
+      } catch {}
+    }
+    pull()
+    const iv = setInterval(pull, 20000)
+    return () => clearInterval(iv)
   }, [])
 
   function dismiss(itemId: string) {
@@ -322,10 +336,24 @@ export default function DashboardPage() {
               </div>
               <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 2 }}>Subscribed {memberDuration(me.memberSince) ?? 'recently'}</div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px' }}>
-              <div className="live-dot" />
-              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)' }}>Live</span>
-            </div>
+            {(() => {
+              const live = srvAgo != null && srvAgo < 150
+              const label = srvAgo == null ? 'Checking…'
+                : srvAgo < 90 ? 'Scraping live'
+                : srvAgo < 150 ? 'Scraping live'
+                : `Last scrape ${srvAgo < 3600 ? Math.round(srvAgo/60)+'m' : Math.round(srvAgo/3600)+'h'} ago`
+              return (
+                <div title={srvAgo != null ? `Server last scraped ${srvAgo}s ago` : ''} style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  background: 'var(--surface)',
+                  border: `1px solid ${live ? 'rgba(20,184,166,0.4)' : 'rgba(245,158,11,0.4)'}`,
+                  borderRadius: 6, padding: '6px 12px',
+                }}>
+                  <div className="live-dot" style={live ? undefined : { background: '#f59e0b', boxShadow: 'none', animation: 'none' }} />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: live ? 'var(--accent)' : '#f59e0b' }}>{label}</span>
+                </div>
+              )
+            })()}
           </div>
         )}
 

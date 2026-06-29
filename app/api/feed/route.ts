@@ -32,12 +32,6 @@ export async function GET(req: NextRequest) {
 
   const supabase = createServiceClient()
 
-  // found_at carries the listing's real post time. Show items posted in the last
-  // 24h (newest first) so the feed is full of genuinely recent deals with truthful
-  // ages, widening to 7d only if a quiet search has nothing recent.
-  const cutoffPrimary = new Date(Date.now() -      24 * 60 * 60 * 1000).toISOString()
-  const cutoffWide    = new Date(Date.now() -  7 * 24 * 60 * 60 * 1000).toISOString()
-
   let searchIds: string[] | null = null
   if (!isAdmin) {
     const ids = await getUserSearchIds(supabase, user.userId)
@@ -45,43 +39,21 @@ export async function GET(req: NextRequest) {
     searchIds = ids
   }
 
-  async function queryItems(cutoff: string) {
+  try {
+    // Show the FULL recent pool, newest post first. The cron already deletes
+    // anything older than 7 days, so this is the complete set of current
+    // listings — no narrow window that makes the feed look empty between posts.
     let q = supabase
       .from('items')
       .select('*, searches(query)')
-      .gte('found_at', cutoff)
       .order('found_at', { ascending: false })
       .limit(500)
-
     if (platform) q = q.eq('platform', platform)
     if (searchIds) q = q.in('search_id', searchIds)
 
-    const { data, error } = await q
+    const { data: rows, error } = await q
     if (error) throw new Error(error.message)
-    return data ?? []
-  }
-
-  try {
-    // Listings discovered in the last 3h
-    let data = await queryItems(cutoffPrimary)
-
-    // If empty (quiet search), widen to 12h
-    if (data.length === 0) {
-      data = await queryItems(cutoffWide)
-    }
-
-    // If still empty, show all time (first run, no cutoff)
-    if (data.length === 0) {
-      let q = supabase
-        .from('items')
-        .select('*, searches(query)')
-        .order('found_at', { ascending: false })
-        .limit(500)
-      if (platform) q = q.eq('platform', platform)
-      if (searchIds) q = q.in('search_id', searchIds)
-      const { data: all } = await q
-      data = all ?? []
-    }
+    const data = rows ?? []
 
     return NextResponse.json(data)
   } catch (e: any) {
