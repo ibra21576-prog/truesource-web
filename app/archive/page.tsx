@@ -82,7 +82,7 @@ export default function ArchivePage() {
           gap: 16, marginBottom: 28, flexWrap: 'wrap',
         }}>
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, letterSpacing: '-0.03em', color: 'var(--text)' }}>
+            <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: '-0.03em', color: 'var(--text)' }}>
               Archive
             </h1>
             <p style={{ fontSize: 14, color: 'var(--text2)', marginTop: 6, lineHeight: 1.6 }}>

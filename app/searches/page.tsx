@@ -53,15 +53,15 @@ export default function SearchesPage() {
         {/* Page header */}
         <div style={{ marginBottom: 32 }}>
           <h1 style={{
-            fontSize: 28, fontWeight: 700, margin: 0,
+            fontSize: 26, fontWeight: 800, margin: 0,
             letterSpacing: '-0.03em', color: 'var(--text)',
           }}>Searches</h1>
-          <p style={{ fontSize: 14, color: 'var(--text2)', marginTop: 6, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 13.5, color: 'var(--text3)', marginTop: 6, lineHeight: 1.5 }}>
             {searches.length} search{searches.length !== 1 ? 'es' : ''} configured
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: 28, alignItems: 'start' }}>
           {/* Search form */}
           <SearchForm onCreated={load} />
 

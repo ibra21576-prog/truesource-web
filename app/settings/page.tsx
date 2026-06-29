@@ -57,7 +57,7 @@ function ExtensionFlow({ onStart }: { onStart: () => void }) {
         <div style={{ background: '#111113', borderRadius: 8, padding: '12px 14px', border: '1px solid #27272a', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#52525b', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>javascript:(function()&#123;var t=…&#125;)()</div>
           <button onClick={copyAndNext} className="btn-primary" style={{ fontSize: 13, padding: '7px 14px', flexShrink: 0 }}>
-            {copied ? '✓ Kopiert!' : '📋 Code kopieren'}
+            {copied ? 'Copied' : 'Copy code'}
           </button>
         </div>
       ),
@@ -300,7 +300,7 @@ function TutorialSlides({ bookmarklet, onStart, onManual }: { bookmarklet: strin
           <p style={{ fontSize: 12, color: 'var(--text2)', margin: 0 }}>Press <kbd style={{ padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border2)', background: 'var(--card)', fontSize: 11, fontWeight: 600 }}>Ctrl+Shift+B</kbd> to show bookmarks bar, then copy → right-click bar → Add bookmark → paste as URL</p>
         </div>
         <button onClick={copyCode} className="btn-primary" style={{ fontSize: 13, padding: '8px 14px', flexShrink: 0 }}>
-          {copied ? '✓ Copied!' : '📋 Copy code'}
+          {copied ? 'Copied' : 'Copy code'}
         </button>
       </div>
 
@@ -374,7 +374,7 @@ function SettingsInner() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <Navigation />
-      <div className="page" style={{ maxWidth: 520 }}>
+      <div className="page" style={{ maxWidth: 640 }}>
 
         <div style={{ marginBottom: 20 }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', margin: 0, letterSpacing: '-0.03em' }}>Vinted</h1>
@@ -480,7 +480,9 @@ function SettingsInner() {
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(20,184,166,0.08)'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(20,184,166,0.04)'}
               >
-                <div style={{ width: 38, height: 38, borderRadius: 8, background: 'rgba(20,184,166,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🔑</div>
+                <div style={{ width: 38, height: 38, borderRadius: 8, background: 'rgba(20,184,166,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M12 15h8"/><path d="M18 12v6"/><path d="M15 12v6"/></svg>
+                </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>Via Email &amp; Password</div>
                   <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5 }}>Works with Google login — just enter your email &amp; a Vinted password</div>
@@ -495,7 +497,9 @@ function SettingsInner() {
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--border2)'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'}
               >
-                <div style={{ width: 38, height: 38, borderRadius: 8, background: 'var(--card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🔖</div>
+                <div style={{ width: 38, height: 38, borderRadius: 8, background: 'var(--card)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="16" height="16" fill="none" stroke="var(--text2)" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                </div>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>Via Bookmark</div>
                   <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5 }}>Save a browser bookmark and click it on Vinted</div>

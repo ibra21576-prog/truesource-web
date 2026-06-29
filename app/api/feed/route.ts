@@ -40,16 +40,19 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Show the FULL recent pool, newest post first. The cron already deletes
-    // anything older than 7 days, so this is the complete set of current
-    // listings — no narrow window that makes the feed look empty between posts.
+    // Show items newest-first. Items are never deleted — they accumulate as a
+    // permanent archive. `before` cursor lets the dashboard load older pages.
+    const before  = searchParams.get('before')   // ISO date — load items older than this
+    const limitN  = Math.min(Number(searchParams.get('limit') || 500), 500)
+
     let q = supabase
       .from('items')
       .select('*, searches(query)')
       .order('found_at', { ascending: false })
-      .limit(500)
+      .limit(limitN)
     if (platform) q = q.eq('platform', platform)
     if (searchIds) q = q.in('search_id', searchIds)
+    if (before)   q = q.lt('found_at', before)
 
     const { data: rows, error } = await q
     if (error) throw new Error(error.message)

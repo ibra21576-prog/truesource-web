@@ -93,12 +93,12 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
     } catch {}
   }
 
-  // 5. Cleanup — drop listings posted more than 7 days ago. Every 10th minute only.
+  // 5. Cleanup — drop listings older than 10 days. Every 10th minute only.
   if (new Date().getMinutes() % 10 === 0) {
     try {
       await supabase.from('items')
         .delete()
-        .lt('found_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .lt('found_at', new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString())
     } catch {}
   }
 
