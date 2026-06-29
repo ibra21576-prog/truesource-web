@@ -121,6 +121,11 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
                 </svg>
               </div>
           }
+          {/* Scrim so badges stay readable over any image */}
+          <div style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 28%)',
+          }} />
           {/* Badges overlay */}
           <div style={{
             position: 'absolute', top: 10, left: 10,
@@ -132,11 +137,11 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
         </div>
 
         {/* Content */}
-        <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+        <div style={{ padding: '13px 15px 15px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
           <span style={{
-            fontSize: 20, fontWeight: 700,
-            color: 'var(--text)',
-            letterSpacing: '-0.02em', lineHeight: 1,
+            fontSize: 21, fontWeight: 800,
+            color: item.price ? 'var(--text)' : 'var(--text3)',
+            letterSpacing: '-0.03em', lineHeight: 1,
           }}>
             {item.price || '—'}
           </span>

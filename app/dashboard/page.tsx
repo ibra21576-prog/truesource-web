@@ -360,13 +360,15 @@ export default function DashboardPage() {
         {/* Header row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', margin: 0, letterSpacing: '-0.03em' }}>
+            <h1 className="gradient-text" style={{ fontSize: 30, fontWeight: 800, margin: 0, letterSpacing: '-0.035em', display: 'inline-flex', alignItems: 'center' }}>
               Live Feed
               {newCount > 0 && (
                 <span style={{
-                  marginLeft: 10, fontSize: 14, fontWeight: 700,
-                  background: 'var(--accent)', color: '#fff',
-                  borderRadius: 20, padding: '2px 10px', verticalAlign: 'middle',
+                  marginLeft: 12, fontSize: 13, fontWeight: 700,
+                  background: 'var(--grad-accent)', color: '#04201c',
+                  borderRadius: 20, padding: '3px 11px', verticalAlign: 'middle',
+                  boxShadow: '0 4px 14px rgba(22,194,174,0.4)',
+                  WebkitTextFillColor: '#04201c',
                 }}>+{newCount} new</span>
               )}
             </h1>

@@ -6,20 +6,24 @@
 
 /* ── Design Tokens ── */
 :root {
-  --bg:      #09090b;
-  --surface: #111113;
-  --card:    #18181b;
-  --border:  #27272a;
+  --bg:      #08080a;
+  --surface: #121214;
+  --card:    #161619;
+  --border:  #26262a;
   --border2: #3f3f46;
-  --accent:  #14b8a6;
+  --accent:  #16c2ae;
   --accent2: #0d9488;
   --purple:  #6366f1;
   --text:    #fafafa;
   --text2:   #a1a1aa;
-  --text3:   #52525b;
+  --text3:   #5b5b63;
   --danger:  #ef4444;
   --success: #22c55e;
   --warning: #f59e0b;
+  --grad-accent: linear-gradient(135deg, #19cdb8 0%, #0d9488 100%);
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-lift: 0 12px 32px -8px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03);
+  --shadow-accent: 0 8px 28px -6px rgba(22,194,174,0.35);
 }
 
 @layer base {
@@ -33,7 +37,21 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.5;
+    letter-spacing: -0.01em;
   }
+
+  /* Subtle ambient depth — a soft teal glow up top, fades into the dark bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(900px 500px at 50% -8%, rgba(22,194,174,0.07), transparent 70%),
+      radial-gradient(700px 400px at 100% 0%, rgba(99,102,241,0.05), transparent 65%);
+  }
+  body > * { position: relative; z-index: 1; }
 
   a { color: inherit; text-decoration: none; }
 
@@ -76,14 +94,18 @@
 
   .btn-primary {
     @apply btn;
-    background: var(--accent);
-    color: #fff;
+    background: var(--grad-accent);
+    color: #04201c;
+    font-weight: 700;
+    box-shadow: var(--shadow-accent);
   }
   .btn-primary:hover:not(:disabled) {
-    background: var(--accent2);
+    transform: translateY(-1px);
+    box-shadow: 0 12px 32px -6px rgba(22,194,174,0.5);
+    filter: brightness(1.06);
   }
-  .btn-primary:active:not(:disabled) { opacity: 0.9; }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); filter: brightness(0.98); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 
   .btn-secondary {
     @apply btn;
@@ -118,16 +140,17 @@
 
   /* ── Cards ── */
   .card {
-    background: var(--card);
+    background: linear-gradient(180deg, rgba(255,255,255,0.018), transparent 40%), var(--card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 20px;
-    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    box-shadow: var(--shadow-card);
+    transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
   }
   .card:hover {
     border-color: var(--border2);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    transform: translateY(-1px);
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-2px);
   }
 
   /* ── Badges ── */
@@ -136,13 +159,17 @@
     font-size: 11px; font-weight: 600; padding: 2px 8px;
     border-radius: 6px; letter-spacing: 0.02em;
   }
-  .badge-vinted        { background: rgba(20,184,166,0.1);  color: #14b8a6; border: 1px solid rgba(20,184,166,0.2); }
-  .badge-ebay          { background: rgba(245,158,11,0.1);  color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
-  .badge-kleinanzeigen { background: rgba(249,115,22,0.1);  color: #f97316; border: 1px solid rgba(249,115,22,0.2); }
-  .badge-gumtree       { background: rgba(0,177,64,0.1);    color: #00b140; border: 1px solid rgba(0,177,64,0.2); }
-  .badge-kijiji        { background: rgba(109,40,217,0.1);  color: #6d28d9; border: 1px solid rgba(109,40,217,0.2); }
-  .badge-craigslist    { background: rgba(124,58,237,0.1);  color: #7c3aed; border: 1px solid rgba(124,58,237,0.2); }
-  .badge-new           { background: rgba(20,184,166,0.1);  color: #14b8a6; border: 1px solid rgba(20,184,166,0.2); }
+  .badge { backdrop-filter: blur(6px); }
+  .badge-vinted        { background: rgba(20,184,166,0.14);  color: #2dd4bf; border: 1px solid rgba(20,184,166,0.3); }
+  .badge-ebay          { background: rgba(245,158,11,0.14);  color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+  .badge-kleinanzeigen { background: rgba(249,115,22,0.14);  color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
+  .badge-gumtree       { background: rgba(0,177,64,0.14);    color: #34d399; border: 1px solid rgba(0,177,64,0.3); }
+  .badge-kijiji        { background: rgba(139,92,246,0.16);  color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
+  .badge-craigslist    { background: rgba(124,58,237,0.16);  color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+  .badge-shpock        { background: rgba(233,30,140,0.14);  color: #f472b6; border: 1px solid rgba(233,30,140,0.3); }
+  .badge-marktplaats   { background: rgba(211,47,47,0.14);   color: #f87171; border: 1px solid rgba(211,47,47,0.3); }
+  .badge-leboncoin     { background: rgba(21,101,192,0.16);  color: #60a5fa; border: 1px solid rgba(21,101,192,0.3); }
+  .badge-new           { background: var(--grad-accent); color: #04201c; border: none; box-shadow: 0 2px 8px rgba(22,194,174,0.4); }
 
   /* ── Form label ── */
   .label {
@@ -156,16 +183,32 @@
 
   /* ── Live dot ── */
   .live-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--success);
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
     display: inline-block;
+    position: relative;
+    box-shadow: 0 0 0 0 rgba(22,194,174,0.55);
+    animation: livePulse 2s ease-out infinite;
+  }
+
+  /* ── Gradient heading ── */
+  .gradient-text {
+    background: linear-gradient(120deg, #fafafa 30%, #6ee7d8 75%, #19cdb8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 }
 
 /* ── Animations ── */
 @keyframes spin   { to { transform: rotate(360deg); } }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px) scale(0.995); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes pulse  { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes livePulse {
+  0%   { box-shadow: 0 0 0 0 rgba(22,194,174,0.5); }
+  70%  { box-shadow: 0 0 0 6px rgba(22,194,174,0); }
+  100% { box-shadow: 0 0 0 0 rgba(22,194,174,0); }
+}
 
 .anim-in { animation: fadeIn 0.25s ease both; }
 .spin     { animation: spin 0.8s linear infinite; }
