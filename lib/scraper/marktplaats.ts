@@ -2,6 +2,28 @@ import { ScrapedItem, Search } from './types'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
+// The lrp API only exposes a human label ("Vandaag", "Gisteren", "12 jun 25").
+// Parse it into an approximate ISO timestamp so the freshness filter works.
+const NL_MONTHS: Record<string, number> = {
+  jan: 0, feb: 1, mrt: 2, apr: 3, mei: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, okt: 9, nov: 10, dec: 11,
+}
+function parseDutchDate(label?: string): string | null {
+  if (!label) return null
+  const s = label.toLowerCase().trim()
+  const now = Date.now()
+  if (s === 'vandaag') return new Date(now).toISOString()
+  if (s === 'gisteren') return new Date(now - 864e5).toISOString()
+  if (s === 'eergisteren') return new Date(now - 2 * 864e5).toISOString()
+  const m = s.match(/^(\d{1,2})\s+([a-z]{3})\.?\s*(\d{2,4})?$/)
+  if (m && NL_MONTHS[m[2]] != null) {
+    const year = m[3] ? (m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3])) : new Date().getFullYear()
+    const d = new Date(year, NL_MONTHS[m[2]], Number(m[1]))
+    if (!isNaN(d.getTime())) return d.toISOString()
+  }
+  return null
+}
+
 export async function fetchMarktplaats(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.marktplaats.nl'
   // Minimal param set — extra category/distance params can trigger empty responses.
@@ -79,7 +101,7 @@ export async function fetchMarktplaats(search: Search): Promise<ScrapedItem[]> {
         ? (l.vipUrl.startsWith('http') ? l.vipUrl : `https://${domain}${l.vipUrl}`)
         : `https://${domain}/v/${id}`
 
-      items.push({ id, title, price, url, image, platform: 'marktplaats' })
+      items.push({ id, title, price, url, image, platform: 'marktplaats', postedAt: parseDutchDate(l.date) })
     }
 
     console.log(`[marktplaats] ${items.length} items`)

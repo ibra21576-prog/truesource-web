@@ -32,7 +32,7 @@ const IMG_HOSTS = [
   'images1.vinted.com', 'images2.vinted.com', 'images3.vinted.com',
   'photos.ztat.net',
   'img.gumtree.com', 'thumbs.gumtree.com',
-  'img.shpock.com', 'media.shpock.com',
+  'img.shpock.com', 'media.shpock.com', 'secondhandapp.at',
   'img.marktplaats.com', 'images.marktplaats.com',
   'img.leboncoin.fr', 'origin-image.leboncoin.fr',
 ]

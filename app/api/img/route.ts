@@ -17,6 +17,7 @@ const ALLOWED = [
   'thumbs.gumtree.com',
   'img.shpock.com',
   'media.shpock.com',
+  'secondhandapp.at',   // Shpock image CDN (webimg./m1. subdomains)
   'img.marktplaats.com',
   'images.marktplaats.com',
   'img.leboncoin.fr',

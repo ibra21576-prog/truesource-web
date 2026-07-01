@@ -82,7 +82,13 @@ function parseApolloState(apollo: Record<string, any>): ScrapedItem[] {
 
     const url = v.canonicalURL || (v.path ? `https://www.shpock.com${v.path}` : `https://www.shpock.com/i/${id}`)
 
-    items.push({ id, title, price, url, image: null, platform: 'shpock' })
+    // media[] holds Apollo refs like { __ref: "Media:6a4415..." }; the CDN serves
+    // the image directly from that id (w-i-m = web item medium).
+    const mediaRef: string = v.media?.[0]?.__ref || ''
+    const mediaId = mediaRef.startsWith('Media:') ? mediaRef.slice(6) : ''
+    const image = mediaId ? `https://webimg.secondhandapp.at/w-i-m/${mediaId}` : null
+
+    items.push({ id, title, price, url, image, platform: 'shpock' })
   }
   return items
 }
