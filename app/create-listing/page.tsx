@@ -139,7 +139,7 @@ export default function CreateListingPage() {
               color: credits.unlimited ? 'var(--accent)' : noCredits ? 'var(--danger)' : 'var(--text2)',
               whiteSpace: 'nowrap',
             }}>
-              {credits.unlimited ? 'Unlimited credits' : `${credits.balance} credit${credits.balance === 1 ? '' : 's'} left`}
+              {credits.unlimited ? 'Unlimited credits' : `${credits.balance} credit${credits.balance === 1 ? '' : 's'} left this month`}
             </div>
           )}
         </div>
@@ -186,7 +186,7 @@ export default function CreateListingPage() {
                 {noCredits ? 'No credits left' : 'Drop a photo here, or click to upload'}
               </p>
               <p style={{ fontSize: 13, color: 'var(--text3)' }}>
-                {noCredits ? 'Contact support to get more credits.' : 'One credit per generated listing'}
+                {noCredits ? 'Contact support to get more credits.' : 'One credit per generated listing — 20 free every month'}
               </p>
             </>
           )}
