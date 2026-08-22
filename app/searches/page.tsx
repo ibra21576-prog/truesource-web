@@ -61,7 +61,7 @@ export default function SearchesPage() {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: 28, alignItems: 'start' }}>
+        <div className="searches-layout">
           {/* Search form */}
           <SearchForm onCreated={load} />
 

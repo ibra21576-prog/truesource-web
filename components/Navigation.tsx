@@ -74,6 +74,18 @@ export default function Navigation() {
   const live = srvAgo != null && srvAgo < 150
 
   return (
+    <>
+    <nav className="bottom-nav">
+      {NAV.map(l => {
+        const active = path === l.href || (l.href !== '/dashboard' && path?.startsWith(l.href))
+        return (
+          <Link key={l.href} href={l.href} className={active ? 'active' : undefined}>
+            {l.icon}
+            {l.label === 'Create Listing' ? 'Create' : l.label}
+          </Link>
+        )
+      })}
+    </nav>
     <aside className="sidebar">
       {/* Brand */}
       <div className="sidebar-brand">
@@ -179,5 +191,6 @@ export default function Navigation() {
         </a>
       </div>
     </aside>
+    </>
   )
 }

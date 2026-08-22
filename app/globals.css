@@ -104,11 +104,26 @@
     flex-shrink: 0;
   }
 
+  /* ── Bottom tab bar — mobile-only replacement for the sidebar. Rendered
+     alongside it in the DOM always; only one of the two is ever visible,
+     switched purely by the media query below (no JS, no hydration risk). ── */
+  .bottom-nav {
+    display: none;
+  }
+
   /* ── Page wrapper — always offset by sidebar ── */
   .page {
     margin-left: var(--sidebar-w);
     padding: 44px 48px;
     min-height: 100vh;
+  }
+
+  /* ── Searches page: fixed form column + flexible list column ── */
+  .searches-layout {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 28px;
+    align-items: start;
   }
 
   /* ── Buttons ── */
@@ -256,3 +271,53 @@
 .stagger > *:nth-child(8)  { animation-delay: 210ms; }
 .stagger > *:nth-child(9)  { animation-delay: 240ms; }
 .stagger > *:nth-child(10) { animation-delay: 270ms; }
+
+/* ── Mobile layout ──────────────────────────────────────────────────────
+   Unlayered on purpose: CSS cascade layers always lose to unlayered rules
+   regardless of source order, so this reliably overrides the `.sidebar` /
+   `.page` / `.searches-layout` rules defined inside @layer components
+   above without fighting specificity. */
+@media (max-width: 860px) {
+  .sidebar { display: none; }
+
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 100;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    justify-content: space-around;
+    align-items: stretch;
+  }
+
+  .bottom-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    flex: 1;
+    padding: 6px 2px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--text3);
+  }
+
+  .bottom-nav a.active {
+    color: var(--accent);
+  }
+
+  .page {
+    margin-left: 0;
+    padding: 20px 16px calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .searches-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
