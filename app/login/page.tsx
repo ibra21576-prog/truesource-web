@@ -58,7 +58,7 @@ function LoginContent() {
 
         {/* Logo */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <Logo size={76} />
+          <Logo size={56} />
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.025em' }}>
               TrueSource <span style={{ color: 'var(--accent)' }}>Flip</span>
