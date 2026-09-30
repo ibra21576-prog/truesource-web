@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import Image from 'next/image'
+import Logo from './Logo'
 import { useEffect, useState } from 'react'
 
 const NAV = [
@@ -90,13 +90,7 @@ export default function Navigation() {
       {/* Brand */}
       <div className="sidebar-brand">
         <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none' }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: 9, overflow: 'hidden',
-            border: '1px solid var(--border)', flexShrink: 0,
-            background: 'var(--card)',
-          }}>
-            <Image src="/logo.png" alt="TrueSource" width={34} height={34} style={{ display: 'block', filter: 'hue-rotate(96deg) saturate(1.18)' }} />
-          </div>
+          <Logo size={36} />
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text)', lineHeight: 1.1 }}>
               TrueSource

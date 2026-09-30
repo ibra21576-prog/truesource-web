@@ -1,5 +1,5 @@
 import { ScrapedItem, Search } from './types'
-import { proxyFetch } from './proxy'
+import { proxyFetch, scraperApiFetch } from './proxy'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
@@ -24,7 +24,7 @@ export async function fetchShpock(search: Search): Promise<ScrapedItem[]> {
   for (const loc of locales) {
     const pageUrl = `https://www.shpock.com/${loc}/results?q=${q}`
     try {
-      const res = await proxyFetch(pageUrl, {
+      let res = await proxyFetch(pageUrl, {
         headers: {
           'User-Agent': UA,
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -38,14 +38,19 @@ export async function fetchShpock(search: Search): Promise<ScrapedItem[]> {
           'Sec-Fetch-User': '?1',
           'Upgrade-Insecure-Requests': '1',
         },
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(15000),
       })
+      if (!res.ok) {
+        const proxied = await scraperApiFetch(pageUrl, {}, { country: loc === 'en-gb' ? 'gb' : 'de' })
+        if (proxied) res = proxied
+      }
       if (!res.ok) { console.log(`[shpock] ${loc} HTTP ${res.status}`); continue }
       const html = await res.text()
       const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
       if (!m) { console.log(`[shpock] ${loc} no __NEXT_DATA__`); continue }
       const data = JSON.parse(m[1])
-      const apollo = data?.props?.pageProps?.apolloState
+      const pageProps = data?.props?.pageProps
+      const apollo = pageProps?.apolloState ?? pageProps?.pageProps?.apolloState
       if (!apollo) { console.log(`[shpock] ${loc} no apolloState`); continue }
       const items = parseApolloState(apollo)
       if (items.length > 0) {

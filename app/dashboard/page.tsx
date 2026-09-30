@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Navigation from '@/components/Navigation'
 import ItemCard from '@/components/ItemCard'
+import Logo from '@/components/Logo'
 
 interface Item {
   id: string; item_id: string; platform: string; domain: string
@@ -191,7 +192,7 @@ export default function DashboardPage() {
     try {
       const n = new Notification(`${item.platform.toUpperCase()} — ${item.price || 'No price'}`, {
         body: item.title || 'New listing found',
-        icon: '/logo.png',
+        icon: '/truesource-logo-purple.png',
         tag: item.id,
       })
       n.onclick = () => { window.open(item.url, '_blank'); n.close() }
@@ -440,7 +441,7 @@ export default function DashboardPage() {
               background: 'var(--surface)', border: '1px solid var(--border)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <img src="/logo.png" alt="TrueSource" width={30} height={30} style={{ borderRadius: 8, display: 'block', filter: 'hue-rotate(96deg) saturate(1.18)' }} />
+              <Logo size={32} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>Member</div>

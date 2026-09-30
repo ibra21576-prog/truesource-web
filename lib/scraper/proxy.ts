@@ -23,6 +23,10 @@ export function hasProxy(): boolean {
   return !!process.env.PROXY_URL
 }
 
+export function hasScraperApi(): boolean {
+  return !!process.env.SCRAPERAPI_KEY
+}
+
 // Drop-in fetch that tunnels through PROXY_URL when configured, else direct.
 export async function proxyFetch(url: string, init: RequestInit = {}): Promise<Response> {
   const agent = await getAgent()
@@ -31,4 +35,25 @@ export async function proxyFetch(url: string, init: RequestInit = {}): Promise<R
     return fetch(url, { ...init, dispatcher: agent } as any)
   }
   return fetch(url, init)
+}
+
+// ScraperAPI fallback for targets that actively block datacenter traffic. The
+// target URL is kept server-side and the configured key never reaches clients.
+export async function scraperApiFetch(
+  targetUrl: string,
+  init: RequestInit = {},
+  options: { country?: string; render?: boolean; keepHeaders?: boolean } = {},
+): Promise<Response | null> {
+  const apiKey = process.env.SCRAPERAPI_KEY
+  if (!apiKey) return null
+
+  const params = new URLSearchParams({ api_key: apiKey, url: targetUrl })
+  if (options.country) params.set('country_code', options.country)
+  if (options.render) params.set('render', 'true')
+  if (options.keepHeaders) params.set('keep_headers', 'true')
+
+  return fetch(`https://api.scraperapi.com/?${params}`, {
+    ...init,
+    signal: init.signal ?? AbortSignal.timeout(options.render ? 45000 : 20000),
+  })
 }

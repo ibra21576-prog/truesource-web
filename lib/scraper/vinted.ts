@@ -1,12 +1,16 @@
 import { ScrapedItem, Search } from './types'
 import { formatPrice } from './utils'
 import { createServiceClient } from '@/lib/supabase/server'
+import { scraperApiFetch } from './proxy'
 
 const BUCKET = 'ts-settings'
 
 async function loadVintedSession(domain: string, userId?: string | null): Promise<{ cookies: string; bearer: string; refreshToken: string }> {
   if (process.env.VINTED_COOKIES) {
     return { cookies: process.env.VINTED_COOKIES, bearer: process.env.VINTED_BEARER ?? '', refreshToken: '' }
+  }
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { cookies: '', bearer: '', refreshToken: '' }
   }
   const supabase = createServiceClient()
 
@@ -101,6 +105,7 @@ async function getGuestSession(domain: string): Promise<string> {
         'Sec-Fetch-Dest':  'document',
         'Upgrade-Insecure-Requests': '1',
       },
+      cache: 'no-store',
       signal: AbortSignal.timeout(12000),
     })
     // getSetCookie() is available in Node 18+ and returns all Set-Cookie values
@@ -225,7 +230,84 @@ export async function fetchVinted(search: Search, cookieStr?: string): Promise<S
     console.log('[vinted] guest session also failed — LOGIN_REQUIRED')
   }
 
+  // 4. Vinted retired the former catalog JSON endpoint for guest traffic. The
+  // public catalogue itself is still server-rendered, so parse its product
+  // cards as a durable, login-free fallback.
+  const htmlItems = await fetchPublicCatalog(search, domain)
+  if (htmlItems.length > 0) return htmlItems
+
   throw new Error('LOGIN_REQUIRED')
+}
+
+async function fetchPublicCatalog(search: Search, domain: string): Promise<ScrapedItem[]> {
+  const params = new URLSearchParams({ search_text: search.query, order: 'newest_first' })
+  if (search.min_price) params.set('price_from', String(search.min_price))
+  if (search.max_price) params.set('price_to', String(search.max_price))
+  const pageUrl = `https://${domain}/catalog?${params}`
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'de-DE,de;q=0.9,en;q=0.8',
+  }
+
+  try {
+    let res = await fetch(pageUrl, { headers, cache: 'no-store', signal: AbortSignal.timeout(18000) })
+    if (!res.ok) {
+      const proxied = await scraperApiFetch(pageUrl, {}, { country: domain.endsWith('.de') ? 'de' : undefined })
+      if (proxied) res = proxied
+    }
+    if (!res.ok) return []
+    return parseCatalogHtml(await res.text(), domain)
+  } catch (e: any) {
+    console.log(`[vinted] public catalogue error: ${e.message}`)
+    return []
+  }
+}
+
+function decodeHtml(value: string): string {
+  return value
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;|&#160;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;|&#34;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .trim()
+}
+
+function parseCatalogHtml(html: string, domain: string): ScrapedItem[] {
+  const items: ScrapedItem[] = []
+  const seen = new Set<string>()
+  const cardPattern = /<div class="[^"]*new-item-box__container" data-testid="product-item-id-(\d+)">([\s\S]*?)(?=<div class="[^"]*new-item-box__container" data-testid="product-item-id-\d+"|<\/body>)/g
+  let match: RegExpExecArray | null
+
+  while ((match = cardPattern.exec(html)) && items.length < 40) {
+    const id = match[1]
+    if (seen.has(id)) continue
+    const card = match[2]
+    const href = card.match(/href="([^\"]*\/items\/[^\"]+)"/)?.[1]
+    const title = card.match(/data-testid="product-item-id-\d+--description-title"[^>]*>([\s\S]*?)<\/p>/)?.[1]
+      || card.match(/--overlay-link"[^>]*title="([^"]+)"/)?.[1]?.split(', Zustand:')[0]
+    const price = card.match(/data-testid="product-item-id-\d+--price-text"[^>]*>([\s\S]*?)<\/p>/)?.[1]
+    const image = card.match(/data-testid="product-item-id-\d+--image--img"[^>]*src="([^"]+)"/)?.[1]
+      || card.match(/<img[^>]+src="([^"]+)"[^>]+data-testid="product-item-id-\d+--image--img"/)?.[1]
+    if (!href || !title) continue
+    seen.add(id)
+    items.push({
+      id,
+      title: decodeHtml(title),
+      price: price ? decodeHtml(price) : '',
+      url: href.startsWith('http') ? decodeHtml(href) : `https://${domain}${decodeHtml(href)}`,
+      image: image ? decodeHtml(image) : null,
+      platform: 'vinted',
+    })
+  }
+
+  console.log(`[vinted] public catalogue got ${items.length} items`)
+  return items
 }
 
 function mapItems(raw: any[], domain: string): ScrapedItem[] {
