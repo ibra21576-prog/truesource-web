@@ -95,7 +95,7 @@ export default function Navigation() {
             border: '1px solid var(--border)', flexShrink: 0,
             background: 'var(--card)',
           }}>
-            <Image src="/logo.png" alt="TrueSource" width={34} height={34} style={{ display: 'block' }} />
+            <Image src="/logo.png" alt="TrueSource" width={34} height={34} style={{ display: 'block', filter: 'hue-rotate(96deg) saturate(1.18)' }} />
           </div>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text)', lineHeight: 1.1 }}>
@@ -128,7 +128,7 @@ export default function Navigation() {
               textDecoration: 'none',
               transition: 'background 0.12s, color 0.12s',
               color: active ? 'var(--text)' : 'var(--text3)',
-              background: active ? 'rgba(255,255,255,0.06)' : 'transparent',
+              background: active ? 'rgba(168,85,247,0.10)' : 'transparent',
               borderLeft: `2px solid ${active ? 'var(--accent)' : 'transparent'}`,
               marginLeft: -2,
             }}>
@@ -145,7 +145,7 @@ export default function Navigation() {
       <div style={{ padding: '12px', borderTop: '1px solid var(--border)' }}>
         <div style={{
           borderRadius: 9, background: 'var(--card)',
-          border: `1px solid ${live ? 'rgba(22,194,174,0.2)' : 'var(--border)'}`,
+          border: `1px solid ${live ? 'rgba(168,85,247,0.28)' : 'var(--border)'}`,
           padding: '11px 13px', marginBottom: 8,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>

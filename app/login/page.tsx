@@ -46,18 +46,18 @@ function LoginContent() {
     <div style={{
       minHeight: '100vh', background: 'var(--bg)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: 24, fontFamily: 'Inter, sans-serif',
+      padding: 24, fontFamily: 'Geist, sans-serif',
     }}>
       <div style={{
         background: 'var(--card)', border: '1.5px solid var(--border)',
         borderRadius: 20, padding: '40px 36px', width: '100%', maxWidth: 420,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
-        boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+        boxShadow: '0 28px 80px rgba(0,0,0,0.58), 0 0 0 1px rgba(168,85,247,0.04)',
       }}>
 
         {/* Logo */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <Image src="/logo.png" alt="TrueSource Flip" width={64} height={64} style={{ borderRadius: 14 }} />
+          <Image src="/logo.png" alt="TrueSource Flip" width={64} height={64} style={{ borderRadius: 14, filter: 'hue-rotate(96deg) saturate(1.18)' }} />
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>
               TrueSource <span style={{ color: 'var(--accent)' }}>Flip</span>
@@ -98,8 +98,8 @@ function LoginContent() {
           <button onClick={openPopup} style={{
             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             padding: '13px 20px', borderRadius: 12, fontWeight: 700, fontSize: 15,
-            background: '#FA4616', color: '#fff', border: 'none', cursor: 'pointer',
-            boxShadow: '0 0 28px rgba(250,70,22,0.4)',
+            background: 'var(--grad-accent)', color: '#fff', border: '1px solid rgba(216,180,254,0.28)', cursor: 'pointer',
+            boxShadow: 'var(--shadow-accent)',
           }}>
             <svg width="22" height="12" viewBox="0 0 1000 515" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M158.881 -0.00366211C93.2014 -0.00366211 47.9251 28.989 13.6619 61.7749C13.6619 61.7749 -0.173169 74.965 0.00164277 75.3669L143.897 220.129L287.766 75.3669C260.521 37.6314 209.152 -0.00366211 158.881 -0.00366211Z" fill="white"/>
@@ -112,8 +112,8 @@ function LoginContent() {
         <a href="/api/auth/whop" style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
           padding: '13px 20px', borderRadius: 12, fontWeight: 700, fontSize: 15,
-          background: '#FA4616', color: '#fff', textDecoration: 'none',
-          boxShadow: '0 0 28px rgba(250,70,22,0.4)', transition: 'all 0.15s',
+          background: 'var(--grad-accent)', color: '#fff', textDecoration: 'none',
+          border: '1px solid rgba(216,180,254,0.28)', boxShadow: 'var(--shadow-accent)', transition: 'all 0.15s',
         }}>
           {/* Official Whop brandmark */}
           <svg width="22" height="12" viewBox="0 0 1000 515" fill="none" xmlns="http://www.w3.org/2000/svg">

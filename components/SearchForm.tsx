@@ -219,7 +219,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
                   transition: 'all 0.15s ease',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                   ...(active
-                    ? { background: 'rgba(20,184,166,0.08)', color: 'var(--accent)' }
+                    ? { background: 'rgba(168,85,247,0.10)', color: 'var(--accent)' }
                     : { background: 'var(--surface)', color: 'var(--text2)' }
                   ),
                 }}>

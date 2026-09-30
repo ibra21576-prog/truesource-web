@@ -5,7 +5,7 @@ import Navigation from '@/components/Navigation'
 
 const DOMAINS = ['www.vinted.de', 'www.vinted.at', 'www.vinted.fr', 'www.vinted.co.uk']
 
-const BOOKMARKLET = `javascript:(function(){if(!location.hostname.includes('vinted')){alert('Please open this on Vinted first!');return;}var base='https://truesource-web-pink.vercel.app/settings';var d=location.hostname;function go(t){if(t&&t.length>10){window.location.href=base+'?vtoken='+encodeURIComponent(t)+'&vdomain='+d;}}function deep(o,n){if(!o||n>8||typeof o!=='object')return null;if(Array.isArray(o)){for(var i=0;i<Math.min(o.length,30);i++){var r=deep(o[i],n+1);if(r)return r;}return null;}for(var k in o){try{var v=o[k];if(/^access_token/i.test(k)&&typeof v==='string'&&v.length>10)return v;var r=deep(v,n+1);if(r)return r;}catch(e){}}return null;}var c=document.cookie.match(/(?:^|;\\s*)access_token(?:_web)?=([^;]+)/);if(c){go(decodeURIComponent(c[1]));return;}var ws=['__NUXT__','__PRELOADED_STATE__','__INITIAL_STATE__','__REDUX_STATE__','gon'];for(var i=0;i<ws.length;i++){if(window[ws[i]]){var t=deep(window[ws[i]],0);if(t){go(t);return;}}}for(var i=0;i<localStorage.length;i++){try{var t=deep(JSON.parse(localStorage.getItem(localStorage.key(i))),0);if(t){go(t);return;}}catch(e){}}var orig=window.fetch,done=false;function cleanup(){window.fetch=orig;var e=document.getElementById('_ts');if(e)e.remove();}window.fetch=function(){return orig.apply(this,arguments).then(function(r){if(!done){r.clone().json().then(function(j){if(!done){var t=deep(j,0);if(t){done=true;cleanup();go(t);}}}).catch(function(){});}return r;});};var el=document.createElement('div');el.id='_ts';el.style.cssText='position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#14b8a6;color:#fff;padding:10px 18px;border-radius:8px;z-index:2147483647;font:600 13px/1 sans-serif;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.3)';el.textContent='Connecting TrueSource…';document.body.appendChild(el);orig('/api/v2/users/current',{credentials:'include'}).then(function(r){return r.json();}).then(function(j){if(!done){var t=deep(j,0);if(t){done=true;cleanup();go(t);return;}cleanup();alert('Automatic connect failed.\\nPlease use the \\'Email & Password\\' method in TrueSource Settings.');}}).catch(function(){if(!done){cleanup();alert('Error — are you logged in to Vinted?');}});setTimeout(function(){if(!done){cleanup();alert('Timed out.\\nPlease use \\'Email & Password\\' method in TrueSource Settings.');}},8000);})();`
+const BOOKMARKLET = `javascript:(function(){if(!location.hostname.includes('vinted')){alert('Please open this on Vinted first!');return;}var base='https://truesource-web-pink.vercel.app/settings';var d=location.hostname;function go(t){if(t&&t.length>10){window.location.href=base+'?vtoken='+encodeURIComponent(t)+'&vdomain='+d;}}function deep(o,n){if(!o||n>8||typeof o!=='object')return null;if(Array.isArray(o)){for(var i=0;i<Math.min(o.length,30);i++){var r=deep(o[i],n+1);if(r)return r;}return null;}for(var k in o){try{var v=o[k];if(/^access_token/i.test(k)&&typeof v==='string'&&v.length>10)return v;var r=deep(v,n+1);if(r)return r;}catch(e){}}return null;}var c=document.cookie.match(/(?:^|;\\s*)access_token(?:_web)?=([^;]+)/);if(c){go(decodeURIComponent(c[1]));return;}var ws=['__NUXT__','__PRELOADED_STATE__','__INITIAL_STATE__','__REDUX_STATE__','gon'];for(var i=0;i<ws.length;i++){if(window[ws[i]]){var t=deep(window[ws[i]],0);if(t){go(t);return;}}}for(var i=0;i<localStorage.length;i++){try{var t=deep(JSON.parse(localStorage.getItem(localStorage.key(i))),0);if(t){go(t);return;}}catch(e){}}var orig=window.fetch,done=false;function cleanup(){window.fetch=orig;var e=document.getElementById('_ts');if(e)e.remove();}window.fetch=function(){return orig.apply(this,arguments).then(function(r){if(!done){r.clone().json().then(function(j){if(!done){var t=deep(j,0);if(t){done=true;cleanup();go(t);}}}).catch(function(){});}return r;});};var el=document.createElement('div');el.id='_ts';el.style.cssText='position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#8b5cf6;color:#fff;padding:10px 18px;border-radius:8px;z-index:2147483647;font:600 13px/1 sans-serif;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.3)';el.textContent='Connecting TrueSource…';document.body.appendChild(el);orig('/api/v2/users/current',{credentials:'include'}).then(function(r){return r.json();}).then(function(j){if(!done){var t=deep(j,0);if(t){done=true;cleanup();go(t);return;}cleanup();alert('Automatic connect failed.\\nPlease use the \\'Email & Password\\' method in TrueSource Settings.');}}).catch(function(){if(!done){cleanup();alert('Error — are you logged in to Vinted?');}});setTimeout(function(){if(!done){cleanup();alert('Timed out.\\nPlease use \\'Email & Password\\' method in TrueSource Settings.');}},8000);})();`
 const SCRIPT = BOOKMARKLET
 
 interface DomainStatus { connected: boolean; email?: string; connectedAt?: number }
@@ -77,7 +77,7 @@ function ExtensionFlow({ onStart }: { onStart: () => void }) {
           <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 20, marginBottom: 2 }}>⌨️</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#14b8a6' }}>Ctrl + D</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)' }}>Ctrl + D</div>
               <div style={{ fontSize: 9, color: '#52525b', marginTop: 1 }}>drücken</div>
             </div>
             <div style={{ fontSize: 18, color: '#27272a' }}>→</div>
@@ -86,7 +86,7 @@ function ExtensionFlow({ onStart }: { onStart: () => void }) {
               <div style={{ fontSize: 8, color: '#71717a', marginBottom: 2 }}>Name</div>
               <div style={{ fontSize: 9, background: '#111', borderRadius: 2, padding: '2px 5px', color: '#fafafa', marginBottom: 4 }}>Connect Vinted</div>
               <div style={{ fontSize: 8, color: '#71717a', marginBottom: 2 }}>URL</div>
-              <div style={{ fontSize: 8, background: '#111', borderRadius: 2, padding: '2px 5px', color: '#14b8a6', fontFamily: 'monospace' }}>javascript:…</div>
+              <div style={{ fontSize: 8, background: '#111', borderRadius: 2, padding: '2px 5px', color: 'var(--accent)', fontFamily: 'monospace' }}>javascript:…</div>
             </div>
           </div>
         </div>
@@ -112,11 +112,11 @@ function ExtensionFlow({ onStart }: { onStart: () => void }) {
           <div style={{ background: '#18181b', borderTop: '1px solid #27272a', padding: '4px 10px', display: 'flex', gap: 6, alignItems: 'center' }}>
             <div style={{ fontSize: 9, color: '#52525b' }}>Amazon</div>
             <div style={{ fontSize: 9, color: '#52525b' }}>YouTube</div>
-            <div style={{ fontSize: 9, color: '#14b8a6', background: 'rgba(20,184,166,0.12)', border: '1px solid rgba(20,184,166,0.3)', borderRadius: 3, padding: '1px 6px', fontWeight: 600, animation: 's-click-btn 1s ease infinite' }}>⭐ Connect Vinted</div>
+            <div style={{ fontSize: 9, color: 'var(--accent)', background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 3, padding: '1px 6px', fontWeight: 600, animation: 's-click-btn 1s ease infinite' }}>⭐ Connect Vinted</div>
           </div>
           <div style={{ padding: 12, textAlign: 'center' }}>
             <div style={{ fontSize: 22 }}>✓</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#14b8a6', marginTop: 2 }}>Verbunden!</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', marginTop: 2 }}>Verbunden!</div>
           </div>
         </div>
       ),
@@ -136,8 +136,8 @@ function ExtensionFlow({ onStart }: { onStart: () => void }) {
             style={{ borderRadius: 10, border: isDone ? '1px solid rgba(34,197,94,0.3)' : isActive ? '1px solid var(--accent)' : '1px solid var(--border)', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: isActive ? 'rgba(20,184,166,0.04)' : 'var(--surface)' }}>
-              <div style={{ width: 26, height: 26, borderRadius: '50%', background: isDone ? 'rgba(34,197,94,0.15)' : isActive ? 'rgba(20,184,166,0.15)' : 'var(--card)', border: `2px solid ${isDone ? '#22c55e' : isActive ? 'var(--accent)' : 'var(--border2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 12, fontWeight: 700, color: isDone ? '#22c55e' : isActive ? 'var(--accent)' : 'var(--text3)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: isActive ? 'rgba(168,85,247,0.06)' : 'var(--surface)' }}>
+              <div style={{ width: 26, height: 26, borderRadius: '50%', background: isDone ? 'rgba(34,197,94,0.15)' : isActive ? 'rgba(168,85,247,0.15)' : 'var(--card)', border: `2px solid ${isDone ? '#22c55e' : isActive ? 'var(--accent)' : 'var(--border2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 12, fontWeight: 700, color: isDone ? '#22c55e' : isActive ? 'var(--accent)' : 'var(--text3)' }}>
                 {isDone ? '✓' : s.n}
               </div>
               <span style={{ fontSize: 14, fontWeight: 600, color: isDone ? 'var(--text2)' : isActive ? 'var(--text)' : 'var(--text3)' }}>{s.title}</span>
@@ -209,7 +209,7 @@ function TutorialSlides({ bookmarklet, onStart, onManual }: { bookmarklet: strin
             <div style={{ fontSize: 9, color: '#52525b', background: '#111113', borderRadius: 3, padding: '2px 7px' }}>Amazon</div>
             <div style={{ fontSize: 9, color: '#52525b', background: '#111113', borderRadius: 3, padding: '2px 7px' }}>YouTube</div>
             {slide >= 1 && (
-              <div style={{ fontSize: 9, color: '#14b8a6', background: 'rgba(20,184,166,0.12)', borderRadius: 3, padding: '2px 8px', border: '1px solid rgba(20,184,166,0.2)', animation: slide === 1 ? 's-bar-pop 0.5s ease both' : 's-click-btn 1.2s ease 0.5s infinite', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: 9, color: 'var(--accent)', background: 'rgba(168,85,247,0.12)', borderRadius: 3, padding: '2px 8px', border: '1px solid rgba(168,85,247,0.24)', animation: slide === 1 ? 's-bar-pop 0.5s ease both' : 's-click-btn 1.2s ease 0.5s infinite', whiteSpace: 'nowrap' }}>
                 ⭐ Connect Vinted
               </div>
             )}
@@ -228,12 +228,12 @@ function TutorialSlides({ bookmarklet, onStart, onManual }: { bookmarklet: strin
               <div style={{ position: 'absolute', right: 16, top: 18, background: '#222224', border: '1px solid #3f3f46', borderRadius: 8, padding: '10px 14px', width: 160, animation: 's-redirect 4.5s ease infinite' }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: '#fafafa', marginBottom: 6 }}>Add bookmark</div>
                 <div style={{ fontSize: 8, color: '#71717a', marginBottom: 4 }}>Name</div>
-                <div style={{ fontSize: 9, background: '#111113', borderRadius: 3, padding: '3px 6px', color: '#14b8a6', marginBottom: 6 }}>Connect Vinted</div>
+                <div style={{ fontSize: 9, background: '#111113', borderRadius: 3, padding: '3px 6px', color: 'var(--accent)', marginBottom: 6 }}>Connect Vinted</div>
                 <div style={{ fontSize: 8, color: '#71717a', marginBottom: 4 }}>URL</div>
                 <div style={{ fontSize: 7, background: '#111113', borderRadius: 3, padding: '3px 6px', color: '#52525b', marginBottom: 8, fontFamily: 'monospace', overflow: 'hidden', whiteSpace: 'nowrap' }}>javascript:(func…</div>
                 <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                   <div style={{ fontSize: 8, padding: '2px 6px', borderRadius: 3, background: '#3f3f46', color: '#a1a1aa' }}>Cancel</div>
-                  <div style={{ fontSize: 8, padding: '2px 6px', borderRadius: 3, background: '#14b8a6', color: '#fff', animation: 's-dot-blink 1.2s ease-in-out infinite' }}>Save</div>
+                  <div style={{ fontSize: 8, padding: '2px 6px', borderRadius: 3, background: 'var(--accent)', color: '#fff', animation: 's-dot-blink 1.2s ease-in-out infinite' }}>Save</div>
                 </div>
               </div>
             </div>
@@ -265,7 +265,7 @@ function TutorialSlides({ bookmarklet, onStart, onManual }: { bookmarklet: strin
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(9,9,11,0.85)', borderRadius: 10, animation: 's-redirect 4.5s ease infinite' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 26, marginBottom: 4 }}>✓</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#14b8a6' }}>Connected!</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>Connected!</div>
                   <div style={{ fontSize: 10, color: '#52525b', marginTop: 3 }}>Redirecting back…</div>
                 </div>
               </div>
@@ -275,7 +275,7 @@ function TutorialSlides({ bookmarklet, onStart, onManual }: { bookmarklet: strin
 
         {/* Progress bar */}
         <div style={{ height: 2, background: '#27272a' }}>
-          <div style={{ height: '100%', background: '#14b8a6', transition: 'width 0.1s linear', width: `${progress}%` }} />
+          <div style={{ height: '100%', background: 'var(--grad-accent)', transition: 'width 0.1s linear', width: `${progress}%` }} />
         </div>
       </div>
 
@@ -384,10 +384,10 @@ function SettingsInner() {
         {/* Auto-working notice */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 14,
-          background: 'rgba(20,184,166,0.06)', border: '1px solid rgba(20,184,166,0.2)',
+          background: 'rgba(168,85,247,0.07)', border: '1px solid rgba(168,85,247,0.24)',
           borderRadius: 10, padding: '14px 16px', marginBottom: 20,
         }}>
-          <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(20,184,166,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(168,85,247,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <div>
@@ -400,8 +400,8 @@ function SettingsInner() {
         {autoMsg && (
           <div style={{
             padding: '12px 16px', borderRadius: 8, marginBottom: 18, fontSize: 14, fontWeight: 500,
-            background: autoMsg.ok ? 'rgba(20,184,166,0.06)' : 'rgba(239,68,68,0.06)',
-            border: `1px solid ${autoMsg.ok ? 'rgba(20,184,166,0.2)' : 'rgba(239,68,68,0.2)'}`,
+            background: autoMsg.ok ? 'rgba(168,85,247,0.07)' : 'rgba(239,68,68,0.06)',
+            border: `1px solid ${autoMsg.ok ? 'rgba(168,85,247,0.24)' : 'rgba(239,68,68,0.2)'}`,
             color: autoMsg.ok ? 'var(--accent)' : 'var(--danger)',
             display: 'flex', alignItems: 'center', gap: 10,
           }}>
@@ -466,7 +466,7 @@ function SettingsInner() {
                 @keyframes s-drag      { 0%,20%{transform:translate(0,0);opacity:1} 60%{transform:translate(4px,-52px);opacity:1} 75%,100%{transform:translate(4px,-52px);opacity:0} }
                 @keyframes s-cursor    { 0%,20%{transform:translate(18px,8px)} 60%{transform:translate(22px,-44px)} 75%,100%{transform:translate(22px,-44px)} }
                 @keyframes s-bar-pop   { 0%,55%{opacity:0;max-width:0;padding:0} 70%,100%{opacity:1;max-width:120px;padding:2px 8px} }
-                @keyframes s-click-btn { 0%,60%{transform:scale(1);background:rgba(20,184,166,0.1)} 70%{transform:scale(0.93);background:rgba(20,184,166,0.25)} 80%,100%{transform:scale(1);background:rgba(20,184,166,0.1)} }
+                @keyframes s-click-btn { 0%,60%{transform:scale(1);background:rgba(168,85,247,0.1)} 70%{transform:scale(0.93);background:rgba(168,85,247,0.26)} 80%,100%{transform:scale(1);background:rgba(168,85,247,0.1)} }
                 @keyframes s-redirect  { 0%,70%{opacity:0} 80%,100%{opacity:1} }
                 @keyframes s-dot-blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
                 @keyframes s-progress  { from{width:0%} to{width:100%} }
@@ -476,18 +476,18 @@ function SettingsInner() {
               {/* Method 1: Email + Password — RECOMMENDED */}
               <div
                 onClick={handlePassword}
-                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', borderRadius: 10, background: 'rgba(20,184,166,0.04)', border: '1.5px solid var(--accent)', cursor: 'pointer', marginBottom: 10, transition: 'background 0.15s' }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(20,184,166,0.08)'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(20,184,166,0.04)'}
+                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', borderRadius: 10, background: 'rgba(168,85,247,0.06)', border: '1.5px solid var(--accent)', cursor: 'pointer', marginBottom: 10, transition: 'background 0.15s' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(168,85,247,0.11)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(168,85,247,0.06)'}
               >
-                <div style={{ width: 38, height: 38, borderRadius: 8, background: 'rgba(20,184,166,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 8, background: 'rgba(168,85,247,0.13)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M12 15h8"/><path d="M18 12v6"/><path d="M15 12v6"/></svg>
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>Via Email &amp; Password</div>
                   <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5 }}>Works with Google login — just enter your email &amp; a Vinted password</div>
                 </div>
-                <div style={{ fontSize: 10, background: 'rgba(20,184,166,0.15)', color: 'var(--accent)', padding: '4px 8px', borderRadius: 4, fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>Easiest</div>
+                <div style={{ fontSize: 10, background: 'rgba(168,85,247,0.16)', color: 'var(--accent)', padding: '4px 8px', borderRadius: 4, fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>Easiest</div>
               </div>
 
               {/* Method 2: Bookmarklet */}
@@ -658,7 +658,7 @@ function PasswordConnect({ domains, onBack, onSuccess }: { domains: string[]; on
       </p>
 
       {/* "No password?" hint */}
-      <div style={{ background: 'rgba(20,184,166,0.05)', border: '1px solid rgba(20,184,166,0.2)', borderRadius: 8, padding: '12px 14px', marginBottom: 20 }}>
+      <div style={{ background: 'rgba(168,85,247,0.07)', border: '1px solid rgba(168,85,247,0.24)', borderRadius: 8, padding: '12px 14px', marginBottom: 20 }}>
         <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', margin: '0 0 4px' }}>Registered with Google?</p>
         <p style={{ fontSize: 12, color: 'var(--text2)', margin: 0, lineHeight: 1.6 }}>
           No problem! Go to <strong style={{ color: 'var(--text)' }}>vinted.de</strong> → click <strong style={{ color: 'var(--text)' }}>"Forgot password"</strong> → enter your Google email → check your inbox → set a new password → come back here!

@@ -210,7 +210,7 @@ export default function CreateListingPage() {
                     <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                       {listing.category}
                     </span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', background: 'rgba(20,201,180,0.08)', border: '1px solid rgba(20,201,180,0.2)', borderRadius: 4, padding: '1px 7px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', background: 'rgba(168,85,247,0.10)', border: '1px solid rgba(168,85,247,0.24)', borderRadius: 4, padding: '1px 7px' }}>
                       {listing.condition}
                     </span>
                   </div>

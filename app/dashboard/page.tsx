@@ -99,14 +99,14 @@ function SetupGuide({ hasSearches }: { hasSearches: boolean }) {
             <div key={i} style={{
               display: 'flex', alignItems: 'flex-start', gap: 16, padding: '18px 20px',
               background: isPast ? 'var(--surface)' : isNext ? 'var(--card)' : 'transparent',
-              border: `1px solid ${isPast ? 'rgba(20,201,180,0.18)' : isNext ? 'var(--border2)' : 'var(--border)'}`,
+              border: `1px solid ${isPast ? 'rgba(168,85,247,0.24)' : isNext ? 'var(--border2)' : 'var(--border)'}`,
               borderRadius: 12, opacity: isFuture ? 0.35 : 1,
             }}>
               <div style={{
                 width: 38, height: 38, borderRadius: 9, flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: isPast ? 'rgba(20,201,180,0.08)' : 'var(--surface)',
-                border: `1px solid ${isPast ? 'rgba(20,201,180,0.25)' : 'var(--border)'}`,
+                background: isPast ? 'rgba(168,85,247,0.10)' : 'var(--surface)',
+                border: `1px solid ${isPast ? 'rgba(168,85,247,0.28)' : 'var(--border)'}`,
                 color: isPast ? 'var(--accent)' : isNext ? 'var(--text2)' : 'var(--text3)',
               }}>
                 {isPast
@@ -116,15 +116,15 @@ function SetupGuide({ hasSearches }: { hasSearches: boolean }) {
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Step {step.num}</span>
-                  {isPast && <span style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--accent)', background: 'rgba(20,201,180,0.08)', padding: '1px 7px', borderRadius: 4, border: '1px solid rgba(20,201,180,0.18)' }}>Complete</span>}
-                  {isNext && <span style={{ fontSize: 10.5, fontWeight: 700, background: 'var(--accent)', padding: '1px 7px', borderRadius: 4, color: '#04201c' }}>Next</span>}
+                  {isPast && <span style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--accent)', background: 'rgba(168,85,247,0.10)', padding: '1px 7px', borderRadius: 4, border: '1px solid rgba(168,85,247,0.24)' }}>Complete</span>}
+                  {isNext && <span style={{ fontSize: 10.5, fontWeight: 700, background: 'var(--accent)', padding: '1px 7px', borderRadius: 4, color: '#fff' }}>Next</span>}
                 </div>
                 <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0, marginBottom: 4 }}>{step.title}</p>
                 <p style={{ fontSize: 13, color: 'var(--text2)', margin: 0, lineHeight: 1.65 }}>{step.desc}</p>
                 {step.action && isNext && (
                   <a href={step.action.href} style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14,
-                    padding: '8px 16px', borderRadius: 8, background: 'var(--accent)', color: '#04201c',
+                    padding: '8px 16px', borderRadius: 8, background: 'var(--grad-accent)', color: '#fff',
                     fontWeight: 700, fontSize: 13,
                   }}>{step.action.label}
                     <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -341,9 +341,9 @@ export default function DashboardPage() {
               {newCount > 0 && (
                 <span style={{
                   fontSize: 12, fontWeight: 700,
-                  background: 'var(--grad-accent)', color: '#04201c',
+                  background: 'var(--grad-accent)', color: '#fff',
                   borderRadius: 20, padding: '3px 10px',
-                  boxShadow: '0 3px 12px rgba(20,201,180,0.35)',
+                  boxShadow: '0 3px 14px rgba(168,85,247,0.42)',
                 }}>+{newCount} new</span>
               )}
             </div>
@@ -360,8 +360,8 @@ export default function DashboardPage() {
               title={soundOn ? 'Sound enabled' : 'Sound disabled'}
               style={{
                 padding: '7px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-                background: soundOn ? 'rgba(20,201,180,0.1)' : 'var(--card)',
-                border: `1px solid ${soundOn ? 'rgba(20,201,180,0.3)' : 'var(--border2)'}`,
+                background: soundOn ? 'rgba(168,85,247,0.12)' : 'var(--card)',
+                border: `1px solid ${soundOn ? 'rgba(168,85,247,0.34)' : 'var(--border2)'}`,
                 color: soundOn ? 'var(--accent)' : 'var(--text3)',
                 display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.14s',
               }}
@@ -381,8 +381,8 @@ export default function DashboardPage() {
               title={notifPerm === 'granted' ? 'Notifications enabled' : 'Enable notifications'}
               style={{
                 padding: '7px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-                background: notifPerm === 'granted' ? 'rgba(20,201,180,0.1)' : 'var(--card)',
-                border: `1px solid ${notifPerm === 'granted' ? 'rgba(20,201,180,0.3)' : 'var(--border2)'}`,
+                background: notifPerm === 'granted' ? 'rgba(168,85,247,0.12)' : 'var(--card)',
+                border: `1px solid ${notifPerm === 'granted' ? 'rgba(168,85,247,0.34)' : 'var(--border2)'}`,
                 color: notifPerm === 'granted' ? 'var(--accent)' : 'var(--text3)',
                 display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.14s',
               }}
@@ -417,7 +417,7 @@ export default function DashboardPage() {
               style={{ fontSize: 13, padding: '8px 16px' }}
             >
               {anyLoading
-                ? <><span className="spin" style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid rgba(4,32,28,0.3)', borderTop: '2px solid #04201c', display: 'inline-block' }} />Scanning</>
+                ? <><span className="spin" style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.32)', borderTop: '2px solid #fff', display: 'inline-block' }} />Scanning</>
                 : <><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Scan now</>
               }
             </button>
@@ -664,9 +664,9 @@ export default function DashboardPage() {
         .dismiss-btn { opacity: 0 !important; }
         div:hover > .dismiss-btn { opacity: 1 !important; }
         @keyframes itemFlash {
-          0%   { box-shadow: 0 0 0 0 rgba(20,201,180,0.55); border-color: rgba(20,201,180,0.3) !important; }
-          60%  { box-shadow: 0 0 0 10px rgba(20,201,180,0); }
-          100% { box-shadow: 0 0 0 0 rgba(20,201,180,0); }
+          0%   { box-shadow: 0 0 0 0 rgba(168,85,247,0.58); border-color: rgba(168,85,247,0.36) !important; }
+          60%  { box-shadow: 0 0 0 10px rgba(168,85,247,0); }
+          100% { box-shadow: 0 0 0 0 rgba(168,85,247,0); }
         }
         .item-new > a { animation: itemFlash 1.4s ease-out 1; }
       `}</style>
