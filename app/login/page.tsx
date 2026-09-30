@@ -49,10 +49,10 @@ function LoginContent() {
       padding: 24, fontFamily: 'var(--font-sans)',
     }}>
       <div className="login-card" style={{
-        background: 'rgba(20,20,23,0.82)', border: '1px solid rgba(255,255,255,0.09)',
+        background: 'linear-gradient(145deg, rgba(31,22,34,0.94), rgba(17,16,20,0.94))', border: '1px solid rgba(157,82,170,0.38)',
         borderRadius: 12, padding: '46px 40px', width: '100%', maxWidth: 430,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
-        boxShadow: '0 32px 100px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.05)',
+        boxShadow: '0 32px 100px rgba(0,0,0,0.62), 0 0 48px rgba(122,62,132,0.14), inset 0 1px 0 rgba(255,255,255,0.05)',
         backdropFilter: 'blur(30px) saturate(130%)',
       }}>
 
