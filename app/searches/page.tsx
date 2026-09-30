@@ -89,7 +89,7 @@ export default function SearchesPage() {
                 textAlign: 'center', padding: '48px 24px',
                 background: 'var(--card)',
                 border: '1px solid var(--border)',
-                borderRadius: 22,
+                borderRadius: 14,
               }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 10,
@@ -112,7 +112,7 @@ export default function SearchesPage() {
                   display: 'flex', alignItems: 'center',
                   background: 'var(--card)',
                   border: '1px solid var(--border)',
-                  borderRadius: 20, overflow: 'hidden',
+                  borderRadius: 12, overflow: 'hidden',
                   opacity: s.enabled ? 1 : 0.45,
                   transition: 'opacity 0.2s, border-color 0.15s, box-shadow 0.15s',
                 }}

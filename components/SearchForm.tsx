@@ -165,7 +165,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
       display: 'flex', flexDirection: 'column', gap: 18,
       background: 'var(--card)',
       border: '1px solid var(--border)',
-      borderRadius: 24,
+      borderRadius: 14,
       padding: 26,
     }}>
       <div>
@@ -211,10 +211,10 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
                 type="button"
                 onClick={() => handlePlatformChange(opt.value)}
                 style={{
-                  padding: '10px 4px', borderRadius: 13,
+                  padding: '10px 4px', borderRadius: 9,
                   fontSize: 12, fontWeight: 500,
                   cursor: 'pointer',
-                  fontFamily: 'Geist, -apple-system, system-ui, sans-serif',
+                  fontFamily: 'var(--font-sans)',
                   border: active ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
                   transition: 'all 0.15s ease',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,

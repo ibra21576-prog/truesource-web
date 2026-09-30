@@ -101,11 +101,11 @@ function SetupGuide({ hasSearches }: { hasSearches: boolean }) {
               display: 'flex', alignItems: 'flex-start', gap: 16, padding: '18px 20px',
               background: isPast ? 'var(--surface)' : isNext ? 'var(--card)' : 'transparent',
               border: `1px solid ${isPast ? 'rgba(168,85,247,0.24)' : isNext ? 'var(--border2)' : 'var(--border)'}`,
-              borderRadius: 20, opacity: isFuture ? 0.35 : 1,
+              borderRadius: 14, opacity: isFuture ? 0.35 : 1,
               boxShadow: isNext ? 'var(--shadow-card)' : 'none',
             }}>
               <div style={{
-                width: 42, height: 42, borderRadius: 13, flexShrink: 0,
+                width: 42, height: 42, borderRadius: 9, flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: isPast ? 'rgba(168,85,247,0.10)' : 'var(--surface)',
                 border: `1px solid ${isPast ? 'rgba(168,85,247,0.28)' : 'var(--border)'}`,
@@ -192,7 +192,7 @@ export default function DashboardPage() {
     try {
       const n = new Notification(`${item.platform.toUpperCase()} — ${item.price || 'No price'}`, {
         body: item.title || 'New listing found',
-        icon: '/truesource-logo-purple.png',
+        icon: '/truesource-mark-v2.png',
         tag: item.id,
       })
       n.onclick = () => { window.open(item.url, '_blank'); n.close() }
@@ -345,7 +345,7 @@ export default function DashboardPage() {
                 <span style={{
                   fontSize: 12, fontWeight: 700,
                   background: 'var(--grad-accent)', color: '#fff',
-                  borderRadius: 20, padding: '3px 10px',
+                  borderRadius: 7, padding: '3px 10px',
                   boxShadow: '0 3px 14px rgba(168,85,247,0.42)',
                 }}>+{newCount} new</span>
               )}
@@ -433,7 +433,7 @@ export default function DashboardPage() {
         {me && (
           <div className="glass-panel" style={{
             background: 'var(--card)', border: '1px solid var(--border)',
-            borderRadius: 22, padding: '20px 22px', marginBottom: 28,
+            borderRadius: 14, padding: '20px 22px', marginBottom: 28,
             display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
           }}>
             <div style={{
@@ -471,7 +471,7 @@ export default function DashboardPage() {
           ].map((s, i) => (
             <div key={i} className="anim-in glass-panel stat-card" style={{
               background: 'var(--card)', border: '1px solid var(--border)',
-              borderRadius: 22,
+              borderRadius: 14,
             }}>
               <div className="stat-card-top">
                 <span className="stat-card-label">{s.label}</span>
@@ -519,7 +519,7 @@ export default function DashboardPage() {
             marginBottom: 18, flexWrap: 'wrap',
             padding: '10px 14px',
             background: 'var(--card)', border: '1px solid var(--border)',
-            borderRadius: 20,
+            borderRadius: 14,
           }}>
             <div style={{ display: 'flex', gap: 4, flex: 1, flexWrap: 'wrap' }}>
               {(['all', ...platsWithItems] as string[]).map(plat => {
@@ -530,7 +530,7 @@ export default function DashboardPage() {
                 const col = PLAT_COLOR[plat] || 'var(--accent)'
                 return (
                   <button key={plat} onClick={() => setPlatFilter(plat)} style={{
-                    padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
                     background: active ? col : 'transparent',
                     border: `1px solid ${active ? col : 'transparent'}`,
                     color: active ? '#fff' : 'var(--text3)',
@@ -637,7 +637,7 @@ export default function DashboardPage() {
                   onClick={loadMoreArchive}
                   disabled={loadingMore}
                   style={{
-                    padding: '10px 22px', borderRadius: 999, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
+                    padding: '10px 22px', borderRadius: 10, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
                     background: 'var(--card)', border: '1px solid var(--border2)',
                     color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 7,
                     transition: 'all 0.14s',

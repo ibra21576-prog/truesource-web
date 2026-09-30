@@ -46,11 +46,11 @@ function LoginContent() {
     <div className="login-shell" style={{
       minHeight: '100vh', background: 'var(--bg)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: 24, fontFamily: 'Geist, sans-serif',
+      padding: 24, fontFamily: 'var(--font-sans)',
     }}>
       <div className="login-card" style={{
         background: 'rgba(20,20,23,0.82)', border: '1px solid rgba(255,255,255,0.09)',
-        borderRadius: 34, padding: '46px 40px', width: '100%', maxWidth: 430,
+        borderRadius: 18, padding: '46px 40px', width: '100%', maxWidth: 430,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
         boxShadow: '0 32px 100px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.05)',
         backdropFilter: 'blur(30px) saturate(130%)',
@@ -98,7 +98,7 @@ function LoginContent() {
         {isIframe ? (
           <button onClick={openPopup} style={{
             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            padding: '14px 20px', borderRadius: 17, fontWeight: 700, fontSize: 15,
+            padding: '14px 20px', borderRadius: 10, fontWeight: 700, fontSize: 15,
             background: '#FA4616', color: '#fff', border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer',
             boxShadow: '0 12px 34px rgba(250,70,22,0.30), inset 0 1px 0 rgba(255,255,255,0.22)',
           }}>
@@ -112,7 +112,7 @@ function LoginContent() {
         ) : (
         <a href="/api/auth/whop" style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          padding: '14px 20px', borderRadius: 17, fontWeight: 700, fontSize: 15,
+          padding: '14px 20px', borderRadius: 10, fontWeight: 700, fontSize: 15,
           background: '#FA4616', color: '#fff', textDecoration: 'none',
           border: '1px solid rgba(255,255,255,0.18)', boxShadow: '0 12px 34px rgba(250,70,22,0.30), inset 0 1px 0 rgba(255,255,255,0.22)', transition: 'all 0.18s',
         }}>

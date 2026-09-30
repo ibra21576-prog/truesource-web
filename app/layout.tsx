@@ -4,7 +4,7 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'TrueSource Flip',
   description: 'Deal Monitor für Vinted, eBay & Kleinanzeigen',
-  icons: { icon: '/truesource-logo-purple.png' },
+  icons: { icon: '/truesource-mark-v2.png' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

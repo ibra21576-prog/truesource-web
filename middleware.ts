@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const PUBLIC = ['/login', '/api/auth', '/_next', '/logo', '/truesource-logo-purple.png', '/favicon', '/api/cron', '/api/debug-scrape', '/api/admin-reset', '/api/img', '/api/status']
+const PUBLIC = ['/login', '/api/auth', '/_next', '/logo', '/truesource-logo-purple.png', '/truesource-mark-v2.png', '/favicon', '/api/cron', '/api/debug-scrape', '/api/admin-reset', '/api/img', '/api/status']
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl

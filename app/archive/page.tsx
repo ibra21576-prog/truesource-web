@@ -104,7 +104,7 @@ export default function ArchivePage() {
         <div className="glass-panel" style={{
           display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center',
           background: 'var(--card)', border: '1px solid var(--border)',
-          borderRadius: 20, padding: '12px 14px',
+          borderRadius: 12, padding: '12px 14px',
         }}>
           <div style={{ position: 'relative', flex: 1, minWidth: 180, maxWidth: 300 }}>
             <input
@@ -126,8 +126,8 @@ export default function ArchivePage() {
               const active = platform === f.value
               return (
                 <button key={f.value} onClick={() => setPlatform(f.value)} style={{
-                  padding: '7px 13px', borderRadius: 999, fontSize: 13, fontWeight: 500,
-                  cursor: 'pointer', fontFamily: 'Geist, -apple-system, system-ui, sans-serif',
+                  padding: '7px 13px', borderRadius: 9, fontSize: 13, fontWeight: 500,
+                  cursor: 'pointer', fontFamily: 'var(--font-sans)',
                   border: 'none', transition: 'all 0.15s ease',
                   ...(active
                     ? { background: 'var(--surface)', color: 'var(--text)', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }
@@ -152,7 +152,7 @@ export default function ArchivePage() {
         ) : filtered.length === 0 ? (
           <div className="glass-panel" style={{
             textAlign: 'center', padding: '64px 24px',
-            background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 22,
+            background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14,
           }}>
             <div style={{
               width: 52, height: 52, borderRadius: 12, background: 'var(--surface)',
@@ -198,7 +198,7 @@ export default function ArchivePage() {
                     cursor: safePage === 1 ? 'default' : 'pointer',
                     border: '1px solid var(--border)',
                     background: 'var(--card)', color: safePage === 1 ? 'var(--text3)' : 'var(--text)',
-                    fontFamily: 'Geist, -apple-system, system-ui, sans-serif',
+                    fontFamily: 'var(--font-sans)',
                     transition: 'all 0.15s', opacity: safePage === 1 ? 0.4 : 1,
                   }}
                 >
@@ -217,7 +217,7 @@ export default function ArchivePage() {
                       style={{
                         width: 36, height: 36, borderRadius: 8, fontSize: 13, fontWeight: 600,
                         cursor: 'pointer', border: '1px solid',
-                        fontFamily: 'Geist, -apple-system, system-ui, sans-serif',
+                        fontFamily: 'var(--font-sans)',
                         transition: 'all 0.15s',
                         ...(n === safePage
                           ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#fff' }
@@ -239,7 +239,7 @@ export default function ArchivePage() {
                     cursor: safePage === totalPages ? 'default' : 'pointer',
                     border: '1px solid var(--border)',
                     background: 'var(--card)', color: safePage === totalPages ? 'var(--text3)' : 'var(--text)',
-                    fontFamily: 'Geist, -apple-system, system-ui, sans-serif',
+                    fontFamily: 'var(--font-sans)',
                     transition: 'all 0.15s', opacity: safePage === totalPages ? 0.4 : 1,
                   }}
                 >

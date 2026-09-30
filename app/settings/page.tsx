@@ -307,7 +307,7 @@ function TutorialSlides({ bookmarklet, onStart, onManual }: { bookmarklet: strin
       <button onClick={onStart} className="btn-primary" style={{ width: '100%', paddingTop: 13, paddingBottom: 13, fontSize: 15, marginBottom: 12 }}>
         Go to Vinted →
       </button>
-      <button onClick={onManual} style={{ width: '100%', background: 'none', border: 'none', color: 'var(--text3)', fontSize: 13, cursor: 'pointer', padding: '8px 0', fontFamily: 'Geist, sans-serif' }}>
+      <button onClick={onManual} style={{ width: '100%', background: 'none', border: 'none', color: 'var(--text3)', fontSize: 13, cursor: 'pointer', padding: '8px 0', fontFamily: 'var(--font-sans)' }}>
         Bookmark not working? Enter token manually →
       </button>
     </div>
@@ -386,7 +386,7 @@ function SettingsInner() {
         <div className="glass-panel" style={{
           display: 'flex', alignItems: 'center', gap: 14,
           background: 'rgba(168,85,247,0.07)', border: '1px solid rgba(168,85,247,0.24)',
-          borderRadius: 20, padding: '17px 18px', marginBottom: 22,
+          borderRadius: 12, padding: '17px 18px', marginBottom: 22,
         }}>
           <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(168,85,247,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -418,7 +418,7 @@ function SettingsInner() {
         {!loading && connectedDomains.length > 0 && (
           <div style={{
             background: 'var(--card)', border: '1px solid var(--border)',
-            borderRadius: 22, padding: '20px', marginBottom: 18,
+            borderRadius: 14, padding: '20px', marginBottom: 18,
           }}>
             <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text3)', marginBottom: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Connected</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -437,7 +437,7 @@ function SettingsInner() {
                     </div>
                     <button onClick={() => disconnect(d)} style={{
                       fontSize: 12, color: 'var(--text3)', background: 'none', border: 'none',
-                      cursor: 'pointer', padding: '4px 8px', borderRadius: 6, fontFamily: 'Geist, sans-serif',
+                      cursor: 'pointer', padding: '4px 8px', borderRadius: 6, fontFamily: 'var(--font-sans)',
                       transition: 'color 0.15s',
                     }}
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--danger)'}
@@ -453,7 +453,7 @@ function SettingsInner() {
         {/* Connect card */}
         <div className="glass-panel" style={{
           background: 'var(--card)', border: '1px solid var(--border)',
-          borderRadius: 22, overflow: 'hidden',
+          borderRadius: 14, overflow: 'hidden',
         }}>
 
           {step === 'idle' && (
@@ -563,7 +563,7 @@ function SettingsInner() {
                 </div>
               </div>
 
-              <button onClick={() => setStep('idle')} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'Geist, sans-serif' }}>← Zurück</button>
+              <button onClick={() => setStep('idle')} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'var(--font-sans)' }}>← Zurück</button>
             </div>
           )}
 
@@ -624,7 +624,7 @@ function ManualConnect({ domains, onBack, onSuccess }: { domains: string[]; onBa
       <button onClick={save} disabled={!token.trim() || saving} className="btn-primary" style={{ width: '100%', paddingTop: 12, paddingBottom: 12, fontSize: 15, marginBottom: 12 }}>
         {saving ? 'Connecting…' : 'Connect →'}
       </button>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'Geist, sans-serif' }}>← Back</button>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'var(--font-sans)' }}>← Back</button>
     </div>
   )
 }
@@ -697,7 +697,7 @@ function PasswordConnect({ domains, onBack, onSuccess }: { domains: string[]; on
           />
           <button
             onClick={() => setShowPw(v => !v)}
-            style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 13, padding: 0, fontFamily: 'Geist, sans-serif' }}
+            style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 13, padding: 0, fontFamily: 'var(--font-sans)' }}
           >{showPw ? 'Hide' : 'Show'}</button>
         </div>
       </div>
@@ -712,7 +712,7 @@ function PasswordConnect({ domains, onBack, onSuccess }: { domains: string[]; on
       >
         {saving ? 'Connecting…' : 'Connect Vinted →'}
       </button>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'Geist, sans-serif' }}>← Back</button>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'var(--font-sans)' }}>← Back</button>
     </div>
   )
 }

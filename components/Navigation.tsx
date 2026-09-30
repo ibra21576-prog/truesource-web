@@ -117,13 +117,13 @@ export default function Navigation() {
           return (
             <Link key={l.href} href={l.href} className={`sidebar-link${active ? ' active' : ''}`} style={{
               display: 'flex', alignItems: 'center', gap: 10,
-              padding: '11px 12px', borderRadius: 14, fontSize: 13.5,
+              padding: '11px 12px', borderRadius: 9, fontSize: 13.5,
               fontWeight: active ? 600 : 400,
               textDecoration: 'none',
               transition: 'background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s',
               color: active ? 'var(--text)' : 'var(--text3)',
-              background: active ? 'linear-gradient(135deg, rgba(169,112,255,0.18), rgba(124,77,255,0.08))' : 'transparent',
-              border: `1px solid ${active ? 'rgba(188,143,255,0.16)' : 'transparent'}`,
+              background: active ? 'linear-gradient(135deg, rgba(157,82,170,0.20), rgba(122,62,132,0.09))' : 'transparent',
+              border: `1px solid ${active ? 'rgba(157,82,170,0.20)' : 'transparent'}`,
               boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.045)' : 'none',
             }}>
               <span style={{ opacity: active ? 1 : 0.6, color: active ? 'var(--accent)' : 'currentColor' }}>
@@ -138,7 +138,7 @@ export default function Navigation() {
       {/* Status panel */}
       <div style={{ padding: '12px', borderTop: '1px solid var(--border)' }}>
         <div style={{
-          borderRadius: 16, background: 'rgba(255,255,255,0.035)',
+          borderRadius: 10, background: 'rgba(255,255,255,0.035)',
           border: `1px solid ${live ? 'rgba(168,85,247,0.28)' : 'var(--border)'}`,
           padding: '13px 14px', marginBottom: 8,
         }}>
@@ -161,7 +161,7 @@ export default function Navigation() {
           href="/api/auth/logout"
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            padding: '9px 11px', borderRadius: 12, fontSize: 13,
+            padding: '9px 11px', borderRadius: 8, fontSize: 13,
             fontWeight: 400, color: 'var(--text3)',
             textDecoration: 'none', transition: 'all 0.12s',
           }}
