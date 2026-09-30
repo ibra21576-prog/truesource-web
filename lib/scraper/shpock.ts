@@ -61,7 +61,54 @@ export async function fetchShpock(search: Search): Promise<ScrapedItem[]> {
       console.log(`[shpock] ${loc} error: ${e.message}`)
     }
   }
-  return []
+  return fetchIndexedShpock(search)
+}
+
+async function fetchIndexedShpock(search: Search): Promise<ScrapedItem[]> {
+  try {
+    const query = `site:shpock.com/en-gb/i/ "${search.query}"`
+    const target = `http://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`
+    const res = await fetch(`https://r.jina.ai/${target}`, {
+      headers: { Accept: 'text/plain', 'User-Agent': UA },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return []
+    const markdown = await res.text()
+    const items: ScrapedItem[] = []
+    const seen = new Set<string>()
+    const pattern = /\d+\.\[([^\]]+)\]\(http:\/\/duckduckgo\.com\/l\/\?uddg=([^&\)]+)[^\)]*\)/g
+    let match: RegExpExecArray | null
+    while ((match = pattern.exec(markdown))) {
+      const url = decodeURIComponent(match[2])
+      const id = url.match(/\/i\/([^\/]+)/)?.[1]
+      if (!id || seen.has(id) || !url.includes('shpock.com/')) continue
+      const rawTitle = match[1].replace(/\s+-\s+Shpock.*$/i, '')
+      const priceMatch = rawTitle.match(/\s+for\s+([€£$][\d.,]+).*$/i)
+      const title = rawTitle.replace(/\s+in\s+.+?\s+for\s+[€£$][\d.,]+.*$/i, '').trim()
+      if (!title.toLowerCase().includes(search.query.toLowerCase())) continue
+      seen.add(id)
+      items.push({ id, title, price: priceMatch?.[1] || '', url, image: null, platform: 'shpock' })
+      if (items.length >= 20) break
+    }
+    console.log(`[shpock] indexed fallback got ${items.length} items`)
+    if (items.length > 0) return applyPriceFilter(items, search)
+    return [liveShpockSearch(search)]
+  } catch (e: any) {
+    console.log(`[shpock] indexed fallback error: ${e.message}`)
+    return [liveShpockSearch(search)]
+  }
+}
+
+function liveShpockSearch(search: Search): ScrapedItem {
+  return {
+    id: `live-search-${search.query.toLowerCase()}`,
+    title: `Shpock Live-Ergebnisse: ${search.query}`,
+    price: '',
+    url: `https://www.shpock.com/en-gb/results?q=${encodeURIComponent(search.query)}`,
+    image: null,
+    platform: 'shpock',
+  }
 }
 
 function parseApolloState(apollo: Record<string, any>): ScrapedItem[] {

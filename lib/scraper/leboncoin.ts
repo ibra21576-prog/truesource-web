@@ -1,5 +1,5 @@
 import { ScrapedItem, Search } from './types'
-import { proxyFetch, scraperApiFetch } from './proxy'
+import { proxyFetch } from './proxy'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 // Public API key used by leboncoin's own web frontend
@@ -42,17 +42,6 @@ export async function fetchLeboncoin(search: Search): Promise<ScrapedItem[]> {
     }
     let res = await proxyFetch('https://api.leboncoin.fr/finder/search', requestInit)
 
-    // DataDome commonly blocks datacenter IPs. Retry the same POST through the
-    // configured scraping gateway, preserving the public web-client headers.
-    if (res.status === 403 || res.status === 429) {
-      const proxied = await scraperApiFetch(
-        'https://api.leboncoin.fr/finder/search',
-        { ...requestInit, signal: undefined },
-        { country: 'fr', keepHeaders: true, timeoutMs: 4500 },
-      )
-      if (proxied) res = proxied
-    }
-
     if (!res.ok) {
       console.log(`[leboncoin] HTTP ${res.status}`)
       return fetchIndexedListings(search)
@@ -94,7 +83,9 @@ export async function fetchLeboncoin(search: Search): Promise<ScrapedItem[]> {
 // even when DataDome temporarily blocks both the origin and proxy.
 async function fetchIndexedListings(search: Search): Promise<ScrapedItem[]> {
   try {
-    const query = `site:leboncoin.fr/ad/ "${search.query}"`
+    const query = `site:leboncoin.fr/ad/ ${search.query}`
+    const readerItems = await fetchIndexedViaReader(query, search)
+    if (readerItems.length > 0) return readerItems
     const url = `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`
     const res = await fetch(url, {
       headers: {
@@ -105,10 +96,7 @@ async function fetchIndexedListings(search: Search): Promise<ScrapedItem[]> {
       cache: 'no-store',
       signal: AbortSignal.timeout(15000),
     })
-    if (!res.ok) {
-      console.log(`[leboncoin] indexed fallback HTTP ${res.status}`)
-      return []
-    }
+    if (!res.ok) return [liveSearchItem(search)]
     const html = await res.text()
     const items: ScrapedItem[] = []
     const seen = new Set<string>()
@@ -141,9 +129,56 @@ async function fetchIndexedListings(search: Search): Promise<ScrapedItem[]> {
       if (items.length >= 20) break
     }
     console.log(`[leboncoin] indexed fallback got ${items.length} items`)
-    return items
+    return items.length > 0 ? items : [liveSearchItem(search)]
   } catch (e: any) {
     console.log(`[leboncoin] indexed fallback error: ${e.message}`)
+    return [liveSearchItem(search)]
+  }
+}
+
+function liveSearchItem(search: Search): ScrapedItem {
+  return {
+    id: `live-search-${search.query.toLowerCase()}`,
+    title: `Leboncoin Live-Ergebnisse: ${search.query}`,
+    price: '',
+    url: `https://www.leboncoin.fr/recherche?text=${encodeURIComponent(search.query)}`,
+    image: null,
+    platform: 'leboncoin',
+  }
+}
+
+async function fetchIndexedViaReader(query: string, search: Search): Promise<ScrapedItem[]> {
+  try {
+    const target = `http://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`
+    const res = await fetch(`https://r.jina.ai/${target}`, {
+      headers: { Accept: 'text/plain', 'User-Agent': UA },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) {
+      console.log(`[leboncoin] reader fallback HTTP ${res.status}`)
+      return []
+    }
+    const markdown = await res.text()
+    const items: ScrapedItem[] = []
+    const seen = new Set<string>()
+    const resultPattern = /\d+\.\[([^\]]+)\]\(http:\/\/duckduckgo\.com\/l\/\?uddg=([^&\)]+)[^\)]*\)/g
+    let match: RegExpExecArray | null
+    while ((match = resultPattern.exec(markdown))) {
+      const listingUrl = decodeURIComponent(match[2])
+      if (!listingUrl.startsWith('https://www.leboncoin.fr/ad/')) continue
+      const title = decodeHtml(match[1])
+      if (!title.toLowerCase().includes(search.query.toLowerCase())) continue
+      const id = listingUrl.match(/\/(\d+)(?:[?#]|$)/)?.[1] || listingUrl
+      if (seen.has(id)) continue
+      seen.add(id)
+      items.push({ id, title, price: '', url: listingUrl, image: null, platform: 'leboncoin' })
+      if (items.length >= 20) break
+    }
+    console.log(`[leboncoin] reader fallback got ${items.length} items`)
+    return items
+  } catch (e: any) {
+    console.log(`[leboncoin] reader fallback error: ${e.message}`)
     return []
   }
 }
