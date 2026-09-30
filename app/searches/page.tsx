@@ -51,12 +51,12 @@ export default function SearchesPage() {
       <div className="page">
 
         {/* Page header */}
-        <div style={{ marginBottom: 32 }}>
+        <div style={{ marginBottom: 40 }}>
           <h1 style={{
-            fontSize: 26, fontWeight: 800, margin: 0,
-            letterSpacing: '-0.03em', color: 'var(--text)',
+            fontSize: 40, fontWeight: 700, margin: 0,
+            letterSpacing: '-0.045em', color: 'var(--text)',
           }}>Searches</h1>
-          <p style={{ fontSize: 13.5, color: 'var(--text3)', marginTop: 6, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 15, color: 'var(--text2)', marginTop: 10, lineHeight: 1.5 }}>
             {searches.length} search{searches.length !== 1 ? 'es' : ''} configured
           </p>
         </div>
@@ -84,11 +84,11 @@ export default function SearchesPage() {
                 <p style={{ color: 'var(--text3)', fontSize: 13 }}>Loading searches…</p>
               </div>
             ) : searches.length === 0 ? (
-              <div style={{
+              <div className="glass-panel" style={{
                 textAlign: 'center', padding: '48px 24px',
                 background: 'var(--card)',
                 border: '1px solid var(--border)',
-                borderRadius: 12,
+                borderRadius: 22,
               }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 10,
@@ -107,11 +107,11 @@ export default function SearchesPage() {
             ) : searches.map(s => {
               const plat = P[s.platform] ?? P.vinted
               return (
-                <div key={s.id} className="anim-in" style={{
+                <div key={s.id} className="anim-in glass-panel" style={{
                   display: 'flex', alignItems: 'center',
                   background: 'var(--card)',
                   border: '1px solid var(--border)',
-                  borderRadius: 12, overflow: 'hidden',
+                  borderRadius: 20, overflow: 'hidden',
                   opacity: s.enabled ? 1 : 0.45,
                   transition: 'opacity 0.2s, border-color 0.15s, box-shadow 0.15s',
                 }}

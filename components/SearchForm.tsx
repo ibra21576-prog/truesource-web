@@ -161,12 +161,12 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
   const domainOptions = DOMAIN_OPTIONS[platform]
 
   return (
-    <form onSubmit={handleSubmit} style={{
+    <form onSubmit={handleSubmit} className="glass-panel" style={{
       display: 'flex', flexDirection: 'column', gap: 18,
       background: 'var(--card)',
       border: '1px solid var(--border)',
-      borderRadius: 12,
-      padding: 24,
+      borderRadius: 24,
+      padding: 26,
     }}>
       <div>
         <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: 'var(--text)', letterSpacing: '-0.01em' }}>
@@ -211,7 +211,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
                 type="button"
                 onClick={() => handlePlatformChange(opt.value)}
                 style={{
-                  padding: '8px 4px', borderRadius: 8,
+                  padding: '10px 4px', borderRadius: 13,
                   fontSize: 12, fontWeight: 500,
                   cursor: 'pointer',
                   fontFamily: 'Geist, -apple-system, system-ui, sans-serif',

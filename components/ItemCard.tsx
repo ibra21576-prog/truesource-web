@@ -73,24 +73,25 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
         className="anim-in"
         style={{
           display: 'flex', flexDirection: 'column',
-          background: 'var(--card)',
+          background: 'rgba(21,21,24,0.84)',
           border: '1px solid var(--border)',
-          borderRadius: 14, overflow: 'hidden',
+          borderRadius: 22, overflow: 'hidden',
           textDecoration: 'none',
-          transition: 'border-color 0.15s, transform 0.15s, box-shadow 0.15s',
+          transition: 'border-color 0.22s, transform 0.22s, box-shadow 0.22s',
           cursor: 'pointer',
+          boxShadow: 'var(--shadow-card)', backdropFilter: 'blur(18px)',
         }}
         onMouseEnter={e => {
           const el = e.currentTarget as HTMLElement
           el.style.borderColor = 'var(--border2)'
-          el.style.transform = 'translateY(-2px)'
-          el.style.boxShadow = '0 8px 24px rgba(0,0,0,0.35)'
+          el.style.transform = 'translateY(-4px)'
+          el.style.boxShadow = 'var(--shadow-lift)'
         }}
         onMouseLeave={e => {
           const el = e.currentTarget as HTMLElement
           el.style.borderColor = 'var(--border)'
           el.style.transform = 'translateY(0)'
-          el.style.boxShadow = 'none'
+          el.style.boxShadow = 'var(--shadow-card)'
         }}
       >
         {/* Image */}
@@ -192,31 +193,32 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
       className="anim-in"
       style={{
         display: 'flex', alignItems: 'stretch',
-        background: 'var(--card)',
+        background: 'rgba(21,21,24,0.84)',
         border: '1px solid var(--border)',
-        borderRadius: 12, overflow: 'hidden',
+        borderRadius: 20, overflow: 'hidden',
         textDecoration: 'none',
-        transition: 'border-color 0.15s, transform 0.15s, box-shadow 0.15s',
+        transition: 'border-color 0.22s, transform 0.22s, box-shadow 0.22s',
         cursor: 'pointer',
+        boxShadow: 'var(--shadow-card)', backdropFilter: 'blur(18px)',
       }}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLElement
         el.style.borderColor = 'var(--border2)'
-        el.style.transform = 'translateY(-1px)'
-        el.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'
+        el.style.transform = 'translateY(-3px)'
+        el.style.boxShadow = 'var(--shadow-lift)'
       }}
       onMouseLeave={e => {
         const el = e.currentTarget as HTMLElement
         el.style.borderColor = 'var(--border)'
         el.style.transform = 'translateY(0)'
-        el.style.boxShadow = 'none'
+        el.style.boxShadow = 'var(--shadow-card)'
       }}
     >
       {/* Thumbnail */}
       <div style={{
         width: 80, height: 80, flexShrink: 0, alignSelf: 'center',
         margin: '14px 14px 14px 14px',
-        borderRadius: 8, overflow: 'hidden',
+        borderRadius: 14, overflow: 'hidden',
         background: 'var(--surface)',
         border: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',

@@ -85,7 +85,7 @@ function SetupGuide({ hasSearches }: { hasSearches: boolean }) {
   ]
   const nextStep = steps.find(s => !s.done)
   return (
-    <div style={{ maxWidth: 540, margin: '0 auto', padding: '40px 0' }}>
+    <div style={{ maxWidth: 600, margin: '0 auto', padding: '52px 0' }}>
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
         <h2 style={{ fontSize: 21, fontWeight: 700, color: 'var(--text)', margin: 0, letterSpacing: '-0.025em' }}>Get started in 2 steps</h2>
         <p style={{ fontSize: 14, color: 'var(--text2)', marginTop: 8, lineHeight: 1.65 }}>TrueSource will find new deals for you automatically around the clock.</p>
@@ -100,10 +100,11 @@ function SetupGuide({ hasSearches }: { hasSearches: boolean }) {
               display: 'flex', alignItems: 'flex-start', gap: 16, padding: '18px 20px',
               background: isPast ? 'var(--surface)' : isNext ? 'var(--card)' : 'transparent',
               border: `1px solid ${isPast ? 'rgba(168,85,247,0.24)' : isNext ? 'var(--border2)' : 'var(--border)'}`,
-              borderRadius: 12, opacity: isFuture ? 0.35 : 1,
+              borderRadius: 20, opacity: isFuture ? 0.35 : 1,
+              boxShadow: isNext ? 'var(--shadow-card)' : 'none',
             }}>
               <div style={{
-                width: 38, height: 38, borderRadius: 9, flexShrink: 0,
+                width: 42, height: 42, borderRadius: 13, flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: isPast ? 'rgba(168,85,247,0.10)' : 'var(--surface)',
                 border: `1px solid ${isPast ? 'rgba(168,85,247,0.28)' : 'var(--border)'}`,
@@ -328,13 +329,13 @@ export default function DashboardPage() {
         <div style={{
           display: 'flex', alignItems: 'flex-start',
           justifyContent: 'space-between', gap: 16,
-          marginBottom: 32, flexWrap: 'wrap',
+          marginBottom: 40, flexWrap: 'wrap',
         }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <h1 className="gradient-text" style={{
-                fontSize: 26, fontWeight: 800, margin: 0,
-                letterSpacing: '-0.03em', lineHeight: 1,
+                fontSize: 40, fontWeight: 700, margin: 0,
+                letterSpacing: '-0.045em', lineHeight: 1.05,
               }}>
                 Live Feed
               </h1>
@@ -347,7 +348,7 @@ export default function DashboardPage() {
                 }}>+{newCount} new</span>
               )}
             </div>
-            <p style={{ fontSize: 13.5, color: 'var(--text3)', marginTop: 6, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 15, color: 'var(--text2)', marginTop: 10, lineHeight: 1.5 }}>
               Real-time listings across 9 marketplaces
             </p>
           </div>
@@ -358,6 +359,7 @@ export default function DashboardPage() {
             <button
               onClick={() => setSoundOn(v => !v)}
               title={soundOn ? 'Sound enabled' : 'Sound disabled'}
+              className="pill-control"
               style={{
                 padding: '7px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
                 background: soundOn ? 'rgba(168,85,247,0.12)' : 'var(--card)',
@@ -379,6 +381,7 @@ export default function DashboardPage() {
             <button
               onClick={requestNotifications}
               title={notifPerm === 'granted' ? 'Notifications enabled' : 'Enable notifications'}
+              className="pill-control"
               style={{
                 padding: '7px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
                 background: notifPerm === 'granted' ? 'rgba(168,85,247,0.12)' : 'var(--card)',
@@ -396,7 +399,7 @@ export default function DashboardPage() {
 
             {/* Countdown */}
             {searches.length > 0 && (
-              <div style={{
+              <div className="pill-control" style={{
                 display: 'flex', alignItems: 'center', gap: 5,
                 padding: '7px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 500,
                 background: 'var(--card)', border: '1px solid var(--border2)',
@@ -426,17 +429,17 @@ export default function DashboardPage() {
 
         {/* Member card */}
         {me && (
-          <div style={{
+          <div className="glass-panel" style={{
             background: 'var(--card)', border: '1px solid var(--border)',
-            borderRadius: 12, padding: '16px 20px', marginBottom: 24,
+            borderRadius: 22, padding: '20px 22px', marginBottom: 28,
             display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
           }}>
             <div style={{
-              width: 40, height: 40, borderRadius: 9, flexShrink: 0,
+              width: 46, height: 46, borderRadius: 14, flexShrink: 0,
               background: 'var(--surface)', border: '1px solid var(--border)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <img src="/logo.png" alt="TrueSource" width={28} height={28} style={{ borderRadius: 6, display: 'block' }} />
+              <img src="/logo.png" alt="TrueSource" width={30} height={30} style={{ borderRadius: 8, display: 'block', filter: 'hue-rotate(96deg) saturate(1.18)' }} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>Member</div>
@@ -464,13 +467,13 @@ export default function DashboardPage() {
               icon: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
             },
           ].map((s, i) => (
-            <div key={i} className="anim-in" style={{
+            <div key={i} className="anim-in glass-panel" style={{
               background: 'var(--card)', border: '1px solid var(--border)',
-              borderRadius: 10, padding: '16px 18px',
+              borderRadius: 22, padding: '21px 22px',
               display: 'flex', alignItems: 'center', gap: 14,
             }}>
               <div style={{
-                width: 36, height: 36, borderRadius: 8,
+                width: 42, height: 42, borderRadius: 14,
                 background: 'var(--surface)', border: '1px solid var(--border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: s.color, flexShrink: 0,
@@ -514,12 +517,12 @@ export default function DashboardPage() {
 
         {/* Platform filter + Sort */}
         {allItems.length > 0 && (
-          <div style={{
+          <div className="glass-panel" style={{
             display: 'flex', alignItems: 'center', gap: 8,
             marginBottom: 18, flexWrap: 'wrap',
             padding: '10px 14px',
             background: 'var(--card)', border: '1px solid var(--border)',
-            borderRadius: 10,
+            borderRadius: 20,
           }}>
             <div style={{ display: 'flex', gap: 4, flex: 1, flexWrap: 'wrap' }}>
               {(['all', ...platsWithItems] as string[]).map(plat => {
@@ -530,7 +533,7 @@ export default function DashboardPage() {
                 const col = PLAT_COLOR[plat] || 'var(--accent)'
                 return (
                   <button key={plat} onClick={() => setPlatFilter(plat)} style={{
-                    padding: '5px 11px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer',
                     background: active ? col : 'transparent',
                     border: `1px solid ${active ? col : 'transparent'}`,
                     color: active ? '#fff' : 'var(--text3)',
@@ -637,7 +640,7 @@ export default function DashboardPage() {
                   onClick={loadMoreArchive}
                   disabled={loadingMore}
                   style={{
-                    padding: '10px 22px', borderRadius: 8, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
+                    padding: '10px 22px', borderRadius: 999, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
                     background: 'var(--card)', border: '1px solid var(--border2)',
                     color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 7,
                     transition: 'all 0.14s',

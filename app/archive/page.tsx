@@ -79,10 +79,10 @@ export default function ArchivePage() {
         {/* Page header */}
         <div style={{
           display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-          gap: 16, marginBottom: 28, flexWrap: 'wrap',
+          gap: 16, marginBottom: 38, flexWrap: 'wrap',
         }}>
           <div>
-            <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: '-0.03em', color: 'var(--text)' }}>
+            <h1 style={{ fontSize: 40, fontWeight: 700, margin: 0, letterSpacing: '-0.045em', color: 'var(--text)' }}>
               Archive
             </h1>
             <p style={{ fontSize: 14, color: 'var(--text2)', marginTop: 6, lineHeight: 1.6 }}>
@@ -100,10 +100,10 @@ export default function ArchivePage() {
         </div>
 
         {/* Filters bar */}
-        <div style={{
+        <div className="glass-panel" style={{
           display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center',
           background: 'var(--card)', border: '1px solid var(--border)',
-          borderRadius: 10, padding: '10px 14px',
+          borderRadius: 20, padding: '12px 14px',
         }}>
           <div style={{ position: 'relative', flex: 1, minWidth: 180, maxWidth: 300 }}>
             <input
@@ -125,7 +125,7 @@ export default function ArchivePage() {
               const active = platform === f.value
               return (
                 <button key={f.value} onClick={() => setPlatform(f.value)} style={{
-                  padding: '6px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500,
+                  padding: '7px 13px', borderRadius: 999, fontSize: 13, fontWeight: 500,
                   cursor: 'pointer', fontFamily: 'Geist, -apple-system, system-ui, sans-serif',
                   border: 'none', transition: 'all 0.15s ease',
                   ...(active
@@ -149,9 +149,9 @@ export default function ArchivePage() {
             <p style={{ color: 'var(--text3)', fontSize: 14 }}>Loading archive…</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{
+          <div className="glass-panel" style={{
             textAlign: 'center', padding: '64px 24px',
-            background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12,
+            background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 22,
           }}>
             <div style={{
               width: 52, height: 52, borderRadius: 12, background: 'var(--surface)',

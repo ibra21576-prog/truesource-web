@@ -6,28 +6,28 @@
 
 /* ── Design Tokens ── */
 :root {
-  --sidebar-w: 248px;
+  --sidebar-w: 238px;
 
-  --bg:      #050308;
-  --surface: #0a0710;
-  --card:    #110b19;
-  --card2:   #191124;
-  --border:  #281a38;
-  --border2: #3d2853;
-  --accent:  #a855f7;
-  --accent2: #7c3aed;
-  --purple:  #c084fc;
-  --text:    #faf7ff;
-  --text2:   #b7a9c8;
-  --text3:   #70627f;
+  --bg:      #050506;
+  --surface: #101012;
+  --card:    #151518;
+  --card2:   #1c1c20;
+  --border:  rgba(255,255,255,0.075);
+  --border2: rgba(255,255,255,0.14);
+  --accent:  #a970ff;
+  --accent2: #7c4dff;
+  --purple:  #c6a7ff;
+  --text:    #f5f5f7;
+  --text2:   #a1a1aa;
+  --text3:   #68686f;
   --danger:  #ef4444;
   --success: #22c55e;
   --warning: #f59e0b;
 
-  --grad-accent:   linear-gradient(135deg, #c084fc 0%, #7c3aed 100%);
-  --shadow-card:   0 1px 3px rgba(0,0,0,0.5);
-  --shadow-lift:   0 16px 40px -8px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.025);
-  --shadow-accent: 0 8px 28px -6px rgba(168,85,247,0.38);
+  --grad-accent:   linear-gradient(135deg, #bd8cff 0%, #7c4dff 100%);
+  --shadow-card:   0 12px 36px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.035);
+  --shadow-lift:   0 22px 56px -18px rgba(0,0,0,0.78), 0 0 0 1px rgba(255,255,255,0.045);
+  --shadow-accent: 0 12px 34px -10px rgba(137,82,255,0.55);
 }
 
 @layer base {
@@ -41,7 +41,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.5;
-    letter-spacing: -0.012em;
+    letter-spacing: -0.016em;
+    min-height: 100vh;
   }
 
   /* Ambient glow */
@@ -50,8 +51,9 @@
     position: fixed; inset: 0;
     pointer-events: none; z-index: 0;
     background:
-      radial-gradient(850px 480px at 58% -7%, rgba(168,85,247,0.12), transparent 65%),
-      radial-gradient(650px 420px at 100% 8%, rgba(76,29,149,0.11), transparent 62%);
+      radial-gradient(900px 520px at 63% -10%, rgba(140,89,255,0.14), transparent 66%),
+      radial-gradient(720px 520px at 105% 36%, rgba(77,119,255,0.07), transparent 64%),
+      linear-gradient(180deg, rgba(255,255,255,0.012), transparent 28%);
   }
   body > * { position: relative; z-index: 1; }
 
@@ -66,17 +68,18 @@
     background: var(--card);
     border: 1px solid var(--border2);
     color: var(--text);
-    border-radius: 8px;
-    padding: 10px 14px;
+    border-radius: 14px;
+    padding: 11px 15px;
     width: 100%;
     font-family: 'Geist', -apple-system, system-ui, sans-serif;
     font-size: 14px;
     outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
   }
   input:focus, select:focus, textarea:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(168,85,247,0.16);
+    background: #19191d;
+    box-shadow: 0 0 0 4px rgba(169,112,255,0.14);
   }
   input::placeholder { color: var(--text3); }
   select option { background: var(--surface); color: var(--text); }
@@ -88,18 +91,21 @@
   /* ── Sidebar ── */
   .sidebar {
     position: fixed;
-    left: 0; top: 0; bottom: 0;
+    left: 14px; top: 14px; bottom: 14px;
     width: var(--sidebar-w);
-    background: var(--surface);
-    border-right: 1px solid var(--border);
+    background: rgba(16,16,19,0.76);
+    border: 1px solid var(--border);
+    border-radius: 24px;
     display: flex;
     flex-direction: column;
     z-index: 100;
     overflow-y: auto;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.045);
+    backdrop-filter: blur(28px) saturate(135%);
   }
 
   .sidebar-brand {
-    padding: 22px 16px 18px;
+    padding: 20px 16px 16px;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
@@ -113,9 +119,10 @@
 
   /* ── Page wrapper — always offset by sidebar ── */
   .page {
-    margin-left: var(--sidebar-w);
-    padding: 44px 48px;
+    margin-left: calc(var(--sidebar-w) + 28px);
+    padding: 54px 52px 64px;
     min-height: 100vh;
+    max-width: 1640px;
   }
 
   /* ── Searches page: fixed form column + flexible list column ── */
@@ -131,7 +138,7 @@
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
     font-family: 'Geist', -apple-system, system-ui, sans-serif;
     font-weight: 600; font-size: 14px;
-    padding: 9px 18px; border-radius: 8px; cursor: pointer;
+    padding: 10px 19px; border-radius: 999px; cursor: pointer;
     border: none; transition: all 0.14s ease;
     user-select: none; white-space: nowrap;
   }
@@ -142,6 +149,7 @@
     color: #fff;
     font-weight: 700;
     box-shadow: var(--shadow-accent);
+    border: 1px solid rgba(255,255,255,0.14);
   }
   .btn-primary:hover:not(:disabled) {
     transform: translateY(-1px);
@@ -153,7 +161,7 @@
 
   .btn-secondary {
     @apply btn;
-    background: var(--card2);
+    background: rgba(255,255,255,0.055);
     color: var(--text2);
     border: 1px solid var(--border2);
   }
@@ -166,7 +174,7 @@
 
   .btn-ghost {
     @apply btn;
-    background: transparent; color: var(--text3); padding: 7px 10px;
+    background: transparent; color: var(--text3); padding: 8px 12px;
   }
   .btn-ghost:hover {
     background: var(--card2); color: var(--text2);
@@ -184,17 +192,31 @@
 
   /* ── Cards ── */
   .card {
-    background: var(--card);
+    background: rgba(21,21,24,0.82);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
+    border-radius: 22px;
+    padding: 22px;
     box-shadow: var(--shadow-card);
-    transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+    backdrop-filter: blur(20px) saturate(125%);
+    transition: border-color 0.22s, box-shadow 0.22s, transform 0.22s;
   }
   .card:hover {
     border-color: var(--border2);
     box-shadow: var(--shadow-lift);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+  }
+
+  .glass-panel {
+    background: rgba(21,21,24,0.78) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 22px !important;
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(22px) saturate(125%);
+  }
+
+  .pill-control {
+    border-radius: 999px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.035);
   }
 
   /* ── Badges ── */
@@ -233,7 +255,7 @@
 
   /* ── Gradient heading ── */
   .gradient-text {
-    background: linear-gradient(115deg, #faf7ff 22%, #d8b4fe 68%, #a855f7 100%);
+    background: linear-gradient(115deg, #ffffff 12%, #eee8ff 58%, #b98cff 100%);
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -277,17 +299,25 @@
    regardless of source order, so this reliably overrides the `.sidebar` /
    `.page` / `.searches-layout` rules defined inside @layer components
    above without fighting specificity. */
+@media (max-width: 1120px) and (min-width: 861px) {
+  .page { padding: 44px 30px 56px; }
+  .searches-layout { grid-template-columns: 360px 1fr; gap: 20px; }
+}
+
 @media (max-width: 860px) {
   .sidebar { display: none; }
 
   .bottom-nav {
     display: flex;
     position: fixed;
-    left: 0; right: 0; bottom: 0;
+    left: 10px; right: 10px; bottom: 10px;
     z-index: 100;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    background: rgba(18,18,21,0.82);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 5px calc(7px + env(safe-area-inset-bottom));
+    box-shadow: 0 18px 50px rgba(0,0,0,0.55);
+    backdrop-filter: blur(24px) saturate(140%);
     justify-content: space-around;
     align-items: stretch;
   }
@@ -300,7 +330,7 @@
     gap: 3px;
     flex: 1;
     padding: 6px 2px;
-    border-radius: 8px;
+    border-radius: 14px;
     font-size: 10px;
     font-weight: 600;
     text-decoration: none;
@@ -309,14 +339,19 @@
 
   .bottom-nav a.active {
     color: var(--accent);
+    background: rgba(169,112,255,0.12);
   }
 
   .page {
     margin-left: 0;
-    padding: 20px 16px calc(76px + env(safe-area-inset-bottom));
+    padding: 26px 16px calc(96px + env(safe-area-inset-bottom));
   }
 
   .searches-layout {
     grid-template-columns: 1fr;
+  }
+
+  .page > .stagger {
+    grid-template-columns: 1fr !important;
   }
 }

@@ -123,18 +123,18 @@ export default function CreateListingPage() {
       <Navigation />
       <div className="page" style={{ maxWidth: 760 }}>
 
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 38, flexWrap: 'wrap' }}>
           <div>
-            <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: '-0.03em', color: 'var(--text)' }}>
+            <h1 style={{ fontSize: 40, fontWeight: 700, margin: 0, letterSpacing: '-0.045em', color: 'var(--text)' }}>
               Create Listing
             </h1>
-            <p style={{ fontSize: 13.5, color: 'var(--text3)', marginTop: 6, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 15, color: 'var(--text2)', marginTop: 10, lineHeight: 1.5 }}>
               Photo in, ready-to-post listing out — title, description and price, generated automatically.
             </p>
           </div>
           {credits && (
             <div style={{
-              padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              padding: '9px 15px', borderRadius: 999, fontSize: 13, fontWeight: 600,
               background: 'var(--card)', border: '1px solid var(--border2)',
               color: credits.unlimited ? 'var(--accent)' : noCredits ? 'var(--danger)' : 'var(--text2)',
               whiteSpace: 'nowrap',
@@ -149,9 +149,10 @@ export default function CreateListingPage() {
           onDragOver={e => e.preventDefault()}
           onDrop={onDrop}
           onClick={() => fileRef.current?.click()}
+          className="glass-panel"
           style={{
             border: `1.5px dashed ${preview ? 'var(--border2)' : 'var(--border2)'}`,
-            borderRadius: 14, padding: preview ? 0 : '48px 24px',
+            borderRadius: 24, padding: preview ? 0 : '56px 28px',
             textAlign: 'center', cursor: noCredits ? 'not-allowed' : 'pointer',
             background: 'var(--card)', overflow: 'hidden',
             opacity: noCredits ? 0.5 : 1,
@@ -200,12 +201,12 @@ export default function CreateListingPage() {
         {listing && (
           <div className="anim-in" style={{ marginTop: 24 }}>
             {listing.product === 'unknown' ? (
-              <div style={{ padding: '20px 22px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, textAlign: 'center' }}>
+              <div className="glass-panel" style={{ padding: '22px 24px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 22, textAlign: 'center' }}>
                 <p style={{ fontSize: 14, color: 'var(--text2)' }}>Could not identify a clear product in this photo. Try a clearer, well-lit shot.</p>
               </div>
             ) : (
               <>
-                <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 22px', marginBottom: 16 }}>
+                <div className="glass-panel" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 22, padding: '24px', marginBottom: 18 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                     <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                       {listing.category}
@@ -256,7 +257,7 @@ export default function CreateListingPage() {
 
                 {/* Market reference */}
                 {listing.marketRefs.length > 0 && (
-                  <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
+                  <div className="glass-panel" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 22, padding: '20px 22px', marginBottom: 18 }}>
                     <p className="section-label" style={{ marginBottom: 10 }}>Recent asking prices for this product</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {listing.marketRefs.map((r, i) => (

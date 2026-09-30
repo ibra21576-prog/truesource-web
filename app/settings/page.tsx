@@ -376,16 +376,16 @@ function SettingsInner() {
       <Navigation />
       <div className="page" style={{ maxWidth: 640 }}>
 
-        <div style={{ marginBottom: 20 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', margin: 0, letterSpacing: '-0.03em' }}>Vinted</h1>
-          <p style={{ fontSize: 14, color: 'var(--text2)', marginTop: 6, lineHeight: 1.6 }}>Vinted läuft bereits automatisch — kein Account nötig.</p>
+        <div style={{ marginBottom: 36 }}>
+          <h1 style={{ fontSize: 40, fontWeight: 700, color: 'var(--text)', margin: 0, letterSpacing: '-0.045em' }}>Vinted</h1>
+          <p style={{ fontSize: 15, color: 'var(--text2)', marginTop: 10, lineHeight: 1.6 }}>Vinted läuft bereits automatisch — kein Account nötig.</p>
         </div>
 
         {/* Auto-working notice */}
-        <div style={{
+        <div className="glass-panel" style={{
           display: 'flex', alignItems: 'center', gap: 14,
           background: 'rgba(168,85,247,0.07)', border: '1px solid rgba(168,85,247,0.24)',
-          borderRadius: 10, padding: '14px 16px', marginBottom: 20,
+          borderRadius: 20, padding: '17px 18px', marginBottom: 22,
         }}>
           <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(168,85,247,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -398,7 +398,7 @@ function SettingsInner() {
 
         {/* Auto-connect result */}
         {autoMsg && (
-          <div style={{
+          <div className="glass-panel" style={{
             padding: '12px 16px', borderRadius: 8, marginBottom: 18, fontSize: 14, fontWeight: 500,
             background: autoMsg.ok ? 'rgba(168,85,247,0.07)' : 'rgba(239,68,68,0.06)',
             border: `1px solid ${autoMsg.ok ? 'rgba(168,85,247,0.24)' : 'rgba(239,68,68,0.2)'}`,
@@ -417,7 +417,7 @@ function SettingsInner() {
         {!loading && connectedDomains.length > 0 && (
           <div style={{
             background: 'var(--card)', border: '1px solid var(--border)',
-            borderRadius: 12, padding: '16px 18px', marginBottom: 16,
+            borderRadius: 22, padding: '20px', marginBottom: 18,
           }}>
             <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text3)', marginBottom: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Connected</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -450,9 +450,9 @@ function SettingsInner() {
         )}
 
         {/* Connect card */}
-        <div style={{
+        <div className="glass-panel" style={{
           background: 'var(--card)', border: '1px solid var(--border)',
-          borderRadius: 12, overflow: 'hidden',
+          borderRadius: 22, overflow: 'hidden',
         }}>
 
           {step === 'idle' && (
