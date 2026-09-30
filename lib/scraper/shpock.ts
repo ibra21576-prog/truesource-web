@@ -41,7 +41,7 @@ export async function fetchShpock(search: Search): Promise<ScrapedItem[]> {
         signal: AbortSignal.timeout(15000),
       })
       if (!res.ok) {
-        const proxied = await scraperApiFetch(pageUrl, {}, { country: loc === 'en-gb' ? 'gb' : 'de' })
+        const proxied = await scraperApiFetch(pageUrl, {}, { country: loc === 'en-gb' ? 'gb' : 'de', timeoutMs: 5000 })
         if (proxied) res = proxied
       }
       if (!res.ok) { console.log(`[shpock] ${loc} HTTP ${res.status}`); continue }

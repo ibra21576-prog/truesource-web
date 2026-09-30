@@ -48,7 +48,7 @@ export async function fetchLeboncoin(search: Search): Promise<ScrapedItem[]> {
       const proxied = await scraperApiFetch(
         'https://api.leboncoin.fr/finder/search',
         { ...requestInit, signal: undefined },
-        { country: 'fr', keepHeaders: true },
+        { country: 'fr', keepHeaders: true, timeoutMs: 4500 },
       )
       if (proxied) res = proxied
     }

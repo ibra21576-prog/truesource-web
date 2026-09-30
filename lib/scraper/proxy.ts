@@ -42,7 +42,7 @@ export async function proxyFetch(url: string, init: RequestInit = {}): Promise<R
 export async function scraperApiFetch(
   targetUrl: string,
   init: RequestInit = {},
-  options: { country?: string; render?: boolean; keepHeaders?: boolean } = {},
+  options: { country?: string; render?: boolean; keepHeaders?: boolean; timeoutMs?: number } = {},
 ): Promise<Response | null> {
   const apiKey = process.env.SCRAPERAPI_KEY
   if (!apiKey) return null
@@ -54,6 +54,6 @@ export async function scraperApiFetch(
 
   return fetch(`https://api.scraperapi.com/?${params}`, {
     ...init,
-    signal: init.signal ?? AbortSignal.timeout(options.render ? 45000 : 20000),
+    signal: init.signal ?? AbortSignal.timeout(options.timeoutMs ?? (options.render ? 45000 : 20000)),
   })
 }

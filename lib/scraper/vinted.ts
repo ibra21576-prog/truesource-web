@@ -192,6 +192,14 @@ export async function fetchVinted(search: Search, cookieStr?: string): Promise<S
   if (search.max_price) params.set('price_to',   String(search.max_price))
   const apiUrl = `https://${domain}/api/v2/catalog/items?${params}`
 
+  // The public catalogue is the fastest current guest path. Prefer it for
+  // normal searches so serverless runs do not spend time probing retired auth
+  // endpoints first. Explicit user cookies still take priority below.
+  if (!cookieStr) {
+    const publicItems = await fetchPublicCatalog(search, domain)
+    if (publicItems.length > 0) return publicItems
+  }
+
   // 1. Try provided cookie string directly
   if (cookieStr) {
     const result = await tryVintedRequest(apiUrl, domain, sanitizeCookieHeader(cookieStr), '')
@@ -233,7 +241,7 @@ export async function fetchVinted(search: Search, cookieStr?: string): Promise<S
   // 4. Vinted retired the former catalog JSON endpoint for guest traffic. The
   // public catalogue itself is still server-rendered, so parse its product
   // cards as a durable, login-free fallback.
-  const htmlItems = await fetchPublicCatalog(search, domain)
+  const htmlItems = cookieStr ? await fetchPublicCatalog(search, domain) : []
   if (htmlItems.length > 0) return htmlItems
 
   throw new Error('LOGIN_REQUIRED')
@@ -251,9 +259,9 @@ async function fetchPublicCatalog(search: Search, domain: string): Promise<Scrap
   }
 
   try {
-    let res = await fetch(pageUrl, { headers, cache: 'no-store', signal: AbortSignal.timeout(18000) })
+    let res = await fetch(pageUrl, { headers, cache: 'no-store', signal: AbortSignal.timeout(8000) })
     if (!res.ok) {
-      const proxied = await scraperApiFetch(pageUrl, {}, { country: domain.endsWith('.de') ? 'de' : undefined })
+      const proxied = await scraperApiFetch(pageUrl, {}, { country: domain.endsWith('.de') ? 'de' : undefined, timeoutMs: 5000 })
       if (proxied) res = proxied
     }
     if (!res.ok) return []
