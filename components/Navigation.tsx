@@ -121,12 +121,12 @@ export default function Navigation() {
         {NAV.map(l => {
           const active = path === l.href || (l.href !== '/dashboard' && path?.startsWith(l.href))
           return (
-            <Link key={l.href} href={l.href} style={{
+            <Link key={l.href} href={l.href} className={`sidebar-link${active ? ' active' : ''}`} style={{
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '11px 12px', borderRadius: 14, fontSize: 13.5,
               fontWeight: active ? 600 : 400,
               textDecoration: 'none',
-              transition: 'background 0.12s, color 0.12s',
+              transition: 'background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s',
               color: active ? 'var(--text)' : 'var(--text3)',
               background: active ? 'linear-gradient(135deg, rgba(169,112,255,0.18), rgba(124,77,255,0.08))' : 'transparent',
               border: `1px solid ${active ? 'rgba(188,143,255,0.16)' : 'transparent'}`,

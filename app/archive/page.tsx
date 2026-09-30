@@ -82,6 +82,7 @@ export default function ArchivePage() {
           gap: 16, marginBottom: 38, flexWrap: 'wrap',
         }}>
           <div>
+            <div className="eyebrow">History</div>
             <h1 style={{ fontSize: 40, fontWeight: 700, margin: 0, letterSpacing: '-0.045em', color: 'var(--text)' }}>
               Archive
             </h1>

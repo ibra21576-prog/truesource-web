@@ -43,12 +43,12 @@ function LoginContent() {
   }
 
   return (
-    <div style={{
+    <div className="login-shell" style={{
       minHeight: '100vh', background: 'var(--bg)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       padding: 24, fontFamily: 'Geist, sans-serif',
     }}>
-      <div style={{
+      <div className="login-card" style={{
         background: 'rgba(20,20,23,0.82)', border: '1px solid rgba(255,255,255,0.09)',
         borderRadius: 28, padding: '44px 38px', width: '100%', maxWidth: 430,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
@@ -64,7 +64,7 @@ function LoginContent() {
               TrueSource <span style={{ color: 'var(--accent)' }}>Flip</span>
             </div>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4, fontWeight: 500, letterSpacing: '0.05em' }}>
-              MEMBERS ONLY
+              PRIVATE MEMBER PLATFORM
             </div>
           </div>
         </div>

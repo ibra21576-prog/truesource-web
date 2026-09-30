@@ -52,6 +52,7 @@ export default function SearchesPage() {
 
         {/* Page header */}
         <div style={{ marginBottom: 40 }}>
+          <div className="eyebrow">Automation</div>
           <h1 style={{
             fontSize: 40, fontWeight: 700, margin: 0,
             letterSpacing: '-0.045em', color: 'var(--text)',

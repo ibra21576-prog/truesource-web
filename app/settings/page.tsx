@@ -377,6 +377,7 @@ function SettingsInner() {
       <div className="page" style={{ maxWidth: 640 }}>
 
         <div style={{ marginBottom: 36 }}>
+          <div className="eyebrow">Connection center</div>
           <h1 style={{ fontSize: 40, fontWeight: 700, color: 'var(--text)', margin: 0, letterSpacing: '-0.045em' }}>Vinted</h1>
           <p style={{ fontSize: 15, color: 'var(--text2)', marginTop: 10, lineHeight: 1.6 }}>Vinted läuft bereits automatisch — kein Account nötig.</p>
         </div>

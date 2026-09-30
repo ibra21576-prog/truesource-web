@@ -70,7 +70,7 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="anim-in"
+        className="anim-in listing-card"
         style={{
           display: 'flex', flexDirection: 'column',
           background: 'rgba(21,21,24,0.84)',
@@ -105,6 +105,7 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
             ? <img
                 src={imgSrc}
                 alt=""
+                className="listing-image"
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                 onError={e => {
                   const img = e.target as HTMLImageElement
@@ -190,7 +191,7 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="anim-in"
+      className="anim-in listing-card"
       style={{
         display: 'flex', alignItems: 'stretch',
         background: 'rgba(21,21,24,0.84)',
@@ -227,6 +228,7 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
           ? <img
               src={imgSrc}
               alt=""
+              className="listing-image"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
             />

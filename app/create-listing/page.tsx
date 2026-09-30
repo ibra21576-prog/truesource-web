@@ -125,6 +125,7 @@ export default function CreateListingPage() {
 
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 38, flexWrap: 'wrap' }}>
           <div>
+            <div className="eyebrow">AI listing studio</div>
             <h1 style={{ fontSize: 40, fontWeight: 700, margin: 0, letterSpacing: '-0.045em', color: 'var(--text)' }}>
               Create Listing
             </h1>

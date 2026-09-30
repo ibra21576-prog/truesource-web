@@ -326,12 +326,13 @@ export default function DashboardPage() {
       <div className="page">
 
         {/* Page header */}
-        <div style={{
+        <div className="dashboard-hero" style={{
           display: 'flex', alignItems: 'flex-start',
           justifyContent: 'space-between', gap: 16,
           marginBottom: 40, flexWrap: 'wrap',
         }}>
           <div>
+            <div className="eyebrow">Realtime intelligence</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <h1 className="gradient-text" style={{
                 fontSize: 40, fontWeight: 700, margin: 0,
@@ -455,33 +456,28 @@ export default function DashboardPage() {
         <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 24 }}>
           {[
             {
-              label: 'Total Listings', value: allItems.length, color: 'var(--accent)',
+              label: 'Total Listings', value: allItems.length, color: 'var(--accent)', meta: 'Across all monitored marketplaces',
               icon: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
             },
             {
-              label: 'Active Searches', value: searches.length, color: 'var(--purple)',
+              label: 'Active Searches', value: searches.length, color: '#8b95ff', meta: 'Automated monitors currently running',
               icon: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
             },
             {
-              label: 'New (5 min)', value: newToday, color: 'var(--success)',
+              label: 'New (5 min)', value: newToday, color: 'var(--success)', meta: 'Fresh opportunities detected',
               icon: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
             },
           ].map((s, i) => (
-            <div key={i} className="anim-in glass-panel" style={{
+            <div key={i} className="anim-in glass-panel stat-card" style={{
               background: 'var(--card)', border: '1px solid var(--border)',
-              borderRadius: 22, padding: '21px 22px',
-              display: 'flex', alignItems: 'center', gap: 14,
+              borderRadius: 22,
             }}>
-              <div style={{
-                width: 42, height: 42, borderRadius: 14,
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: s.color, flexShrink: 0,
-              }}>{s.icon}</div>
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.04em', lineHeight: 1 }}>{s.value}</div>
-                <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 3, fontWeight: 500 }}>{s.label}</div>
+              <div className="stat-card-top">
+                <span className="stat-card-label">{s.label}</span>
+                <div className="stat-card-icon" style={{ color: s.color }}>{s.icon}</div>
               </div>
+              <div className="stat-card-value">{s.value}</div>
+              <div className="stat-card-meta">{s.meta}</div>
             </div>
           ))}
         </div>
