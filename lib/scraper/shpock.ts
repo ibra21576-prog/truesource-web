@@ -52,7 +52,11 @@ export async function fetchShpock(search: Search): Promise<ScrapedItem[]> {
       const pageProps = data?.props?.pageProps
       const apollo = pageProps?.apolloState ?? pageProps?.pageProps?.apolloState
       if (!apollo) { console.log(`[shpock] ${loc} no apolloState`); continue }
-      const items = parseApolloState(apollo)
+      const queryWords = search.query.toLowerCase().split(/\s+/).filter(Boolean)
+      const items = parseApolloState(apollo).filter(item => {
+        const title = item.title.toLowerCase()
+        return queryWords.every(word => title.includes(word))
+      })
       if (items.length > 0) {
         console.log(`[shpock] ${loc} got ${items.length} items`)
         return applyPriceFilter(items, search)
