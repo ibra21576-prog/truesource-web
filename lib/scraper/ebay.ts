@@ -276,8 +276,15 @@ export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
     } catch {}
   }
 
-  console.log('[ebay] all methods failed — set EBAY_APP_ID env var for reliable scraping')
-  return []
+  console.log('[ebay] all item methods failed — returning live search link')
+  return [{
+    id: `ebay-live-${search.query.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'search'}`,
+    title: `eBay Live-Ergebnisse: ${search.query}`,
+    price: '',
+    url: `https://${domain}/sch/i.html?${params}`,
+    image: null,
+    platform: 'ebay',
+  }]
 }
 
 function parseRss(text: string, domain: string): ScrapedItem[] {
