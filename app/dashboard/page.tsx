@@ -101,7 +101,7 @@ function SetupGuide({ hasSearches }: { hasSearches: boolean }) {
               display: 'flex', alignItems: 'flex-start', gap: 16, padding: '18px 20px',
               background: isPast ? 'var(--surface)' : isNext ? 'var(--card)' : 'transparent',
               border: `1px solid ${isPast ? 'rgba(168,85,247,0.24)' : isNext ? 'var(--border2)' : 'var(--border)'}`,
-              borderRadius: 14, opacity: isFuture ? 0.35 : 1,
+              borderRadius: 10, opacity: isFuture ? 0.35 : 1,
               boxShadow: isNext ? 'var(--shadow-card)' : 'none',
             }}>
               <div style={{
@@ -433,11 +433,11 @@ export default function DashboardPage() {
         {me && (
           <div className="glass-panel" style={{
             background: 'var(--card)', border: '1px solid var(--border)',
-            borderRadius: 14, padding: '20px 22px', marginBottom: 28,
+            borderRadius: 10, padding: '20px 22px', marginBottom: 28,
             display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
           }}>
             <div style={{
-              width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+              width: 46, height: 46, borderRadius: 9, flexShrink: 0,
               background: 'var(--surface)', border: '1px solid var(--border)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
@@ -471,7 +471,7 @@ export default function DashboardPage() {
           ].map((s, i) => (
             <div key={i} className="anim-in glass-panel stat-card" style={{
               background: 'var(--card)', border: '1px solid var(--border)',
-              borderRadius: 14,
+              borderRadius: 10,
             }}>
               <div className="stat-card-top">
                 <span className="stat-card-label">{s.label}</span>
@@ -519,7 +519,7 @@ export default function DashboardPage() {
             marginBottom: 18, flexWrap: 'wrap',
             padding: '10px 14px',
             background: 'var(--card)', border: '1px solid var(--border)',
-            borderRadius: 14,
+            borderRadius: 10,
           }}>
             <div style={{ display: 'flex', gap: 4, flex: 1, flexWrap: 'wrap' }}>
               {(['all', ...platsWithItems] as string[]).map(plat => {
@@ -637,7 +637,7 @@ export default function DashboardPage() {
                   onClick={loadMoreArchive}
                   disabled={loadingMore}
                   style={{
-                    padding: '10px 22px', borderRadius: 10, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
+                    padding: '10px 22px', borderRadius: 7, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
                     background: 'var(--card)', border: '1px solid var(--border2)',
                     color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', gap: 7,
                     transition: 'all 0.14s',

@@ -153,7 +153,7 @@ export default function CreateListingPage() {
           className="glass-panel"
           style={{
             border: `1.5px dashed ${preview ? 'var(--border2)' : 'var(--border2)'}`,
-            borderRadius: 14, padding: preview ? 0 : '56px 28px',
+            borderRadius: 10, padding: preview ? 0 : '56px 28px',
             textAlign: 'center', cursor: noCredits ? 'not-allowed' : 'pointer',
             background: 'var(--card)', overflow: 'hidden',
             opacity: noCredits ? 0.5 : 1,
@@ -202,12 +202,12 @@ export default function CreateListingPage() {
         {listing && (
           <div className="anim-in" style={{ marginTop: 24 }}>
             {listing.product === 'unknown' ? (
-              <div className="glass-panel" style={{ padding: '22px 24px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, textAlign: 'center' }}>
+              <div className="glass-panel" style={{ padding: '22px 24px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, textAlign: 'center' }}>
                 <p style={{ fontSize: 14, color: 'var(--text2)' }}>Could not identify a clear product in this photo. Try a clearer, well-lit shot.</p>
               </div>
             ) : (
               <>
-                <div className="glass-panel" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '24px', marginBottom: 18 }}>
+                <div className="glass-panel" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '24px', marginBottom: 18 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                     <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                       {listing.category}
@@ -258,7 +258,7 @@ export default function CreateListingPage() {
 
                 {/* Market reference */}
                 {listing.marketRefs.length > 0 && (
-                  <div className="glass-panel" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 22px', marginBottom: 18 }}>
+                  <div className="glass-panel" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '20px 22px', marginBottom: 18 }}>
                     <p className="section-label" style={{ marginBottom: 10 }}>Recent asking prices for this product</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {listing.marketRefs.map((r, i) => (

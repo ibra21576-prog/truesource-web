@@ -117,7 +117,7 @@ export default function Navigation() {
           return (
             <Link key={l.href} href={l.href} className={`sidebar-link${active ? ' active' : ''}`} style={{
               display: 'flex', alignItems: 'center', gap: 10,
-              padding: '11px 12px', borderRadius: 9, fontSize: 13.5,
+              padding: '11px 12px', borderRadius: 7, fontSize: 13.5,
               fontWeight: active ? 600 : 400,
               textDecoration: 'none',
               transition: 'background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s',
@@ -138,7 +138,7 @@ export default function Navigation() {
       {/* Status panel */}
       <div style={{ padding: '12px', borderTop: '1px solid var(--border)' }}>
         <div style={{
-          borderRadius: 10, background: 'rgba(255,255,255,0.035)',
+          borderRadius: 7, background: 'rgba(255,255,255,0.035)',
           border: `1px solid ${live ? 'rgba(168,85,247,0.28)' : 'var(--border)'}`,
           padding: '13px 14px', marginBottom: 8,
         }}>
@@ -161,7 +161,7 @@ export default function Navigation() {
           href="/api/auth/logout"
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            padding: '9px 11px', borderRadius: 8, fontSize: 13,
+            padding: '9px 11px', borderRadius: 6, fontSize: 13,
             fontWeight: 400, color: 'var(--text3)',
             textDecoration: 'none', transition: 'all 0.12s',
           }}

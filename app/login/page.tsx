@@ -50,7 +50,7 @@ function LoginContent() {
     }}>
       <div className="login-card" style={{
         background: 'rgba(20,20,23,0.82)', border: '1px solid rgba(255,255,255,0.09)',
-        borderRadius: 18, padding: '46px 40px', width: '100%', maxWidth: 430,
+        borderRadius: 12, padding: '46px 40px', width: '100%', maxWidth: 430,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
         boxShadow: '0 32px 100px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.05)',
         backdropFilter: 'blur(30px) saturate(130%)',
@@ -60,7 +60,7 @@ function LoginContent() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
           <Logo size={76} />
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.025em' }}>
               TrueSource <span style={{ color: 'var(--accent)' }}>Flip</span>
             </div>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4, fontWeight: 500, letterSpacing: '0.05em' }}>
@@ -83,7 +83,7 @@ function LoginContent() {
         {error && (
           <div style={{
             width: '100%', background: 'rgba(248,113,113,0.08)',
-            border: '1px solid rgba(248,113,113,0.2)', borderRadius: 10,
+            border: '1px solid rgba(248,113,113,0.2)', borderRadius: 7,
             padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start',
           }}>
             <svg width="15" height="15" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}>
@@ -98,7 +98,7 @@ function LoginContent() {
         {isIframe ? (
           <button onClick={openPopup} style={{
             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            padding: '14px 20px', borderRadius: 10, fontWeight: 700, fontSize: 15,
+            padding: '14px 20px', borderRadius: 7, fontWeight: 650, fontSize: 15,
             background: '#FA4616', color: '#fff', border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer',
             boxShadow: '0 12px 34px rgba(250,70,22,0.30), inset 0 1px 0 rgba(255,255,255,0.22)',
           }}>
@@ -112,7 +112,7 @@ function LoginContent() {
         ) : (
         <a href="/api/auth/whop" style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          padding: '14px 20px', borderRadius: 10, fontWeight: 700, fontSize: 15,
+          padding: '14px 20px', borderRadius: 7, fontWeight: 650, fontSize: 15,
           background: '#FA4616', color: '#fff', textDecoration: 'none',
           border: '1px solid rgba(255,255,255,0.18)', boxShadow: '0 12px 34px rgba(250,70,22,0.30), inset 0 1px 0 rgba(255,255,255,0.22)', transition: 'all 0.18s',
         }}>

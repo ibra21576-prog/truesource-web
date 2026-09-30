@@ -386,7 +386,7 @@ function SettingsInner() {
         <div className="glass-panel" style={{
           display: 'flex', alignItems: 'center', gap: 14,
           background: 'rgba(168,85,247,0.07)', border: '1px solid rgba(168,85,247,0.24)',
-          borderRadius: 12, padding: '17px 18px', marginBottom: 22,
+          borderRadius: 8, padding: '17px 18px', marginBottom: 22,
         }}>
           <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(168,85,247,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -418,7 +418,7 @@ function SettingsInner() {
         {!loading && connectedDomains.length > 0 && (
           <div style={{
             background: 'var(--card)', border: '1px solid var(--border)',
-            borderRadius: 14, padding: '20px', marginBottom: 18,
+            borderRadius: 10, padding: '20px', marginBottom: 18,
           }}>
             <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text3)', marginBottom: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Connected</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -453,7 +453,7 @@ function SettingsInner() {
         {/* Connect card */}
         <div className="glass-panel" style={{
           background: 'var(--card)', border: '1px solid var(--border)',
-          borderRadius: 14, overflow: 'hidden',
+          borderRadius: 10, overflow: 'hidden',
         }}>
 
           {step === 'idle' && (

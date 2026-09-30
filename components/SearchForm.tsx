@@ -165,7 +165,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
       display: 'flex', flexDirection: 'column', gap: 18,
       background: 'var(--card)',
       border: '1px solid var(--border)',
-      borderRadius: 14,
+      borderRadius: 10,
       padding: 26,
     }}>
       <div>

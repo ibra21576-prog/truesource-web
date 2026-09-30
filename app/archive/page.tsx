@@ -104,7 +104,7 @@ export default function ArchivePage() {
         <div className="glass-panel" style={{
           display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center',
           background: 'var(--card)', border: '1px solid var(--border)',
-          borderRadius: 12, padding: '12px 14px',
+          borderRadius: 8, padding: '12px 14px',
         }}>
           <div style={{ position: 'relative', flex: 1, minWidth: 180, maxWidth: 300 }}>
             <input
@@ -152,10 +152,10 @@ export default function ArchivePage() {
         ) : filtered.length === 0 ? (
           <div className="glass-panel" style={{
             textAlign: 'center', padding: '64px 24px',
-            background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14,
+            background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10,
           }}>
             <div style={{
-              width: 52, height: 52, borderRadius: 12, background: 'var(--surface)',
+              width: 52, height: 52, borderRadius: 8, background: 'var(--surface)',
               border: '1px solid var(--border)', display: 'flex', alignItems: 'center',
               justifyContent: 'center', margin: '0 auto 16px',
             }}>

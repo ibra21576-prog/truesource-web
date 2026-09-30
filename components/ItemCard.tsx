@@ -75,7 +75,7 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
           display: 'flex', flexDirection: 'column',
           background: 'rgba(21,21,24,0.84)',
           border: '1px solid var(--border)',
-          borderRadius: 12, overflow: 'hidden',
+          borderRadius: 8, overflow: 'hidden',
           textDecoration: 'none',
           transition: 'border-color 0.22s, transform 0.22s, box-shadow 0.22s',
           cursor: 'pointer',
@@ -141,7 +141,7 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
         {/* Content */}
         <div style={{ padding: '13px 15px 15px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
           <span style={{
-            fontSize: 21, fontWeight: 800,
+            fontSize: 21, fontWeight: 700,
             color: item.price ? 'var(--text)' : 'var(--text3)',
             letterSpacing: '-0.03em', lineHeight: 1,
           }}>
@@ -196,7 +196,7 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
         display: 'flex', alignItems: 'stretch',
         background: 'rgba(21,21,24,0.84)',
         border: '1px solid var(--border)',
-        borderRadius: 12, overflow: 'hidden',
+        borderRadius: 8, overflow: 'hidden',
         textDecoration: 'none',
         transition: 'border-color 0.22s, transform 0.22s, box-shadow 0.22s',
         cursor: 'pointer',
@@ -219,7 +219,7 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
       <div style={{
         width: 80, height: 80, flexShrink: 0, alignSelf: 'center',
         margin: '14px 14px 14px 14px',
-        borderRadius: 14, overflow: 'hidden',
+        borderRadius: 10, overflow: 'hidden',
         background: 'var(--surface)',
         border: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
