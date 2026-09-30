@@ -73,7 +73,7 @@ async function fetchIndexedShpock(search: Search): Promise<ScrapedItem[]> {
       cache: 'no-store',
       signal: AbortSignal.timeout(5000),
     })
-    if (!res.ok) return []
+    if (!res.ok) return [liveShpockSearch(search)]
     const markdown = await res.text()
     const items: ScrapedItem[] = []
     const seen = new Set<string>()
