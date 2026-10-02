@@ -11,7 +11,7 @@ const interTight = Inter_Tight({
 export const metadata: Metadata = {
   title: 'TrueSource Flip',
   description: 'Deal Monitor für Vinted, eBay & Kleinanzeigen',
-  icons: { icon: '/truesource-mark-v2.png' },
+  icons: { icon: '/truesource-logo-original-compact.png' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -192,7 +192,7 @@ export default function DashboardPage() {
     try {
       const n = new Notification(`${item.platform.toUpperCase()} — ${item.price || 'No price'}`, {
         body: item.title || 'New listing found',
-        icon: '/truesource-mark-v2.png',
+        icon: '/truesource-logo-original-compact.png',
         tag: item.id,
       })
       n.onclick = () => { window.open(item.url, '_blank'); n.close() }
