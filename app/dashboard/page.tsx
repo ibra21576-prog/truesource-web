@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import Navigation from '@/components/Navigation'
 import ItemCard from '@/components/ItemCard'
 import Logo from '@/components/Logo'
+import { apiFetch } from '@/lib/api-client'
 
 interface Item {
   id: string; item_id: string; platform: string; domain: string
@@ -128,6 +129,11 @@ function SetupGuide({ hasSearches }: { hasSearches: boolean }) {
                     display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14,
                     padding: '8px 16px', borderRadius: 8, background: 'var(--grad-accent)', color: '#fff',
                     fontWeight: 700, fontSize: 13,
+                  }} onClick={e => {
+                    const token = sessionStorage.getItem('ts_token')
+                    if (!token) return
+                    e.preventDefault()
+                    window.location.assign(`${step.action.href}?t=${encodeURIComponent(token)}`)
                   }}>{step.action.label}
                     <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                   </a>
@@ -163,6 +169,9 @@ export default function DashboardPage() {
   const searchesRef  = useRef<Search[]>([])
   const knownIdsRef  = useRef<Set<string>>(new Set())
   const firstLoadRef = useRef(true)
+  const soundOnRef   = useRef(false)
+
+  useEffect(() => { soundOnRef.current = soundOn }, [soundOn])
 
   useEffect(() => {
     try {
@@ -187,7 +196,7 @@ export default function DashboardPage() {
     setNotifPerm(perm)
   }
 
-  function fireNotification(item: Item) {
+  const fireNotification = useCallback((item: Item) => {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
     try {
       const n = new Notification(`${item.platform.toUpperCase()} — ${item.price || 'No price'}`, {
@@ -197,10 +206,10 @@ export default function DashboardPage() {
       })
       n.onclick = () => { window.open(item.url, '_blank'); n.close() }
     } catch {}
-  }
+  }, [])
 
   const loadFeed = useCallback(async () => {
-    const res = await fetch('/api/feed')
+    const res = await apiFetch('/api/feed')
     if (!res.ok) { setLoading(false); return }
     const raw: Item[] = (await res.json()).map((it: any) => ({ ...it, search_query: it.searches?.query }))
 
@@ -208,7 +217,7 @@ export default function DashboardPage() {
       const newItems = raw.filter(it => !knownIdsRef.current.has(it.id))
       if (newItems.length > 0) {
         setNewCount(n => n + newItems.length)
-        if (soundOn) playBeep()
+        if (soundOnRef.current) playBeep()
         newItems.slice(0, 3).forEach(it => fireNotification(it))
       }
     }
@@ -219,7 +228,7 @@ export default function DashboardPage() {
     setLoading(false)
     setArchiveItems([])
     setNoMoreItems(false)
-  }, [soundOn])
+  }, [fireNotification])
 
   const loadMoreArchive = useCallback(async () => {
     setLoadingMore(true)
@@ -229,7 +238,7 @@ export default function DashboardPage() {
       const oldest = allCurrent.reduce((a, b) =>
         new Date(a.found_at).getTime() < new Date(b.found_at).getTime() ? a : b
       )
-      const res = await fetch(`/api/feed?before=${encodeURIComponent(oldest.found_at)}&limit=500`)
+      const res = await apiFetch(`/api/feed?before=${encodeURIComponent(oldest.found_at)}&limit=500`)
       if (!res.ok) return
       const raw: Item[] = (await res.json()).map((it: any) => ({ ...it, search_query: it.searches?.query }))
       if (raw.length === 0) { setNoMoreItems(true); return }
@@ -244,7 +253,7 @@ export default function DashboardPage() {
   }, [items, archiveItems])
 
   const loadSearches = useCallback(async () => {
-    const res = await fetch('/api/searches')
+    const res = await apiFetch('/api/searches')
     if (res.ok) {
       const active = (await res.json()).filter((s: Search) => s.enabled)
       setSearches(active)
@@ -252,11 +261,11 @@ export default function DashboardPage() {
     }
   }, [])
 
-  async function scrapeOne(searchId: string) {
+  const scrapeOne = useCallback(async (searchId: string) => {
     setScraping(s => ({ ...s, [searchId]: true }))
     setErrors(e => { const n = { ...e }; delete n[searchId]; return n })
     try {
-      const res = await fetch('/api/scrape', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ searchId }) })
+      const res = await apiFetch('/api/scrape', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ searchId }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
     } catch (e: any) {
@@ -264,30 +273,38 @@ export default function DashboardPage() {
     } finally {
       setScraping(s => ({ ...s, [searchId]: false }))
     }
-  }
+  }, [])
 
-  async function scrapeAll(list?: Search[]) {
+  const scrapeAll = useCallback(async (list?: Search[]) => {
     const targets = list ?? searchesRef.current
     if (targets.length === 0) return
     await Promise.all(targets.map(s => scrapeOne(s.id)))
     await loadFeed()
-  }
+  }, [loadFeed, scrapeOne])
 
   useEffect(() => {
-    loadFeed(); loadSearches()
-    fetch('/api/me').then(r => r.ok ? r.json() : null).then(setMe)
-    const feedIv   = setInterval(loadFeed, FEED_INTERVAL)
-    const scrapeIv = setInterval(() => { scrapeAll(); setNextScan(SCRAPE_INTERVAL / 1000) }, SCRAPE_INTERVAL)
+    apiFetch('/api/me').then(r => r.ok ? r.json() : null).then(setMe)
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    const scan = async () => {
+      await loadSearches()
+      if (active) await scrapeAll()
+    }
+    const kickoff = setTimeout(scan, 3000)
+    const scrapeIv = setInterval(() => { scan(); setNextScan(SCRAPE_INTERVAL / 1000) }, SCRAPE_INTERVAL)
     const countIv  = setInterval(() => setNextScan(n => Math.max(0, n - 1)), 1000)
-    return () => { clearInterval(feedIv); clearInterval(scrapeIv); clearInterval(countIv) }
-  }, [])
+    return () => {
+      active = false
+      clearTimeout(kickoff)
+      clearInterval(scrapeIv)
+      clearInterval(countIv)
+    }
+  }, [loadSearches, scrapeAll])
 
   useEffect(() => {
-    const t = setTimeout(async () => { await loadSearches(); scrapeAll() }, 3000)
-    return () => clearTimeout(t)
-  }, [])
-
-  useEffect(() => {
+    loadFeed()
     const iv = setInterval(loadFeed, FEED_INTERVAL)
     return () => clearInterval(iv)
   }, [loadFeed])

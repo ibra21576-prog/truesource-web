@@ -1,6 +1,8 @@
 'use client'
+/* eslint-disable @next/next/no-img-element */
 import { useState, useRef, useCallback, useEffect } from 'react'
 import Navigation from '@/components/Navigation'
+import { apiFetch } from '@/lib/api-client'
 
 interface MarketRef { platform: string; price: string; title: string }
 interface Listing {
@@ -63,7 +65,7 @@ export default function CreateListingPage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const loadCredits = useCallback(async () => {
-    const res = await fetch('/api/credits')
+    const res = await apiFetch('/api/credits')
     if (res.ok) setCredits(await res.json())
   }, [])
 
@@ -75,7 +77,7 @@ export default function CreateListingPage() {
     setLoading(true)
     try {
       const { base64, mimeType } = await compressImage(file)
-      const res = await fetch('/api/listing/generate', {
+      const res = await apiFetch('/api/listing/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64: base64, mimeType }),

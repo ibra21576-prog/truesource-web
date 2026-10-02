@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Navigation from '@/components/Navigation'
 import SearchForm from '@/components/SearchForm'
+import { apiFetch } from '@/lib/api-client'
 
 interface Search {
   id: string; query: string; platform: string; domain: string
@@ -26,22 +27,27 @@ export default function SearchesPage() {
   const [loading,  setLoading]  = useState(true)
 
   const load = useCallback(async () => {
-    const res  = await fetch('/api/searches')
-    const data = await res.json()
-    setSearches(Array.isArray(data) ? data : [])
-    setLoading(false)
+    try {
+      const res = await apiFetch('/api/searches')
+      const data = res.ok ? await res.json() : []
+      setSearches(Array.isArray(data) ? data : [])
+    } catch {
+      setSearches([])
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [load])
 
   async function toggle(s: Search) {
-    await fetch(`/api/searches/${s.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: !s.enabled }) })
+    await apiFetch(`/api/searches/${s.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: !s.enabled }) })
     load()
   }
 
   async function remove(id: string) {
     if (!confirm('Delete this search and all its listings?')) return
-    await fetch(`/api/searches/${id}`, { method: 'DELETE' })
+    await apiFetch(`/api/searches/${id}`, { method: 'DELETE' })
     load()
   }
 

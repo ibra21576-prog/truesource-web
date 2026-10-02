@@ -2,13 +2,12 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { fetchItems } from '@/lib/scraper'
 import { saveNewItems } from '@/lib/scraper/save'
 import { NextRequest, NextResponse } from 'next/server'
-import { verifySession } from '@/lib/session'
+import { getRequestSession } from '@/lib/session'
 
 const BUCKET = 'ts-settings'
 
 export async function POST(req: NextRequest) {
-  const token = req.cookies.get('session')?.value
-  const session = token ? await verifySession(token) : null
+  const session = await getRequestSession(req)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchId } = await req.json()

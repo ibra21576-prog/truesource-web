@@ -1,15 +1,13 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { verifySession } from '@/lib/session'
+import { getRequestSession } from '@/lib/session'
 import { spendCredit } from '@/lib/credits'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
 async function getUser(req: NextRequest) {
-  const token = req.cookies.get('session')?.value
-  if (!token) return null
-  return verifySession(token)
+  return getRequestSession(req)
 }
 
 const PROMPT = `You are a resale listing assistant. Look at this product photo and identify exactly what it is (brand, model, product type). Then write a marketplace listing for it in German.

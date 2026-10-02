@@ -1,13 +1,11 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { verifySession } from '@/lib/session'
+import { getRequestSession } from '@/lib/session'
 
 const BUCKET = 'ts-settings'
 
 async function getUser(req: NextRequest) {
-  const token = req.cookies.get('session')?.value
-  if (!token) return null
-  return verifySession(token)
+  return getRequestSession(req)
 }
 
 async function ownsSearch(supabase: any, userId: string, searchId: string): Promise<boolean> {

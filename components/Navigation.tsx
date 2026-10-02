@@ -58,6 +58,17 @@ const NAV = [
 export default function Navigation() {
   const path = usePathname()
   const [srvAgo, setSrvAgo] = useState<number | null>(null)
+  const [sessionToken, setSessionToken] = useState('')
+
+  useEffect(() => {
+    const urlToken = new URLSearchParams(window.location.search).get('t')
+    if (urlToken) sessionStorage.setItem('ts_token', urlToken)
+    setSessionToken(urlToken || sessionStorage.getItem('ts_token') || '')
+  }, [path])
+
+  const authHref = (href: string) => sessionToken
+    ? `${href}${href.includes('?') ? '&' : '?'}t=${encodeURIComponent(sessionToken)}`
+    : href
 
   useEffect(() => {
     const pull = async () => {
@@ -79,7 +90,7 @@ export default function Navigation() {
       {NAV.map(l => {
         const active = path === l.href || (l.href !== '/dashboard' && path?.startsWith(l.href))
         return (
-          <Link key={l.href} href={l.href} className={active ? 'active' : undefined}>
+          <Link key={l.href} href={authHref(l.href)} className={active ? 'active' : undefined}>
             {l.icon}
             {l.label === 'Create Listing' ? 'Create' : l.label}
           </Link>
@@ -89,7 +100,7 @@ export default function Navigation() {
     <aside className="sidebar">
       {/* Brand */}
       <div className="sidebar-brand">
-        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none' }}>
+        <Link href={authHref('/dashboard')} style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none' }}>
           <Logo size={36} />
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text)', lineHeight: 1.1 }}>
@@ -115,7 +126,7 @@ export default function Navigation() {
         {NAV.map(l => {
           const active = path === l.href || (l.href !== '/dashboard' && path?.startsWith(l.href))
           return (
-            <Link key={l.href} href={l.href} className={`sidebar-link${active ? ' active' : ''}`} style={{
+            <Link key={l.href} href={authHref(l.href)} className={`sidebar-link${active ? ' active' : ''}`} style={{
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '11px 12px', borderRadius: 7, fontSize: 13.5,
               fontWeight: active ? 600 : 400,
@@ -159,6 +170,7 @@ export default function Navigation() {
 
         <a
           href="/api/auth/logout"
+          onClick={() => sessionStorage.removeItem('ts_token')}
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '9px 11px', borderRadius: 6, fontSize: 13,

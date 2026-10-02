@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { jwtVerify } from 'jose/jwt/verify'
 
 const PUBLIC = ['/login', '/api/auth', '/_next', '/logo', '/truesource-logo-purple.png', '/truesource-mark-v2.png', '/truesource-logo-original-compact.png', '/favicon', '/api/cron', '/api/debug-scrape', '/api/admin-reset', '/api/img', '/api/status']
 
@@ -10,7 +11,9 @@ export async function middleware(req: NextRequest) {
   }
 
   // Accept session from cookie OR URL param ?t= (iframe mode — cookies blocked)
-  const token = req.cookies.get('session')?.value || req.nextUrl.searchParams.get('t') || ''
+  const authorization = req.headers.get('authorization') || ''
+  const bearer = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : ''
+  const token = bearer || req.nextUrl.searchParams.get('t') || req.cookies.get('session')?.value
   if (!token) {
     // Detect iframe via Sec-Fetch-Dest header — pass ?iframe=1 so login page knows
     const dest = req.headers.get('Sec-Fetch-Dest') || ''
@@ -20,36 +23,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Verify JWT using Web Crypto API (Edge-compatible)
+  // jose uses the Edge runtime's Web Crypto implementation and applies the
+  // same signature and expiry checks as the API route session helper.
   try {
-    const parts = token.split('.')
-    if (parts.length !== 3) throw new Error('invalid')
-
-    const secret = process.env.SESSION_SECRET ?? 'fallback-change-me'
-    const key = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(secret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['verify']
-    )
-
-    const sigInput = new TextEncoder().encode(`${parts[0]}.${parts[1]}`)
-    // Base64URL → Base64 → Uint8Array
-    const sigB64 = parts[2].replace(/-/g, '+').replace(/_/g, '/').padEnd(
-      parts[2].length + (4 - (parts[2].length % 4)) % 4, '='
-    )
-    const sigBytes = Uint8Array.from(atob(sigB64), c => c.charCodeAt(0))
-
-    const valid = await crypto.subtle.verify('HMAC', key, sigBytes, sigInput)
-    if (!valid) throw new Error('bad sig')
-
-    // Check expiry
-    const payloadB64 = parts[1].replace(/-/g, '+').replace(/_/g, '/').padEnd(
-      parts[1].length + (4 - (parts[1].length % 4)) % 4, '='
-    )
-    const payload = JSON.parse(atob(payloadB64))
-    if (payload.exp && payload.exp * 1000 < Date.now()) throw new Error('expired')
+    const secret = process.env.SESSION_SECRET?.trim() || 'fallback-change-me'
+    await jwtVerify(token, new TextEncoder().encode(secret))
 
     return NextResponse.next()
   } catch {

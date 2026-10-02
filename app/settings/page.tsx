@@ -2,6 +2,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Navigation from '@/components/Navigation'
+import { apiFetch } from '@/lib/api-client'
 
 const DOMAINS = ['www.vinted.de', 'www.vinted.at', 'www.vinted.fr', 'www.vinted.co.uk']
 
@@ -93,7 +94,7 @@ function ExtensionFlow({ onStart }: { onStart: () => void }) {
       ),
       desc: (
         <>
-          Geh auf <strong style={{ color: 'var(--text)' }}>vinted.de</strong>, drück <kbd style={{ padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border2)', background: 'var(--card)', fontSize: 11, fontWeight: 600 }}>Ctrl+D</kbd> → klick <strong style={{ color: 'var(--text)' }}>„Mehr…"</strong> → bei URL alles löschen → <kbd style={{ padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border2)', background: 'var(--card)', fontSize: 11, fontWeight: 600 }}>Ctrl+V</kbd> einfügen → Speichern.
+          Geh auf <strong style={{ color: 'var(--text)' }}>vinted.de</strong>, drück <kbd style={{ padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border2)', background: 'var(--card)', fontSize: 11, fontWeight: 600 }}>Ctrl+D</kbd> → klick <strong style={{ color: 'var(--text)' }}>„Mehr…&ldquo;</strong> → bei URL alles löschen → <kbd style={{ padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border2)', background: 'var(--card)', fontSize: 11, fontWeight: 600 }}>Ctrl+V</kbd> einfügen → Speichern.
         </>
       ),
       cta: <button onClick={onStart} className="btn-primary" style={{ fontSize: 13, padding: '8px 16px' }}>Zu Vinted →</button>,
@@ -323,7 +324,7 @@ function SettingsInner() {
   const [copied,   setCopied]   = useState(false)
 
   async function loadStatus() {
-    const r = await fetch('/api/vinted-connect')
+    const r = await apiFetch('/api/vinted-connect')
     if (r.ok) setStatus(await r.json())
     setLoading(false)
   }
@@ -334,7 +335,7 @@ function SettingsInner() {
     if (!vtoken) return
     const d = vdomain ? `www.${vdomain.replace(/^www\./, '')}` : 'www.vinted.de'
     setAutoMsg({ text: 'Connecting…', ok: true })
-    fetch('/api/vinted-connect', {
+    apiFetch('/api/vinted-connect', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ domain: d, accessToken: vtoken }),
     }).then(r => r.json()).then(data => {
@@ -365,7 +366,7 @@ function SettingsInner() {
   }
 
   async function disconnect(d: string) {
-    await fetch('/api/vinted-connect', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain: d }) })
+    await apiFetch('/api/vinted-connect', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain: d }) })
     await loadStatus()
   }
 
@@ -536,12 +537,12 @@ function SettingsInner() {
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', margin: '0 0 6px' }}>Lesezeichen erstellen (einmalig)</p>
                   <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px' }}>
                     <p style={{ fontSize: 12, color: 'var(--text2)', margin: '0 0 8px', lineHeight: 1.7 }}>
-                      <strong style={{ color: 'var(--text)' }}>Schon ein "Connect Vinted" Lesezeichen?</strong><br />
+                      <strong style={{ color: 'var(--text)' }}>Schon ein &ldquo;Connect Vinted&rdquo; Lesezeichen?</strong><br />
                       Rechtsklick darauf → <strong style={{ color: 'var(--text)' }}>Bearbeiten</strong> → URL-Feld komplett löschen → <kbd style={{ padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border2)', background: 'var(--card)', fontSize: 11, fontWeight: 600 }}>Ctrl+V</kbd> → Speichern
                     </p>
                     <p style={{ fontSize: 12, color: 'var(--text2)', margin: 0, lineHeight: 1.7 }}>
                       <strong style={{ color: 'var(--text)' }}>Noch kein Lesezeichen?</strong><br />
-                      Rechtsklick auf die <strong style={{ color: 'var(--text)' }}>Lesezeichenleiste</strong> → "Lesezeichen hinzufügen" → Name: <strong style={{ color: 'var(--accent)' }}>Connect Vinted</strong> → URL: <kbd style={{ padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border2)', background: 'var(--card)', fontSize: 11, fontWeight: 600 }}>Ctrl+V</kbd> → Speichern
+                      Rechtsklick auf die <strong style={{ color: 'var(--text)' }}>Lesezeichenleiste</strong> → &ldquo;Lesezeichen hinzufügen&rdquo; → Name: <strong style={{ color: 'var(--accent)' }}>Connect Vinted</strong> → URL: <kbd style={{ padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border2)', background: 'var(--card)', fontSize: 11, fontWeight: 600 }}>Ctrl+V</kbd> → Speichern
                     </p>
                   </div>
                 </div>
@@ -553,7 +554,7 @@ function SettingsInner() {
                 <div style={{ flex: 1, paddingTop: 5 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', margin: '0 0 8px' }}>Auf Vinted gehen &amp; Lesezeichen klicken</p>
                   <p style={{ fontSize: 12, color: 'var(--text2)', margin: '0 0 10px', lineHeight: 1.6 }}>
-                    Logge dich auf Vinted ein → klick auf <strong style={{ color: 'var(--accent)' }}>"Connect Vinted"</strong> in deiner Lesezeichenleiste → du wirst automatisch verbunden!
+                    Logge dich auf Vinted ein → klick auf <strong style={{ color: 'var(--accent)' }}>&ldquo;Connect Vinted&rdquo;</strong> in deiner Lesezeichenleiste → du wirst automatisch verbunden!
                   </p>
                   <button
                     onClick={() => window.open('https://www.vinted.de', '_blank')}
@@ -585,7 +586,7 @@ function ManualConnect({ domains, onBack, onSuccess }: { domains: string[]; onBa
   async function save() {
     if (!token.trim()) return
     setSaving(true); setErr('')
-    const r = await fetch('/api/vinted-connect', {
+    const r = await apiFetch('/api/vinted-connect', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ domain, accessToken: token.trim() }),
     })
@@ -599,7 +600,7 @@ function ManualConnect({ domains, onBack, onSuccess }: { domains: string[]; onBa
     <div style={{ padding: 24 }}>
       <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: '0 0 4px' }}>Enter your Vinted token manually</p>
       <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 20px', lineHeight: 1.6 }}>
-        Open <strong style={{ color: 'var(--text)' }}>vinted.de</strong>, log in, then press <kbd style={{ padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border2)', background: 'var(--card)', fontSize: 11, fontWeight: 600 }}>F12</kbd> → tab <strong style={{ color: 'var(--text)' }}>„Application"</strong> (or „Storage") → <strong style={{ color: 'var(--text)' }}>Cookies</strong> → <strong style={{ color: 'var(--text)' }}>vinted.de</strong> → find <strong style={{ color: 'var(--accent)' }}>access_token_web</strong> → copy the value.
+        Open <strong style={{ color: 'var(--text)' }}>vinted.de</strong>, log in, then press <kbd style={{ padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border2)', background: 'var(--card)', fontSize: 11, fontWeight: 600 }}>F12</kbd> → tab <strong style={{ color: 'var(--text)' }}>„Application&ldquo;</strong> (or „Storage&ldquo;) → <strong style={{ color: 'var(--text)' }}>Cookies</strong> → <strong style={{ color: 'var(--text)' }}>vinted.de</strong> → find <strong style={{ color: 'var(--accent)' }}>access_token_web</strong> → copy the value.
       </p>
 
       <div style={{ marginBottom: 14 }}>
@@ -640,7 +641,7 @@ function PasswordConnect({ domains, onBack, onSuccess }: { domains: string[]; on
   async function connect() {
     if (!email.trim() || !password.trim()) return
     setSaving(true); setErr('')
-    const r = await fetch('/api/vinted-connect', {
+    const r = await apiFetch('/api/vinted-connect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ domain, email: email.trim(), password: password.trim() }),
@@ -662,7 +663,7 @@ function PasswordConnect({ domains, onBack, onSuccess }: { domains: string[]; on
       <div style={{ background: 'rgba(168,85,247,0.07)', border: '1px solid rgba(168,85,247,0.24)', borderRadius: 8, padding: '12px 14px', marginBottom: 20 }}>
         <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', margin: '0 0 4px' }}>Registered with Google?</p>
         <p style={{ fontSize: 12, color: 'var(--text2)', margin: 0, lineHeight: 1.6 }}>
-          No problem! Go to <strong style={{ color: 'var(--text)' }}>vinted.de</strong> → click <strong style={{ color: 'var(--text)' }}>"Forgot password"</strong> → enter your Google email → check your inbox → set a new password → come back here!
+          No problem! Go to <strong style={{ color: 'var(--text)' }}>vinted.de</strong> → click <strong style={{ color: 'var(--text)' }}>&ldquo;Forgot password&rdquo;</strong> → enter your Google email → check your inbox → set a new password → come back here!
         </p>
       </div>
 

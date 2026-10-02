@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose'
+import type { NextRequest } from 'next/server'
 
-const secret = () => new TextEncoder().encode(process.env.SESSION_SECRET ?? 'fallback-change-me')
+const secret = () => new TextEncoder().encode(process.env.SESSION_SECRET?.trim() || 'fallback-change-me')
 
 export interface SessionPayload {
   userId: string
@@ -27,4 +28,15 @@ export async function verifySession(token: string): Promise<SessionPayload | nul
   } catch {
     return null
   }
+}
+
+export function getRequestToken(req: NextRequest): string {
+  const authorization = req.headers.get('authorization') || ''
+  const bearer = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : ''
+  return bearer || req.nextUrl.searchParams.get('t') || req.cookies.get('session')?.value || ''
+}
+
+export async function getRequestSession(req: NextRequest): Promise<SessionPayload | null> {
+  const token = getRequestToken(req)
+  return token ? verifySession(token) : null
 }

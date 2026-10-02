@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 interface Item {
   id: string; item_id: string; platform: string; domain: string
   title?: string; price?: string; url?: string; image?: string | null

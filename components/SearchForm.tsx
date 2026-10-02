@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { apiFetch } from '@/lib/api-client'
 
 const VINTED_DOMAINS = [
   { value: 'www.vinted.de',     label: '🇩🇪 vinted.de — Deutschland' },
@@ -145,7 +146,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
     if (!query.trim()) return
     setLoading(true); setError('')
     try {
-      const res = await fetch('/api/searches', {
+      const res = await apiFetch('/api/searches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: query.trim(), platform, domain, min_price: minPrice || null, max_price: maxPrice || null }),

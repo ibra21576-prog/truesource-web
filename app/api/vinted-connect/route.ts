@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { verifySession } from '@/lib/session'
+import { getRequestSession } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -9,9 +9,7 @@ const BUCKET = 'ts-settings'
 const ALLOWED_DOMAINS = ['www.vinted.de', 'www.vinted.at', 'www.vinted.fr', 'www.vinted.co.uk']
 
 async function getUser(req: NextRequest) {
-  const token = req.cookies.get('session')?.value
-  if (!token) return null
-  return verifySession(token)
+  return getRequestSession(req)
 }
 
 export async function GET(req: NextRequest) {

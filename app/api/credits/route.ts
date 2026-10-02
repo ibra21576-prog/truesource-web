@@ -1,14 +1,12 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { verifySession } from '@/lib/session'
+import { getRequestSession } from '@/lib/session'
 import { getCredits, addCredits } from '@/lib/credits'
 
 export const dynamic = 'force-dynamic'
 
 async function getUser(req: NextRequest) {
-  const token = req.cookies.get('session')?.value
-  if (!token) return null
-  return verifySession(token)
+  return getRequestSession(req)
 }
 
 export async function GET(req: NextRequest) {
@@ -31,7 +29,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
   const { userId, amount } = await req.json()
-  if (!userId || typeof amount !== 'number') {
+  if (!userId || !Number.isInteger(amount) || amount <= 0) {
     return NextResponse.json({ error: 'Missing userId or amount' }, { status: 400 })
   }
   const supabase = createServiceClient()

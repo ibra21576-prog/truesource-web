@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Navigation from '@/components/Navigation'
 import ItemCard from '@/components/ItemCard'
+import { apiFetch } from '@/lib/api-client'
 
 interface Item {
   id: string; item_id: string; platform: string; domain: string
@@ -21,19 +22,19 @@ export default function ArchivePage() {
   const load = useCallback(async () => {
     const params = new URLSearchParams()
     if (platform) params.set('platform', platform)
-    const res = await fetch(`/api/feed?${params}`)
+    const res = await apiFetch(`/api/feed?${params}`)
     if (res.ok) setItems((await res.json()).map((it: any) => ({ ...it, search_query: it.searches?.query })))
     setLoading(false)
   }, [platform])
 
-  useEffect(() => { load() }, [platform])
+  useEffect(() => { load() }, [load])
 
   // Reset to page 1 whenever filter/search changes
   useEffect(() => { setPage(1) }, [search, platform])
 
   async function clearAll() {
     if (!confirm('Delete the entire archive? This cannot be undone.')) return
-    await fetch('/api/feed', { method: 'DELETE' })
+    await apiFetch('/api/feed', { method: 'DELETE' })
     setItems([])
   }
 
