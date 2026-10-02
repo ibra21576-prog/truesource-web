@@ -122,8 +122,8 @@ export default function Navigation() {
               textDecoration: 'none',
               transition: 'background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s',
               color: active ? 'var(--text)' : 'var(--text3)',
-              background: active ? 'linear-gradient(135deg, rgba(157,82,170,0.20), rgba(122,62,132,0.09))' : 'transparent',
-              border: `1px solid ${active ? 'rgba(157,82,170,0.20)' : 'transparent'}`,
+              background: active ? 'rgba(150,80,161,0.12)' : 'transparent',
+              border: `1px solid ${active ? 'rgba(150,80,161,0.20)' : 'transparent'}`,
               boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.045)' : 'none',
             }}>
               <span style={{ opacity: active ? 1 : 0.6, color: active ? 'var(--accent)' : 'currentColor' }}>
@@ -139,7 +139,7 @@ export default function Navigation() {
       <div style={{ padding: '12px', borderTop: '1px solid var(--border)' }}>
         <div style={{
           borderRadius: 7, background: 'rgba(255,255,255,0.035)',
-          border: `1px solid ${live ? 'rgba(168,85,247,0.28)' : 'var(--border)'}`,
+          border: `1px solid ${live ? 'rgba(150,80,161,0.26)' : 'var(--border)'}`,
           padding: '13px 14px', marginBottom: 8,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>

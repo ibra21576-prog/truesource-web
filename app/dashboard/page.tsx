@@ -346,7 +346,7 @@ export default function DashboardPage() {
                   fontSize: 12, fontWeight: 700,
                   background: 'var(--grad-accent)', color: '#fff',
                   borderRadius: 7, padding: '3px 10px',
-                  boxShadow: '0 3px 14px rgba(168,85,247,0.42)',
+                  boxShadow: 'none',
                 }}>+{newCount} new</span>
               )}
             </div>
@@ -364,8 +364,8 @@ export default function DashboardPage() {
               className="pill-control"
               style={{
                 padding: '7px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-                background: soundOn ? 'rgba(168,85,247,0.12)' : 'var(--card)',
-                border: `1px solid ${soundOn ? 'rgba(168,85,247,0.34)' : 'var(--border2)'}`,
+                background: soundOn ? 'rgba(150,80,161,0.10)' : 'var(--card)',
+                border: `1px solid ${soundOn ? 'rgba(150,80,161,0.28)' : 'var(--border2)'}`,
                 color: soundOn ? 'var(--accent)' : 'var(--text3)',
                 display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.14s',
               }}
@@ -386,8 +386,8 @@ export default function DashboardPage() {
               className="pill-control"
               style={{
                 padding: '7px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-                background: notifPerm === 'granted' ? 'rgba(168,85,247,0.12)' : 'var(--card)',
-                border: `1px solid ${notifPerm === 'granted' ? 'rgba(168,85,247,0.34)' : 'var(--border2)'}`,
+                background: notifPerm === 'granted' ? 'rgba(150,80,161,0.10)' : 'var(--card)',
+                border: `1px solid ${notifPerm === 'granted' ? 'rgba(150,80,161,0.28)' : 'var(--border2)'}`,
                 color: notifPerm === 'granted' ? 'var(--accent)' : 'var(--text3)',
                 display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.14s',
               }}

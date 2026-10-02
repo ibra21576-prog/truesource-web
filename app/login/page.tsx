@@ -49,11 +49,11 @@ function LoginContent() {
       padding: 24, fontFamily: 'var(--font-sans)',
     }}>
       <div className="login-card" style={{
-        background: 'linear-gradient(145deg, rgba(31,22,34,0.94), rgba(17,16,20,0.94))', border: '1px solid rgba(157,82,170,0.38)',
+        background: 'linear-gradient(145deg, rgba(22,19,24,0.97), rgba(14,14,16,0.97))', border: '1px solid rgba(150,80,161,0.22)',
         borderRadius: 12, padding: '46px 40px', width: '100%', maxWidth: 430,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
-        boxShadow: '0 32px 100px rgba(0,0,0,0.62), 0 0 48px rgba(122,62,132,0.14), inset 0 1px 0 rgba(255,255,255,0.05)',
-        backdropFilter: 'blur(30px) saturate(130%)',
+        boxShadow: '0 24px 72px rgba(0,0,0,0.58), 0 0 32px rgba(122,62,132,0.08), inset 0 1px 0 rgba(255,255,255,0.035)',
+        backdropFilter: 'blur(18px)',
       }}>
 
         {/* Logo */}
@@ -100,7 +100,7 @@ function LoginContent() {
             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             padding: '14px 20px', borderRadius: 7, fontWeight: 650, fontSize: 15,
             background: '#FA4616', color: '#fff', border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer',
-            boxShadow: '0 12px 34px rgba(250,70,22,0.30), inset 0 1px 0 rgba(255,255,255,0.22)',
+            boxShadow: '0 8px 22px rgba(250,70,22,0.22), inset 0 1px 0 rgba(255,255,255,0.16)',
           }}>
             <svg width="22" height="12" viewBox="0 0 1000 515" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M158.881 -0.00366211C93.2014 -0.00366211 47.9251 28.989 13.6619 61.7749C13.6619 61.7749 -0.173169 74.965 0.00164277 75.3669L143.897 220.129L287.766 75.3669C260.521 37.6314 209.152 -0.00366211 158.881 -0.00366211Z" fill="white"/>
@@ -114,7 +114,7 @@ function LoginContent() {
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
           padding: '14px 20px', borderRadius: 7, fontWeight: 650, fontSize: 15,
           background: '#FA4616', color: '#fff', textDecoration: 'none',
-          border: '1px solid rgba(255,255,255,0.18)', boxShadow: '0 12px 34px rgba(250,70,22,0.30), inset 0 1px 0 rgba(255,255,255,0.22)', transition: 'all 0.18s',
+          border: '1px solid rgba(255,255,255,0.16)', boxShadow: '0 8px 22px rgba(250,70,22,0.22), inset 0 1px 0 rgba(255,255,255,0.16)', transition: 'all 0.18s',
         }}>
           {/* Official Whop brandmark */}
           <svg width="22" height="12" viewBox="0 0 1000 515" fill="none" xmlns="http://www.w3.org/2000/svg">
