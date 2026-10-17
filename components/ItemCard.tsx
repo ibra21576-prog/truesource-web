@@ -80,13 +80,13 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
         className="anim-in listing-card"
         style={{
           display: 'flex', flexDirection: 'column',
-          background: 'rgba(21,21,24,0.84)',
+          background: 'var(--card)',
           border: '1px solid var(--border)',
           borderRadius: 8, overflow: 'hidden',
           textDecoration: 'none',
           transition: 'border-color 0.22s, transform 0.22s, box-shadow 0.22s',
           cursor: 'pointer',
-          boxShadow: 'var(--shadow-card)', backdropFilter: 'blur(18px)',
+          boxShadow: 'var(--shadow-card)',
         }}
         onMouseEnter={e => {
           const el = e.currentTarget as HTMLElement
@@ -201,13 +201,13 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
       className="anim-in listing-card"
       style={{
         display: 'flex', alignItems: 'stretch',
-        background: 'rgba(21,21,24,0.84)',
+        background: 'var(--card)',
         border: '1px solid var(--border)',
         borderRadius: 8, overflow: 'hidden',
         textDecoration: 'none',
         transition: 'border-color 0.22s, transform 0.22s, box-shadow 0.22s',
         cursor: 'pointer',
-        boxShadow: 'var(--shadow-card)', backdropFilter: 'blur(18px)',
+        boxShadow: 'var(--shadow-card)',
       }}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLElement

@@ -98,102 +98,51 @@ export default function Navigation() {
       })}
     </nav>
     <aside className="sidebar">
-      {/* Brand */}
       <div className="sidebar-brand">
-        <Link href={authHref('/dashboard')} style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none' }}>
-          <Logo size={36} />
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text)', lineHeight: 1.1 }}>
-              TrueSource
-            </div>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 1 }}>
-              Flip
-            </div>
-          </div>
+        <Link href={authHref('/dashboard')} className="sidebar-brand-link" aria-label="TrueSource Flip dashboard">
+          <Logo size={34} />
+          <span>TrueSource</span>
         </Link>
       </div>
 
-      {/* Nav links */}
-      <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <div style={{
-          fontSize: 10, fontWeight: 700, color: 'var(--text3)',
-          letterSpacing: '0.1em', textTransform: 'uppercase',
-          padding: '8px 10px 6px',
-        }}>
-          Platform
-        </div>
-
+      <nav className="sidebar-nav">
         {NAV.map(l => {
           const active = path === l.href || (l.href !== '/dashboard' && path?.startsWith(l.href))
           return (
-            <Link key={l.href} href={authHref(l.href)} className={`sidebar-link${active ? ' active' : ''}`} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '11px 12px', borderRadius: 7, fontSize: 13.5,
-              fontWeight: active ? 600 : 400,
-              textDecoration: 'none',
-              transition: 'background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s',
-              color: active ? 'var(--text)' : 'var(--text3)',
-              background: active ? 'rgba(150,80,161,0.12)' : 'transparent',
-              border: `1px solid ${active ? 'rgba(150,80,161,0.20)' : 'transparent'}`,
-              boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.045)' : 'none',
-            }}>
-              <span style={{ opacity: active ? 1 : 0.6, color: active ? 'var(--accent)' : 'currentColor' }}>
-                {l.icon}
-              </span>
-              {l.label}
+            <Link
+              key={l.href}
+              href={authHref(l.href)}
+              className={`sidebar-link${active ? ' active' : ''}`}
+              title={l.label}
+            >
+              <span className="sidebar-link-icon">{l.icon}</span>
+              <span className="sidebar-link-label">{l.label === 'Create Listing' ? 'Create' : l.label}</span>
             </Link>
           )
         })}
       </nav>
 
-      {/* Status panel */}
-      <div style={{ padding: '12px', borderTop: '1px solid var(--border)' }}>
-        <div style={{
-          borderRadius: 7, background: 'rgba(255,255,255,0.035)',
-          border: `1px solid ${live ? 'rgba(150,80,161,0.26)' : 'var(--border)'}`,
-          padding: '13px 14px', marginBottom: 8,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-            <div className="live-dot" style={!live ? { background: '#f59e0b', boxShadow: 'none', animation: 'none' } : undefined} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: live ? 'var(--accent)' : '#f59e0b', letterSpacing: '-0.01em' }}>
-              {live ? 'Scraping live' : 'Scraper idle'}
-            </span>
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', letterSpacing: '0.01em' }}>
-            {srvAgo == null
-              ? 'Checking…'
-              : srvAgo < 60
-                ? 'Last scan: just now'
-                : `Last scan: ${Math.round(srvAgo / 60)}m ago`}
-          </div>
+      <div className="sidebar-footer">
+        <div
+          className={`sidebar-status${live ? ' live' : ''}`}
+          title={srvAgo == null ? 'Checking scraper status' : `Last scan: ${srvAgo < 60 ? 'just now' : `${Math.round(srvAgo / 60)}m ago`}`}
+        >
+          <div className="live-dot" style={!live ? { background: '#f59e0b', boxShadow: 'none', animation: 'none' } : undefined} />
+          <span>{live ? 'Live' : 'Idle'}</span>
         </div>
 
         <a
           href="/api/auth/logout"
           onClick={() => sessionStorage.removeItem('ts_token')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '9px 11px', borderRadius: 6, fontSize: 13,
-            fontWeight: 400, color: 'var(--text3)',
-            textDecoration: 'none', transition: 'all 0.12s',
-          }}
-          onMouseEnter={e => {
-            const el = e.currentTarget as HTMLElement
-            el.style.color = 'var(--text2)'
-            el.style.background = 'var(--card)'
-          }}
-          onMouseLeave={e => {
-            const el = e.currentTarget as HTMLElement
-            el.style.color = 'var(--text3)'
-            el.style.background = 'transparent'
-          }}
+          className="sidebar-signout"
+          title="Sign out"
         >
           <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
             <line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
-          Sign out
+          <span>Logout</span>
         </a>
       </div>
     </aside>
