@@ -84,6 +84,20 @@ const SUBITO_DOMAINS = [{ value: 'www.subito.it', label: '🇮🇹 subito.it —
 const TRADERA_DOMAINS = [{ value: 'www.tradera.com', label: '🇸🇪 tradera.com — Sverige' }]
 const WILLHABEN_DOMAINS = [{ value: 'www.willhaben.at', label: '🇦🇹 willhaben.at — Österreich' }]
 
+const WALLAPOP_DOMAINS = [
+  { value: 'es.wallapop.com', label: '🇪🇸 wallapop.com — España' },
+  { value: 'it.wallapop.com', label: '🇮🇹 wallapop.com — Italia' },
+  { value: 'pt.wallapop.com', label: '🇵🇹 wallapop.com — Portugal' },
+]
+
+const OLX_DOMAINS = [
+  { value: 'www.olx.pl', label: '🇵🇱 olx.pl — Polska' },
+  { value: 'www.olx.ro', label: '🇷🇴 olx.ro — România' },
+  { value: 'www.olx.bg', label: '🇧🇬 olx.bg — България' },
+  { value: 'www.olx.pt', label: '🇵🇹 olx.pt — Portugal' },
+  { value: 'www.olx.ua', label: '🇺🇦 olx.ua — Україна' },
+]
+
 const PLATFORMS = [
   { value: 'vinted',        label: 'Vinted',       domain: 'vinted.de' },
   { value: 'ebay',          label: 'eBay',         domain: 'ebay.de' },
@@ -97,6 +111,9 @@ const PLATFORMS = [
   { value: 'subito',        label: 'Subito',       domain: 'subito.it' },
   { value: 'tradera',       label: 'Tradera',      domain: 'tradera.com' },
   { value: 'willhaben',     label: 'willhaben',    domain: 'willhaben.at' },
+  { value: 'wallapop',      label: 'Wallapop',     domain: 'wallapop.com' },
+  { value: 'olx',           label: 'OLX',          domain: 'olx.pl' },
+  { value: 'facebook',      label: 'Facebook',     domain: 'facebook.com', soon: true },
 ]
 
 const platformLogo = (domain: string) =>
@@ -115,6 +132,8 @@ const DEFAULT_DOMAINS: Record<string, string> = {
   subito: 'www.subito.it',
   tradera: 'www.tradera.com',
   willhaben: 'www.willhaben.at',
+  wallapop: 'es.wallapop.com',
+  olx: 'www.olx.pl',
 }
 
 const DOMAIN_OPTIONS: Record<string, { value: string; label: string }[] | null> = {
@@ -129,6 +148,8 @@ const DOMAIN_OPTIONS: Record<string, { value: string; label: string }[] | null> 
   subito: SUBITO_DOMAINS,
   tradera: TRADERA_DOMAINS,
   willhaben: WILLHABEN_DOMAINS,
+  wallapop: WALLAPOP_DOMAINS,
+  olx: OLX_DOMAINS,
   kleinanzeigen: null,
 }
 
@@ -138,6 +159,9 @@ function currencyForDomain(domain: string): string {
   if (domain.endsWith('.co.uk'))  return '£'
   if (domain.endsWith('.com') || domain.endsWith('.ca')) return '$'
   if (domain.endsWith('.pl'))     return 'zł'
+  if (domain.endsWith('.ro'))     return 'lei'
+  if (domain.endsWith('.bg'))     return 'лв'
+  if (domain.endsWith('.ua'))     return '₴'
   if (domain.endsWith('.cz'))     return 'Kč'
   if (domain.endsWith('.hu'))     return 'Ft'
   if (domain.endsWith('.se'))     return 'kr'
@@ -271,15 +295,18 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => handlePlatformChange(opt.value)}
+                onClick={() => { if (!opt.soon) handlePlatformChange(opt.value) }}
+                aria-disabled={opt.soon || undefined}
                 style={{
                   padding: '10px 4px', borderRadius: 9,
                   fontSize: 12, fontWeight: 500,
-                  cursor: 'pointer',
+                  cursor: opt.soon ? 'default' : 'pointer',
                   fontFamily: 'var(--font-sans)',
                   border: active ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
                   transition: 'all 0.15s ease',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  position: 'relative',
+                  opacity: opt.soon ? 0.66 : 1,
                   ...(active
                     ? { background: 'rgba(168,85,247,0.10)', color: 'var(--accent)' }
                     : { background: 'var(--surface)', color: 'var(--text2)' }
@@ -301,6 +328,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
                   />
                 </span>
                 <span>{opt.label}</span>
+                {opt.soon && <span className="platform-soon">Soon</span>}
               </button>
             )
           })}

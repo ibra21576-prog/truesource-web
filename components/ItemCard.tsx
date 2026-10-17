@@ -26,6 +26,8 @@ const P: Record<string, { label: string; color: string }> = {
   subito:        { label: 'Subito',        color: '#ef3b24' },
   tradera:       { label: 'Tradera',       color: '#005b49' },
   willhaben:     { label: 'willhaben',     color: '#e2001a' },
+  wallapop:      { label: 'Wallapop',      color: '#13c1ac' },
+  olx:           { label: 'OLX',           color: '#00a49f' },
 }
 
 const IMG_HOSTS = [
@@ -42,6 +44,8 @@ const IMG_HOSTS = [
   'images.sbito.it', 's.sbito.it',
   'img.tradera.net',
   'cache.willhaben.at',
+  'cdn.wallapop.com',
+  'apollo.olxcdn.com',
 ]
 
 function proxyImg(url: string | null | undefined): string | null {

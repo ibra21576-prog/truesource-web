@@ -18,12 +18,14 @@ const PLAT_COLOR: Record<string, string> = {
   gumtree: '#00b140', kijiji: '#6d28d9', craigslist: '#7c3aed',
   shpock: '#e91e8c', marktplaats: '#d32f2f', leboncoin: '#1565c0',
   subito: '#ef3b24', tradera: '#005b49', willhaben: '#e2001a',
+  wallapop: '#13c1ac', olx: '#23e5db',
 }
 const PLAT_LABEL: Record<string, string> = {
   vinted: 'Vinted', ebay: 'eBay', kleinanzeigen: 'Kleinanzeigen',
   gumtree: 'Gumtree', kijiji: 'Kijiji', craigslist: 'Craigslist',
   shpock: 'Shpock', marktplaats: 'Marktplaats', leboncoin: 'Leboncoin',
   subito: 'Subito', tradera: 'Tradera', willhaben: 'willhaben',
+  wallapop: 'Wallapop', olx: 'OLX',
 }
 // The background worker discovers listings; this short poll only makes a
 // newly saved result visible in an already-open dashboard with minimal delay.

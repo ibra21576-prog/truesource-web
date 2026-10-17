@@ -18,6 +18,8 @@ const TARGETS: Record<string, { domain: string }> = {
   subito:        { domain: 'www.subito.it' },
   tradera:       { domain: 'www.tradera.com' },
   willhaben:     { domain: 'www.willhaben.at' },
+  wallapop:      { domain: 'es.wallapop.com' },
+  olx:           { domain: 'www.olx.pl' },
 }
 
 export async function GET(req: NextRequest) {

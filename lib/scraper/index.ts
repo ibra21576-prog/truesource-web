@@ -11,6 +11,8 @@ import { fetchLeboncoin } from './leboncoin'
 import { fetchSubito } from './subito'
 import { fetchTradera } from './tradera'
 import { fetchWillhaben } from './willhaben'
+import { fetchWallapop } from './wallapop'
+import { fetchOlx } from './olx'
 import { matchesProduct, isWantedAd } from './utils'
 
 export type { Search, ScrapedItem }
@@ -29,6 +31,8 @@ export async function fetchItems(search: Search, cookieStr?: string): Promise<Sc
     case 'subito':        items = await fetchSubito(search); break
     case 'tradera':       items = await fetchTradera(search); break
     case 'willhaben':     items = await fetchWillhaben(search); break
+    case 'wallapop':      items = await fetchWallapop(search); break
+    case 'olx':           items = await fetchOlx(search); break
     default:              items = await fetchVinted(search, cookieStr); break
   }
   return items.filter(it => matchesProduct(it.title, search.query, search.platform) && !isWantedAd(it.title))

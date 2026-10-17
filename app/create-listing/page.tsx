@@ -25,6 +25,8 @@ const PLATFORMS = [
   { key: 'subito',        label: 'Subito',         url: 'https://www.subito.it/inserisci-annuncio.htm' },
   { key: 'tradera',       label: 'Tradera',        url: 'https://www.tradera.com/sell' },
   { key: 'willhaben',     label: 'willhaben',      url: 'https://www.willhaben.at/iad/newad' },
+  { key: 'wallapop',      label: 'Wallapop',       url: 'https://es.wallapop.com/app/catalog/upload' },
+  { key: 'olx',           label: 'OLX',            url: 'https://www.olx.pl/d/nowe-ogloszenie/' },
 ]
 
 const PLAT_COLOR: Record<string, string> = {
@@ -32,6 +34,7 @@ const PLAT_COLOR: Record<string, string> = {
   marktplaats: '#d32f2f', shpock: '#e91e8c', craigslist: '#7c3aed',
   kijiji: '#6d28d9', gumtree: '#00b140', leboncoin: '#1565c0',
   subito: '#ef3b24', tradera: '#005b49', willhaben: '#e2001a',
+  wallapop: '#13c1ac', olx: '#23e5db',
 }
 
 // Downscale + compress in the browser before upload — keeps the request small

@@ -59,6 +59,8 @@ export default function ArchivePage() {
     { value: 'subito',        label: 'Subito' },
     { value: 'tradera',       label: 'Tradera' },
     { value: 'willhaben',     label: 'willhaben' },
+    { value: 'wallapop',      label: 'Wallapop' },
+    { value: 'olx',           label: 'OLX' },
   ]
 
   // Build page numbers to show: always first, last, and a window around current
