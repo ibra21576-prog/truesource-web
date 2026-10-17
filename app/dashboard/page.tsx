@@ -216,7 +216,7 @@ export default function DashboardPage() {
     const raw: Item[] = (await res.json()).map((it: any) => ({ ...it, search_query: it.searches?.query }))
 
     if (!firstLoadRef.current) {
-      const newItems = raw.filter(it => !knownIdsRef.current.has(it.id))
+      const newItems = raw.filter(it => !it.first_scan && !knownIdsRef.current.has(it.id))
       if (newItems.length > 0) {
         setNewCount(n => n + newItems.length)
         if (soundOnRef.current) playBeep()

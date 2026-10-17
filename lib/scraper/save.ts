@@ -17,9 +17,9 @@ export async function saveNewItems(supabase: any, search: any, items: ScrapedIte
     .from('seen_ids').select('item_id').eq('search_id', search.id)
   const seenSet = new Set((seenRows || []).map((r: any) => r.item_id))
 
-  // Baseline scan = the very first scrape of this search. Everything on the
-  // marketplace at that moment is "old stock" — remember the ids, show nothing.
-  // From the next scan on, an unseen id is a genuinely fresh listing.
+  // Baseline scan = the very first scrape of this search. Show its current
+  // results immediately so a newly-created monitor never looks broken, but mark
+  // them as baseline items so the UI does not fire sound/push notifications.
   const isBaseline = seenSet.size === 0
 
   const newItems = items.filter(it => !seenSet.has(it.id))
@@ -30,9 +30,10 @@ export async function saveNewItems(supabase: any, search: any, items: ScrapedIte
       const age = nowMs - new Date(it.postedAt).getTime()
       return age <= MAX_LISTING_AGE_MS
     }
-    // No real post time from the platform: trust only items that appear after
-    // the baseline — those were posted between two scans, i.e. brand new.
-    return !isBaseline
+    // Some marketplaces do not expose a reliable post time. An unseen ID is
+    // still useful: on the baseline it becomes an initial result; afterwards it
+    // is a newly discovered listing.
+    return true
   })
 
   const rows = freshItems.map(it => ({
@@ -45,10 +46,11 @@ export async function saveNewItems(supabase: any, search: any, items: ScrapedIte
     url:        it.url,
     image:      it.image,
     found_at:   it.postedAt || now,   // real post time when the platform exposes it
-    first_scan: true,
+    posted_at:  it.postedAt || null,
+    first_scan: isBaseline,
   }))
 
-  await Promise.all([
+  const [itemWrite, seenWrite] = await Promise.all([
     // ignoreDuplicates: never overwrite an existing row (protects found_at)
     rows.length
       ? supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id', ignoreDuplicates: true })
@@ -59,5 +61,7 @@ export async function saveNewItems(supabase: any, search: any, items: ScrapedIte
       { ignoreDuplicates: true }
     ),
   ])
+  if (itemWrite?.error) throw new Error(`Could not save listings: ${itemWrite.error.message}`)
+  if (seenWrite?.error) throw new Error(`Could not save seen IDs: ${seenWrite.error.message}`)
   return rows.length
 }

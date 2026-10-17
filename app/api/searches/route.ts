@@ -1,6 +1,8 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getRequestSession } from '@/lib/session'
+import { fetchItems } from '@/lib/scraper'
+import { saveNewItems } from '@/lib/scraper/save'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,11 +23,12 @@ async function getUserSearchIds(supabase: any, userId: string): Promise<string[]
 }
 
 async function saveUserSearchIds(supabase: any, userId: string, ids: string[]) {
-  await supabase.storage.from(BUCKET).upload(
+  const { error } = await supabase.storage.from(BUCKET).upload(
     `user-data/${userId}/search-ids.json`,
     Buffer.from(JSON.stringify(ids)),
     { contentType: 'application/json', upsert: true }
   )
+  if (error) throw error
 }
 
 export async function GET(req: NextRequest) {
@@ -70,8 +73,29 @@ export async function POST(req: NextRequest) {
   // Register this search as belonging to the user
   const ids = await getUserSearchIds(supabase, user.userId)
   if (!ids.includes(data.id)) {
-    await saveUserSearchIds(supabase, user.userId, [...ids, data.id])
+    try {
+      await saveUserSearchIds(supabase, user.userId, [...ids, data.id])
+    } catch (e: any) {
+      // Do not leave an invisible orphan search behind if ownership storage fails.
+      await supabase.from('searches').delete().eq('id', data.id)
+      return NextResponse.json({ error: `Search could not be linked to your account: ${e.message}` }, { status: 500 })
+    }
   }
 
-  return NextResponse.json(data, { status: 201 })
+  // Populate the new monitor immediately instead of making the customer wait
+  // for the next background tick. A scrape failure does not undo the monitor;
+  // the continuous worker will retry it automatically.
+  let initial_results = 0
+  try {
+    const searchWithUser = { ...data, user_id: user.userId }
+    const items = await fetchItems(searchWithUser)
+    initial_results = await saveNewItems(supabase, data, items)
+    await supabase.from('searches')
+      .update({ last_scraped_at: new Date().toISOString() })
+      .eq('id', data.id)
+  } catch (e: any) {
+    console.error(`[searches] initial scrape failed for ${data.id}:`, e.message)
+  }
+
+  return NextResponse.json({ ...data, initial_results }, { status: 201 })
 }
