@@ -1,6 +1,7 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { fetchItems } from '@/lib/scraper'
 import { saveNewItems } from '@/lib/scraper/save'
+import { cooldownFor } from '@/lib/scraper/cadence'
 
 // ─── Shared scrape cycle ─────────────────────────────────────────────────────
 // One self-limiting pass over all enabled searches. Called either by the HTTP
@@ -13,10 +14,6 @@ import { saveNewItems } from '@/lib/scraper/save'
 //  • Small scale → everything every tick. Large scale → automatic rotation.
 
 const CHUNK = 25
-const MIN_INTERVAL_MS: Record<string, number> = {
-  ebay: 180_000, // eBay API quota → at most every 3 min per unique search
-}
-
 export interface CycleResult {
   ok: boolean
   processed: number
@@ -61,7 +58,7 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
   // 2. Keep only groups whose per-platform cooldown has elapsed, oldest first.
   const now = Date.now()
   const eligible = Array.from(groups.values())
-    .filter(g => now - g.lastScraped >= (MIN_INTERVAL_MS[g.platform] ?? 0))
+    .filter(g => now - g.lastScraped >= cooldownFor(g.platform, g.key))
     .sort((a, b) => a.lastScraped - b.lastScraped)
 
   // 3. Process in waves until the time budget runs out (leftovers run next tick).

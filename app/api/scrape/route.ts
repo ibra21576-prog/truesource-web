@@ -3,6 +3,7 @@ import { fetchItems } from '@/lib/scraper'
 import { saveNewItems } from '@/lib/scraper/save'
 import { NextRequest, NextResponse } from 'next/server'
 import { getRequestSession } from '@/lib/session'
+import { cooldownFor } from '@/lib/scraper/cadence'
 
 const BUCKET = 'ts-settings'
 
@@ -30,6 +31,28 @@ export async function POST(req: NextRequest) {
 
   // Attach userId so vinted.ts loads the correct per-user session
   const searchWithUser = { ...search, user_id: session.userId }
+
+  // Enforce marketplace-specific cooldowns on the server. This protects against
+  // several open tabs (or repeated button clicks) multiplying the request rate.
+  const now = Date.now()
+  const last = search.last_scraped_at ? new Date(search.last_scraped_at).getTime() : 0
+  const cooldown = cooldownFor(search.platform, search.id)
+  const remaining = cooldown - (now - last)
+  if (remaining > 0) {
+    return NextResponse.json({ ok: true, skipped: true, retryAfterMs: remaining })
+  }
+
+  // Optimistic reservation: only one concurrent request may claim this scan.
+  let reservation = supabase.from('searches')
+    .update({ last_scraped_at: new Date(now).toISOString() })
+    .eq('id', searchId)
+  reservation = search.last_scraped_at
+    ? reservation.eq('last_scraped_at', search.last_scraped_at)
+    : reservation.is('last_scraped_at', null)
+  const { data: claimed } = await reservation.select('id')
+  if (!claimed?.length) {
+    return NextResponse.json({ ok: true, skipped: true, retryAfterMs: cooldown })
+  }
 
   try {
     const items = await fetchItems(searchWithUser)
