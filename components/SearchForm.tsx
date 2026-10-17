@@ -112,7 +112,7 @@ const PLATFORMS = [
   { value: 'tradera',       label: 'Tradera',      domain: 'tradera.com' },
   { value: 'willhaben',     label: 'willhaben',    domain: 'willhaben.at' },
   { value: 'wallapop',      label: 'Wallapop',     domain: 'wallapop.com' },
-  { value: 'olx',           label: 'OLX',          domain: 'olx.pl' },
+  { value: 'olx',           label: 'OLX',          domain: 'olx.pl', soon: true },
   { value: 'facebook',      label: 'Facebook',     domain: 'facebook.com', soon: true },
 ]
 
@@ -178,6 +178,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
   const [regionOpen, setRegionOpen] = useState(false)
+  const [platformNotice, setPlatformNotice] = useState('')
   const regionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -199,6 +200,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
     setPlatform(p)
     setDomain(DEFAULT_DOMAINS[p] || 'www.' + p + '.com')
     setRegionOpen(false)
+    setPlatformNotice('')
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -295,7 +297,12 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => { if (!opt.soon) handlePlatformChange(opt.value) }}
+                onClick={() => {
+                  if (!opt.soon) return handlePlatformChange(opt.value)
+                  setPlatformNotice(opt.value === 'facebook'
+                    ? 'Facebook Marketplace is coming soon — we are waiting for an official, account-safe connection so nobody risks a ban.'
+                    : 'OLX is coming soon — direct access is currently blocked, so we will only activate it once scanning is reliable.')
+                }}
                 aria-disabled={opt.soon || undefined}
                 style={{
                   padding: '10px 4px', borderRadius: 9,
@@ -333,6 +340,12 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
             )
           })}
         </div>
+        {platformNotice && (
+          <div className="platform-notice" role="status">
+            <span>Coming soon</span>
+            {platformNotice}
+          </div>
+        )}
       </div>
 
       {/* Country / Domain */}

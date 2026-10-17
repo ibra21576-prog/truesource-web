@@ -912,6 +912,24 @@
     text-transform: uppercase;
   }
 
+  .platform-notice {
+    margin-top: 8px;
+    padding: 10px 11px;
+    border: 1px solid rgba(124,58,237,0.16);
+    border-radius: 8px;
+    background: rgba(124,58,237,0.055);
+    color: var(--text2);
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .platform-notice span {
+    display: inline-block;
+    margin-right: 6px;
+    color: var(--accent);
+    font-weight: 750;
+  }
+
   /* ── Live dot ── */
   .live-dot {
     width: 7px; height: 7px; border-radius: 50%;
