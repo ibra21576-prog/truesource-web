@@ -4,6 +4,7 @@ import { diagnoseEbayMarkup } from '@/lib/scraper/ebay'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 10  // Vercel Hobby hard limit; platforms run in parallel so total ≈ slowest one
+export const preferredRegion = 'fra1'
 
 // Test every platform from Vercel's actual IPs. Returns item count + sample + timing.
 const TARGETS: Record<string, { domain: string }> = {
