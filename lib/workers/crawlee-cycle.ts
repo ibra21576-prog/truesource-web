@@ -120,11 +120,20 @@ export async function runCrawleeScanCycle(
       unique_groups: groupMap.size,
       errors: errorDetails.length,
     })
-    await supabase.storage.from('ts-settings').upload(
-      'heartbeat2.json',
-      new Blob([heartbeat], { type: 'application/json' }),
-      { upsert: true, cacheControl: '0' },
-    )
+    const heartbeatBlob = () => new Blob([heartbeat], { type: 'application/json' })
+    await Promise.all([
+      supabase.storage.from('ts-settings').upload(
+        'heartbeat2.json',
+        heartbeatBlob(),
+        { upsert: true, cacheControl: '0' },
+      ),
+      // Kept separate because the legacy fallback cron also updates heartbeat2.
+      supabase.storage.from('ts-settings').upload(
+        'heartbeat-crawlee.json',
+        heartbeatBlob(),
+        { upsert: true, cacheControl: '0' },
+      ),
+    ])
   } catch {}
 
   return {

@@ -26,6 +26,24 @@ export async function GET() {
     out.heartbeatError = e.message
   }
 
+  // Dedicated worker heartbeat. The fallback cron writes heartbeat2.json too,
+  // so a separate file is required to prove Trigger.dev/Crawlee actually ran.
+  try {
+    const { data } = await supabase.storage.from('ts-settings').download('heartbeat-crawlee.json')
+    if (data) {
+      const beat = JSON.parse(await data.text())
+      out.crawlee = {
+        active: true,
+        lastRun: beat,
+        secondsSinceLastRun: Math.round((Date.now() - new Date(beat.at).getTime()) / 1000),
+      }
+    } else {
+      out.crawlee = { active: false }
+    }
+  } catch {
+    out.crawlee = { active: false }
+  }
+
   // Item totals + freshest post time per platform
   try {
     const { count } = await supabase.from('items').select('*', { count: 'exact', head: true })
@@ -44,6 +62,19 @@ export async function GET() {
     }
   } catch (e: any) {
     out.dbError = e.message
+  }
+
+  // Safe readiness/counts only; raw price history and embeddings stay private.
+  try {
+    const [{ count: historyItems, error }, { count: embeddedItems }] = await Promise.all([
+      supabase.from('market_history').select('*', { count: 'exact', head: true }),
+      supabase.from('market_history').select('*', { count: 'exact', head: true }).not('embedding', 'is', null),
+    ])
+    out.priceIntelligence = error
+      ? { databaseReady: false, historyItems: 0, embeddedItems: 0 }
+      : { databaseReady: true, historyItems: historyItems ?? 0, embeddedItems: embeddedItems ?? 0 }
+  } catch {
+    out.priceIntelligence = { databaseReady: false, historyItems: 0, embeddedItems: 0 }
   }
 
   return NextResponse.json(out, { headers: { 'Cache-Control': 'no-store' } })
