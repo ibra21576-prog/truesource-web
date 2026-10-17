@@ -1,4 +1,5 @@
 import { ScrapedItem } from './types'
+import { recordMarketHistory } from '@/lib/intelligence/history'
 
 // Only listings actually posted within this window count as "new". Anything the
 // marketplace says is older gets remembered (seen_ids) but never shown in the feed.
@@ -13,8 +14,11 @@ export async function saveNewItems(supabase: any, search: any, items: ScrapedIte
   const nowMs = Date.now()
   const now = new Date(nowMs).toISOString()
 
-  const { data: seenRows } = await supabase
-    .from('seen_ids').select('item_id').eq('search_id', search.id)
+  const [{ data: seenRows }] = await Promise.all([
+    supabase.from('seen_ids').select('item_id').eq('search_id', search.id),
+    // Keep a permanent, search-independent record for future price analysis.
+    recordMarketHistory(supabase, search, items),
+  ])
   const seenSet = new Set((seenRows || []).map((r: any) => r.item_id))
 
   // Baseline scan = the very first scrape of this search. Show its current
