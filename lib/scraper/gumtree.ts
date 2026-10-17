@@ -138,7 +138,10 @@ function parseHtmlFallback(html: string, domain: string): ScrapedItem[] {
     const title = titleM ? stripHtml(titleM[1]).replace(/\s+/g, ' ').trim() : ''
     if (!title || title.length < 2) continue
     const pm = win.match(/(?:£|A\$|\$)\s*[\d,]+(?:\.\d{2})?/)
-    const imgM = win.match(/src="(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i)
+    // Gumtree lazy-loads listing thumbnails through data-src, and its image CDN
+    // URLs usually have no file extension (for example .../image-id/86).
+    // Accept both eager and lazy attributes instead of requiring .jpg/.webp.
+    const imgM = win.match(/(?:data-src|src)=["'](https?:\/\/(?:img|thumbs)\.gumtree\.com\/[^"']+)["']/i)
     items.push({
       id, title, price: pm ? pm[0].trim() : '',
       url: `https://${domain}${m[1]}`, image: imgM ? imgM[1] : null, platform: 'gumtree',
