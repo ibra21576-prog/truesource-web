@@ -133,7 +133,7 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
 // on Vercel — serverless freezes between requests so the interval can't survive).
 let running = false
 
-export function startScheduler(intervalMs = 60_000) {
+export function startScheduler(intervalMs = 45_000) {
   if (running) return
   running = true
 

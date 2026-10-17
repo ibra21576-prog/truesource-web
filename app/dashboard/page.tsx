@@ -28,7 +28,9 @@ const PLAT_LABEL: Record<string, string> = {
 // The background worker discovers listings; this short poll only makes a
 // newly saved result visible in an already-open dashboard with minimal delay.
 const FEED_INTERVAL = 2_000
-const SCRAPE_INTERVAL = 30_000
+// Balanced live cadence: quick enough for fresh deals without hammering the
+// marketplaces or burning through proxy/API quotas.
+const SCRAPE_INTERVAL = 20_000
 
 function parsePriceNum(price?: string): number {
   if (!price) return -1
