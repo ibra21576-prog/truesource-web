@@ -38,20 +38,6 @@ function parsePriceNum(price?: string): number {
   return isNaN(n) ? -1 : n
 }
 
-function playBeep() {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain); gain.connect(ctx.destination)
-    osc.type = 'sine'; osc.frequency.value = 880
-    gain.gain.setValueAtTime(0.12, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35)
-    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35)
-    setTimeout(() => ctx.close(), 500)
-  } catch {}
-}
-
 function memberDuration(since?: string) {
   if (!since) return null
   const ms = Date.now() - new Date(since).getTime()
@@ -165,8 +151,6 @@ export default function DashboardPage() {
   const [platFilter,   setPlatFilter]   = useState<string>('all')
   const [sortMode,     setSortMode]     = useState<'newest' | 'cheapest' | 'expensive'>('newest')
   const [dismissed,    setDismissed]    = useState<Set<string>>(new Set())
-  const [soundOn,      setSoundOn]      = useState(false)
-  const [notifPerm,    setNotifPerm]    = useState<NotificationPermission>('default')
   const [newCount,     setNewCount]     = useState(0)
   const [archiveItems, setArchiveItems] = useState<Item[]>([])
   const [loadingMore,  setLoadingMore]  = useState(false)
@@ -175,16 +159,11 @@ export default function DashboardPage() {
   const searchesRef  = useRef<Search[]>([])
   const knownIdsRef  = useRef<Set<string>>(new Set())
   const firstLoadRef = useRef(true)
-  const soundOnRef   = useRef(false)
-
-  useEffect(() => { soundOnRef.current = soundOn }, [soundOn])
-
   useEffect(() => {
     try {
       const saved = localStorage.getItem('ts_dismissed')
       if (saved) setDismissed(new Set(JSON.parse(saved)))
     } catch {}
-    if (typeof Notification !== 'undefined') setNotifPerm(Notification.permission)
   }, [])
 
   function dismiss(itemId: string) {
@@ -196,24 +175,6 @@ export default function DashboardPage() {
     })
   }
 
-  async function requestNotifications() {
-    if (typeof Notification === 'undefined') return
-    const perm = await Notification.requestPermission()
-    setNotifPerm(perm)
-  }
-
-  const fireNotification = useCallback((item: Item) => {
-    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
-    try {
-      const n = new Notification(`${item.platform.toUpperCase()} — ${item.price || 'No price'}`, {
-        body: item.title || 'New listing found',
-        icon: '/truesource-logo-original-compact.png',
-        tag: item.id,
-      })
-      n.onclick = () => { window.open(item.url, '_blank'); n.close() }
-    } catch {}
-  }, [])
-
   const loadFeed = useCallback(async () => {
     const res = await apiFetch('/api/feed')
     if (!res.ok) { setLoading(false); return }
@@ -223,8 +184,6 @@ export default function DashboardPage() {
       const newItems = raw.filter(it => !it.first_scan && !knownIdsRef.current.has(it.id))
       if (newItems.length > 0) {
         setNewCount(n => n + newItems.length)
-        if (soundOnRef.current) playBeep()
-        newItems.slice(0, 3).forEach(it => fireNotification(it))
       }
     }
 
@@ -234,7 +193,7 @@ export default function DashboardPage() {
     setLoading(false)
     setArchiveItems([])
     setNoMoreItems(false)
-  }, [fireNotification])
+  }, [])
 
   const loadMoreArchive = useCallback(async () => {
     setLoadingMore(true)
@@ -380,48 +339,6 @@ export default function DashboardPage() {
 
           {/* Controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            {/* Sound */}
-            <button
-              onClick={() => setSoundOn(v => !v)}
-              title={soundOn ? 'Sound enabled' : 'Sound disabled'}
-              className="pill-control"
-              style={{
-                padding: '7px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-                background: soundOn ? 'rgba(150,80,161,0.10)' : 'var(--card)',
-                border: `1px solid ${soundOn ? 'rgba(150,80,161,0.28)' : 'var(--border2)'}`,
-                color: soundOn ? 'var(--accent)' : 'var(--text3)',
-                display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.14s',
-              }}
-            >
-              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
-                {soundOn
-                  ? <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></>
-                  : <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></>
-                }
-              </svg>
-              Sound
-            </button>
-
-            {/* Notifications */}
-            <button
-              onClick={requestNotifications}
-              title={notifPerm === 'granted' ? 'Notifications enabled' : 'Enable notifications'}
-              className="pill-control"
-              style={{
-                padding: '7px 13px', borderRadius: 7, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-                background: notifPerm === 'granted' ? 'rgba(150,80,161,0.10)' : 'var(--card)',
-                border: `1px solid ${notifPerm === 'granted' ? 'rgba(150,80,161,0.28)' : 'var(--border2)'}`,
-                color: notifPerm === 'granted' ? 'var(--accent)' : 'var(--text3)',
-                display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.14s',
-              }}
-            >
-              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-              {notifPerm === 'granted' ? 'Alerts on' : 'Alerts'}
-            </button>
-
             {/* Countdown */}
             {searches.length > 0 && (
               <div className="pill-control" style={{
