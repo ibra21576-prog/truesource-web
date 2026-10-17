@@ -200,7 +200,26 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
 
   function regionParts(label: string) {
     const [flag, ...name] = label.split(' ')
-    return { flag, name: name.join(' ') }
+    const regionalIndicators = [...flag].map(character => character.codePointAt(0) ?? 0)
+    const flagCode = regionalIndicators.length === 2 && regionalIndicators.every(code => code >= 0x1f1e6 && code <= 0x1f1ff)
+      ? String.fromCharCode(...regionalIndicators.map(code => code - 0x1f1e6 + 97))
+      : null
+    return { flagCode, name: name.join(' ') }
+  }
+
+  function RegionFlag({ code, name }: { code: string | null; name: string }) {
+    return (
+      <span className="region-picker-flag" aria-hidden="true">
+        {code
+          ? <img src={`https://flagcdn.com/${code}.svg`} alt="" loading="lazy" />
+          : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M3 12h18M12 3c2.3 2.5 3.5 5.5 3.5 9S14.3 18.5 12 21c-2.3-2.5-3.5-5.5-3.5-9S9.7 5.5 12 3Z" />
+            </svg>
+        }
+        <span className="sr-only">{name}</span>
+      </span>
+    )
   }
 
   return (
@@ -303,7 +322,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
                 {selectedRegion && (() => {
                   const parts = regionParts(selectedRegion.label)
                   return <>
-                    <span className="region-picker-flag">{parts.flag}</span>
+                    <RegionFlag code={parts.flagCode} name={parts.name} />
                     <span className="region-picker-copy">
                       <strong>{parts.name}</strong>
                       <small>{selectedRegion.value}</small>
@@ -329,7 +348,7 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
                         key={option.value}
                         onClick={() => { setDomain(option.value); setRegionOpen(false) }}
                       >
-                        <span className="region-picker-flag">{parts.flag}</span>
+                        <RegionFlag code={parts.flagCode} name={parts.name} />
                         <span className="region-picker-copy">
                           <strong>{parts.name}</strong>
                           <small>{option.value}</small>
