@@ -20,6 +20,9 @@ const P: Record<string, { label: string }> = {
   shpock:        { label: 'Shpock' },
   marktplaats:   { label: 'Marktplaats' },
   leboncoin:     { label: 'Leboncoin' },
+  subito:        { label: 'Subito' },
+  tradera:       { label: 'Tradera' },
+  willhaben:     { label: 'willhaben' },
 }
 
 export default function SearchesPage() {

@@ -22,6 +22,10 @@ const ALLOWED = [
   'images.marktplaats.com',
   'img.leboncoin.fr',
   'origin-image.leboncoin.fr',
+  'images.sbito.it',
+  's.sbito.it',
+  'img.tradera.net',
+  'cache.willhaben.at',
 ]
 
 export async function GET(req: NextRequest) {

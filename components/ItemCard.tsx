@@ -23,6 +23,9 @@ const P: Record<string, { label: string; color: string }> = {
   shpock:        { label: 'Shpock',        color: '#e91e8c' },
   marktplaats:   { label: 'Marktplaats',   color: '#d32f2f' },
   leboncoin:     { label: 'Leboncoin',     color: '#1565c0' },
+  subito:        { label: 'Subito',        color: '#ef3b24' },
+  tradera:       { label: 'Tradera',       color: '#005b49' },
+  willhaben:     { label: 'willhaben',     color: '#e2001a' },
 }
 
 const IMG_HOSTS = [
@@ -36,6 +39,9 @@ const IMG_HOSTS = [
   'img.shpock.com', 'media.shpock.com', 'secondhandapp.at',
   'img.marktplaats.com', 'images.marktplaats.com',
   'img.leboncoin.fr', 'origin-image.leboncoin.fr',
+  'images.sbito.it', 's.sbito.it',
+  'img.tradera.net',
+  'cache.willhaben.at',
 ]
 
 function proxyImg(url: string | null | undefined): string | null {

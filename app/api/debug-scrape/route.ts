@@ -15,6 +15,9 @@ const TARGETS: Record<string, { domain: string }> = {
   marktplaats:   { domain: 'www.marktplaats.nl' },
   leboncoin:     { domain: 'www.leboncoin.fr' },
   gumtree:       { domain: 'www.gumtree.com' },
+  subito:        { domain: 'www.subito.it' },
+  tradera:       { domain: 'www.tradera.com' },
+  willhaben:     { domain: 'www.willhaben.at' },
 }
 
 export async function GET(req: NextRequest) {

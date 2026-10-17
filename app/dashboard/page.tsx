@@ -17,11 +17,13 @@ const PLAT_COLOR: Record<string, string> = {
   vinted: '#14b8a6', ebay: '#f59e0b', kleinanzeigen: '#f97316',
   gumtree: '#00b140', kijiji: '#6d28d9', craigslist: '#7c3aed',
   shpock: '#e91e8c', marktplaats: '#d32f2f', leboncoin: '#1565c0',
+  subito: '#ef3b24', tradera: '#005b49', willhaben: '#e2001a',
 }
 const PLAT_LABEL: Record<string, string> = {
   vinted: 'Vinted', ebay: 'eBay', kleinanzeigen: 'Kleinanzeigen',
   gumtree: 'Gumtree', kijiji: 'Kijiji', craigslist: 'Craigslist',
   shpock: 'Shpock', marktplaats: 'Marktplaats', leboncoin: 'Leboncoin',
+  subito: 'Subito', tradera: 'Tradera', willhaben: 'willhaben',
 }
 // The background worker discovers listings; this short poll only makes a
 // newly saved result visible in an already-open dashboard with minimal delay.
@@ -370,7 +372,7 @@ export default function DashboardPage() {
               )}
             </div>
             <p style={{ fontSize: 15, color: 'var(--text2)', marginTop: 10, lineHeight: 1.5 }}>
-              Real-time listings across 9 marketplaces
+              Real-time listings across 12 marketplaces
             </p>
           </div>
 

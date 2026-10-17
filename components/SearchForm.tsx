@@ -79,6 +79,10 @@ const LEBONCOIN_DOMAINS = [
   { value: 'www.leboncoin.fr', label: '🇫🇷 leboncoin.fr — France' },
 ]
 
+const SUBITO_DOMAINS = [{ value: 'www.subito.it', label: '🇮🇹 subito.it — Italia' }]
+const TRADERA_DOMAINS = [{ value: 'www.tradera.com', label: '🇸🇪 tradera.com — Sverige' }]
+const WILLHABEN_DOMAINS = [{ value: 'www.willhaben.at', label: '🇦🇹 willhaben.at — Österreich' }]
+
 const PLATFORMS = [
   { value: 'vinted',        label: 'Vinted',        flag: '👗' },
   { value: 'ebay',          label: 'eBay',          flag: '🛒' },
@@ -89,6 +93,9 @@ const PLATFORMS = [
   { value: 'craigslist',    label: 'Craigslist',   flag: '🇺🇸' },
   { value: 'kijiji',        label: 'Kijiji',       flag: '🇨🇦' },
   { value: 'gumtree',       label: 'Gumtree',      flag: '🇬🇧' },
+  { value: 'subito',        label: 'Subito',       flag: '🇮🇹' },
+  { value: 'tradera',       label: 'Tradera',      flag: '🇸🇪' },
+  { value: 'willhaben',     label: 'willhaben',    flag: '🇦🇹' },
 ]
 
 const DEFAULT_DOMAINS: Record<string, string> = {
@@ -101,6 +108,9 @@ const DEFAULT_DOMAINS: Record<string, string> = {
   shpock: 'www.shpock.com',
   marktplaats: 'www.marktplaats.nl',
   leboncoin: 'www.leboncoin.fr',
+  subito: 'www.subito.it',
+  tradera: 'www.tradera.com',
+  willhaben: 'www.willhaben.at',
 }
 
 const DOMAIN_OPTIONS: Record<string, { value: string; label: string }[] | null> = {
@@ -112,13 +122,17 @@ const DOMAIN_OPTIONS: Record<string, { value: string; label: string }[] | null> 
   shpock: SHPOCK_DOMAINS,
   marktplaats: MARKTPLAATS_DOMAINS,
   leboncoin: LEBONCOIN_DOMAINS,
+  subito: SUBITO_DOMAINS,
+  tradera: TRADERA_DOMAINS,
+  willhaben: WILLHABEN_DOMAINS,
   kleinanzeigen: null,
 }
 
 function currencyForDomain(domain: string): string {
+  if (domain.endsWith('.com.au')) return 'A$'
+  if (domain.includes('tradera.com')) return 'kr'
   if (domain.endsWith('.co.uk'))  return '£'
   if (domain.endsWith('.com') || domain.endsWith('.ca')) return '$'
-  if (domain.endsWith('.com.au')) return 'A$'
   if (domain.endsWith('.pl'))     return 'zł'
   if (domain.endsWith('.cz'))     return 'Kč'
   if (domain.endsWith('.hu'))     return 'Ft'

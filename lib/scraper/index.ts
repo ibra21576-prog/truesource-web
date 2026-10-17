@@ -8,6 +8,9 @@ import { fetchCraigslist } from './craigslist'
 import { fetchShpock } from './shpock'
 import { fetchMarktplaats } from './marktplaats'
 import { fetchLeboncoin } from './leboncoin'
+import { fetchSubito } from './subito'
+import { fetchTradera } from './tradera'
+import { fetchWillhaben } from './willhaben'
 import { matchesProduct, isWantedAd } from './utils'
 
 export type { Search, ScrapedItem }
@@ -23,6 +26,9 @@ export async function fetchItems(search: Search, cookieStr?: string): Promise<Sc
     case 'shpock':        items = await fetchShpock(search); break
     case 'marktplaats':   items = await fetchMarktplaats(search); break
     case 'leboncoin':     items = await fetchLeboncoin(search); break
+    case 'subito':        items = await fetchSubito(search); break
+    case 'tradera':       items = await fetchTradera(search); break
+    case 'willhaben':     items = await fetchWillhaben(search); break
     default:              items = await fetchVinted(search, cookieStr); break
   }
   return items.filter(it => matchesProduct(it.title, search.query, search.platform) && !isWantedAd(it.title))

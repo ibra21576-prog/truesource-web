@@ -56,6 +56,9 @@ export default function ArchivePage() {
     { value: 'gumtree',       label: 'Gumtree' },
     { value: 'kijiji',        label: 'Kijiji' },
     { value: 'craigslist',    label: 'Craigslist' },
+    { value: 'subito',        label: 'Subito' },
+    { value: 'tradera',       label: 'Tradera' },
+    { value: 'willhaben',     label: 'willhaben' },
   ]
 
   // Build page numbers to show: always first, last, and a window around current
