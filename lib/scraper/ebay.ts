@@ -217,6 +217,30 @@ async function fetchViaProxy(url: string): Promise<Response> {
   return proxyFetch(url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(12000) })
 }
 
+// Read-only production diagnostic used by /api/debug-scrape. It exposes only
+// public listing-page structure (never proxy credentials or response headers),
+// which lets us keep the parser compatible when eBay changes its markup.
+export async function diagnoseEbayMarkup(search: Search) {
+  const domain = search.domain || 'www.ebay.de'
+  const params = new URLSearchParams({ _nkw: search.query, _sop: '10', _ipg: '60' })
+  const url = `https://${domain}/sch/i.html?${params}`
+  const res = await fetchViaProxy(url)
+  const html = await res.text()
+  const linkAt = html.search(/\/itm\//i)
+  const listingAt = html.search(/data-listingid/i)
+  const cardAt = html.search(/s-card|s-item/i)
+  const at = [linkAt, listingAt, cardAt].filter(n => n >= 0).sort((a, b) => a - b)[0] ?? 0
+  return {
+    status: res.status,
+    length: html.length,
+    botCheck: isBotCheck(html),
+    linkCount: (html.match(/\/itm\//gi) || []).length,
+    listingIdCount: (html.match(/data-listingid/gi) || []).length,
+    cardCount: (html.match(/s-card|s-item/gi) || []).length,
+    snippet: html.slice(Math.max(0, at - 300), at + 1800),
+  }
+}
+
 export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
   const domain = search.domain || 'www.ebay.de'
 

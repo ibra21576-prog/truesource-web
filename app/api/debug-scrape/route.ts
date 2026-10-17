@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchItems } from '@/lib/scraper'
+import { diagnoseEbayMarkup } from '@/lib/scraper/ebay'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 10  // Vercel Hobby hard limit; platforms run in parallel so total ≈ slowest one
@@ -21,6 +22,17 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const only  = searchParams.get('platform')
   const query = searchParams.get('q') || 'iphone'
+
+  if (only === 'ebay' && searchParams.get('diag') === '1') {
+    try {
+      return NextResponse.json({ diagnostic: await diagnoseEbayMarkup({
+        id: 'debug', query, platform: 'ebay', domain: 'www.ebay.de',
+        min_price: null, max_price: null, enabled: true,
+      } as any) }, { headers: { 'Cache-Control': 'no-store' } })
+    } catch (e: any) {
+      return NextResponse.json({ diagnostic: { error: e.message } }, { status: 500 })
+    }
+  }
 
   const platforms = only && only !== 'all' ? [only] : Object.keys(TARGETS)
   const results: Record<string, any> = {}
