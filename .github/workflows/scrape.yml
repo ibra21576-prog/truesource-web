@@ -7,7 +7,8 @@ name: Scrape trigger
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    # Offset from the start of the hour, where GitHub's scheduler is busiest.
+    - cron: '2-59/5 * * * *'
   workflow_dispatch: {}
 
 # Don't pile up overlapping runs; a fresh schedule supersedes a lingering one.
@@ -18,21 +19,23 @@ concurrency:
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    # Scheduled workflow events can be delayed or dropped. Keep the current
+    # trigger alive for GitHub's six-hour job maximum; a newer run replaces it.
+    timeout-minutes: 360
     steps:
       - name: Ping cron every 15s
         env:
           CRON_URL: https://truesource-web-pink.vercel.app/api/cron?key=${{ secrets.CRON_SECRET }}
         run: |
-          # Forty pings cover roughly ten minutes. A new scheduled run normally
-          # replaces this one after five, while the overlap protects against a
-          # delayed GitHub scheduler start.
-          for i in $(seq 1 40); do
+          # 1,440 pings at a 15-second cadence cover six hours. Normally a new
+          # scheduled run replaces this one after five minutes. If GitHub delays
+          # that event, this run keeps monitoring instead of leaving a blind spot.
+          for i in $(seq 1 1440); do
             started=$(date +%s)
             code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 40 "$CRON_URL" || true)
             code=${code:-000}
             echo "ping $i -> HTTP $code at $(date -u +%H:%M:%S)"
             elapsed=$(($(date +%s) - started))
             wait=$((15 - elapsed))
-            if [ "$i" -lt 40 ] && [ "$wait" -gt 0 ]; then sleep "$wait"; fi
+            if [ "$i" -lt 1440 ] && [ "$wait" -gt 0 ]; then sleep "$wait"; fi
           done
