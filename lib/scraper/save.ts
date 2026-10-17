@@ -46,7 +46,6 @@ export async function saveNewItems(supabase: any, search: any, items: ScrapedIte
     url:        it.url,
     image:      it.image,
     found_at:   it.postedAt || now,   // real post time when the platform exposes it
-    posted_at:  it.postedAt || null,
     first_scan: isBaseline,
   }))
 
