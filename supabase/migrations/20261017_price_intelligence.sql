@@ -78,3 +78,6 @@ $$;
 revoke all on function public.match_market_history(extensions.vector, float, integer) from public, anon, authenticated;
 grant execute on function public.match_market_history(extensions.vector, float, integer) to service_role;
 
+-- Make newly created tables/functions immediately visible to PostgREST.
+notify pgrst, 'reload schema';
+
