@@ -23,7 +23,9 @@ const PLAT_LABEL: Record<string, string> = {
   gumtree: 'Gumtree', kijiji: 'Kijiji', craigslist: 'Craigslist',
   shpock: 'Shpock', marktplaats: 'Marktplaats', leboncoin: 'Leboncoin',
 }
-const FEED_INTERVAL = 5_000
+// The background worker discovers listings; this short poll only makes a
+// newly saved result visible in an already-open dashboard with minimal delay.
+const FEED_INTERVAL = 2_000
 const SCRAPE_INTERVAL = 30_000
 
 function parsePriceNum(price?: string): number {
@@ -76,7 +78,7 @@ function SetupGuide({ hasSearches }: { hasSearches: boolean }) {
     {
       num: 2, done: false,
       title: 'Listings appear automatically',
-      desc: 'TrueSource scans 9 marketplaces every minute — new deals appear here the moment they are posted.',
+      desc: 'TrueSource scans marketplaces continuously — new deals appear here within seconds of being found.',
       action: null,
       icon: (
         <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" viewBox="0 0 24 24">

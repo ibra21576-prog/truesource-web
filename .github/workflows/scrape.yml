@@ -1,9 +1,9 @@
 name: Scrape trigger
 
 # Keeps the scraper running 24/7 for free, independent of cron-job.org.
-# GitHub's smallest schedule granularity is 5 minutes, so each run loops and
-# pings the cron endpoint once a minute for ~5 minutes — giving roughly
-# every-minute coverage. The repo is public, so Actions minutes are unlimited.
+# GitHub's smallest schedule granularity is 5 minutes, so each run keeps
+# pinging beyond the next scheduled start. The next run cancels and replaces
+# it, which avoids the old one-minute blind spot between workflow runs.
 
 on:
   schedule:
@@ -18,13 +18,21 @@ concurrency:
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
-      - name: Ping cron every 60s for ~5 minutes
+      - name: Ping cron every 15s
         env:
           CRON_URL: https://truesource-web-pink.vercel.app/api/cron?key=${{ secrets.CRON_SECRET }}
         run: |
-          for i in 1 2 3 4 5; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 40 "$CRON_URL" || echo "000")
+          # Forty pings cover roughly ten minutes. A new scheduled run normally
+          # replaces this one after five, while the overlap protects against a
+          # delayed GitHub scheduler start.
+          for i in $(seq 1 40); do
+            started=$(date +%s)
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 40 "$CRON_URL" || true)
+            code=${code:-000}
             echo "ping $i -> HTTP $code at $(date -u +%H:%M:%S)"
-            if [ "$i" -lt 5 ]; then sleep 60; fi
+            elapsed=$(($(date +%s) - started))
+            wait=$((15 - elapsed))
+            if [ "$i" -lt 40 ] && [ "$wait" -gt 0 ]; then sleep "$wait"; fi
           done
