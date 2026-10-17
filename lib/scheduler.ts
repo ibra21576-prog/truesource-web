@@ -110,7 +110,6 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
       processed,
       unique_groups: groups.size,
       errors: errorDetails.length,
-      errorDetails: errorDetails.slice(0, 10),
     })
     await supabase.storage.from('ts-settings')
       .upload('heartbeat2.json', new Blob([beat], { type: 'application/json' }), { upsert: true, cacheControl: '0' })
