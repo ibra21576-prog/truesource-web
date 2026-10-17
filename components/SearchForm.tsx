@@ -1,6 +1,6 @@
 'use client'
 /* eslint-disable @next/next/no-img-element */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { apiFetch } from '@/lib/api-client'
 
 const VINTED_DOMAINS = [
@@ -153,10 +153,28 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
   const [maxPrice, setMaxPrice] = useState('')
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
+  const [regionOpen, setRegionOpen] = useState(false)
+  const regionRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const closeOnOutside = (event: PointerEvent) => {
+      if (regionRef.current && !regionRef.current.contains(event.target as Node)) setRegionOpen(false)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setRegionOpen(false)
+    }
+    document.addEventListener('pointerdown', closeOnOutside)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutside)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [])
 
   function handlePlatformChange(p: string) {
     setPlatform(p)
     setDomain(DEFAULT_DOMAINS[p] || 'www.' + p + '.com')
+    setRegionOpen(false)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -178,6 +196,12 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
 
   const currency = currencyForDomain(domain)
   const domainOptions = DOMAIN_OPTIONS[platform]
+  const selectedRegion = domainOptions?.find(option => option.value === domain)
+
+  function regionParts(label: string) {
+    const [flag, ...name] = label.split(' ')
+    return { flag, name: name.join(' ') }
+  }
 
   return (
     <form onSubmit={handleSubmit} className="glass-panel" style={{
@@ -268,9 +292,59 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
       <div>
         <label className="label">Country / Region</label>
         {domainOptions
-          ? <select value={domain} onChange={e => setDomain(e.target.value)}>
-              {domainOptions.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-            </select>
+          ? <div className="region-picker" ref={regionRef}>
+              <button
+                type="button"
+                className={`region-picker-trigger${regionOpen ? ' open' : ''}`}
+                aria-haspopup="listbox"
+                aria-expanded={regionOpen}
+                onClick={() => setRegionOpen(open => !open)}
+              >
+                {selectedRegion && (() => {
+                  const parts = regionParts(selectedRegion.label)
+                  return <>
+                    <span className="region-picker-flag">{parts.flag}</span>
+                    <span className="region-picker-copy">
+                      <strong>{parts.name}</strong>
+                      <small>{selectedRegion.value}</small>
+                    </span>
+                  </>
+                })()}
+                <svg className="region-picker-chevron" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+
+              {regionOpen && (
+                <div className="region-picker-menu" role="listbox" aria-label="Country or region">
+                  {domainOptions.map(option => {
+                    const parts = regionParts(option.label)
+                    const active = option.value === domain
+                    return (
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={active}
+                        className={`region-picker-option${active ? ' active' : ''}`}
+                        key={option.value}
+                        onClick={() => { setDomain(option.value); setRegionOpen(false) }}
+                      >
+                        <span className="region-picker-flag">{parts.flag}</span>
+                        <span className="region-picker-copy">
+                          <strong>{parts.name}</strong>
+                          <small>{option.value}</small>
+                        </span>
+                        {active && (
+                          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           : <input value={domain} readOnly />
         }
       </div>

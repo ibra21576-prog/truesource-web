@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 
 const ERROR_MESSAGES: Record<string, string> = {
-  no_access:         "Your subscription is not active. Purchase access to continue.",
+  no_access:         'Your subscription is not active. Purchase access to continue.',
   token_failed:      'Authentication failed. Please try again.',
   user_failed:       'Could not retrieve your account. Please try again.',
   membership_failed: 'Could not verify your membership. Please try again.',
@@ -12,19 +12,32 @@ const ERROR_MESSAGES: Record<string, string> = {
   no_code:           'Authentication was cancelled. Please try again.',
 }
 
+function WhopMark() {
+  return (
+    <svg width="22" height="12" viewBox="0 0 1000 515" fill="none" aria-hidden="true">
+      <path d="M158.881 -0.00366211C93.2014 -0.00366211 47.9251 28.989 13.6619 61.7749C13.6619 61.7749 -0.173169 74.965 0.00164277 75.3669L143.897 220.129L287.766 75.3669C260.521 37.6314 209.152 -0.00366211 158.881 -0.00366211Z" fill="white"/>
+      <path d="M514.191 -0.00354004C448.513 -0.00354004 403.236 28.9891 368.971 61.7751C368.971 61.7751 356.336 74.6134 355.763 75.3671L177.903 254.322L321.574 398.857L643.077 75.3671C615.831 37.6316 564.488 -0.00354004 514.191 -0.00354004Z" fill="white"/>
+      <path d="M870.479 -0.00354004C804.798 -0.00354004 759.524 28.9891 725.259 61.7751C725.259 61.7751 712.098 74.7138 711.6 75.3671L355.806 433.351L393.466 471.237C451.73 529.852 547.101 529.852 605.365 471.237L998.914 75.3671H999.365C972.119 37.6316 920.773 -0.00354004 870.479 -0.00354004Z" fill="white"/>
+    </svg>
+  )
+}
+
+const BENEFITS = [
+  'Live listings across 12 marketplaces',
+  'Fast, automated product monitoring',
+  'Built for professional resellers',
+]
+
 function LoginContent() {
   const params = useSearchParams()
   const router = useRouter()
-  const error  = params.get('error')
-  // Server detected iframe via Sec-Fetch-Dest header
+  const error = params.get('error')
   const serverIframe = params.get('iframe') === '1'
   const [isIframe, setIsIframe] = useState(serverIframe)
 
   useEffect(() => {
-    // Also detect client-side (catches cases server header missed)
     try { if (window.self !== window.top) setIsIframe(true) } catch { setIsIframe(true) }
 
-    // Always listen for auth token from popup
     const handler = (e: MessageEvent) => {
       if (e.data?.type === 'truesource_auth' && e.data?.token) {
         sessionStorage.setItem('ts_token', e.data.token)
@@ -42,113 +55,99 @@ function LoginContent() {
     window.open('/api/auth/whop?popup=1', 'whop_login', `width=${w},height=${h},left=${left},top=${top}`)
   }
 
+  const authContent = <><WhopMark />Connect with Whop</>
+
   return (
-    <div className="login-shell" style={{
-      minHeight: '100vh', background: 'var(--bg)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: 24, fontFamily: 'var(--font-sans)',
-    }}>
-      <div className="login-card" style={{
-        background: 'linear-gradient(145deg, rgba(22,19,24,0.97), rgba(14,14,16,0.97))', border: '1px solid rgba(150,80,161,0.22)',
-        borderRadius: 12, padding: '46px 40px', width: '100%', maxWidth: 430,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
-        boxShadow: '0 24px 72px rgba(0,0,0,0.58), 0 0 32px rgba(122,62,132,0.08), inset 0 1px 0 rgba(255,255,255,0.035)',
-        backdropFilter: 'blur(18px)',
-      }}>
-
-        {/* Logo */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <Logo size={48} />
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.025em' }}>
-              TrueSource <span style={{ color: 'var(--accent)' }}>Flip</span>
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4, fontWeight: 500, letterSpacing: '0.05em' }}>
-              PRIVATE MEMBER PLATFORM
-            </div>
+    <main className="login-shell">
+      <section className="login-showcase">
+        <div className="login-showcase-brand">
+          <Logo size={38} />
+          <div>
+            <div>TrueSource</div>
+            <span>Flip intelligence</span>
           </div>
         </div>
 
-        <div style={{ width: '100%', height: 1, background: 'var(--border)' }} />
+        <div className="login-showcase-copy">
+          <div className="login-kicker"><span /> Marketplace intelligence</div>
+          <h1>Find the right deal before everyone else.</h1>
+          <p>One focused workspace for monitoring new listings and identifying resale opportunities across international marketplaces.</p>
 
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
-            Subscriber Access Required
-          </p>
-          <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.6 }}>
-            This tool is exclusively available to members of the TrueSource Flip course. Sign in with your Whop account to continue.
-          </p>
+          <div className="login-benefits">
+            {BENEFITS.map(benefit => (
+              <div key={benefit}>
+                <span>
+                  <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </span>
+                {benefit}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {error && (
-          <div style={{
-            width: '100%', background: 'rgba(248,113,113,0.08)',
-            border: '1px solid rgba(248,113,113,0.2)', borderRadius: 7,
-            padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start',
-          }}>
-            <svg width="15" height="15" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}>
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <p style={{ fontSize: 13, color: '#f87171', lineHeight: 1.5 }}>
-              {ERROR_MESSAGES[error] ?? 'An error occurred. Please try again.'}
+        <p className="login-showcase-footer">TrueSource Flip · Private member platform</p>
+      </section>
+
+      <section className="login-auth-panel">
+        <div className="login-auth-wrap">
+          <div className="login-card">
+            <div className="login-card-brand">
+              <Logo size={44} />
+              <div>
+                <strong>TrueSource Flip</strong>
+                <span>Member workspace</span>
+              </div>
+            </div>
+
+            <div className="login-access-badge"><span /> Member access</div>
+            <h2>Welcome back</h2>
+            <p className="login-intro">Sign in with the Whop account connected to your active TrueSource membership.</p>
+
+            {error && (
+              <div className="login-error">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <span>{ERROR_MESSAGES[error] ?? 'An error occurred. Please try again.'}</span>
+              </div>
+            )}
+
+            {isIframe ? (
+              <button onClick={openPopup} className="whop-login-button">{authContent}</button>
+            ) : (
+              <a href="/api/auth/whop" className="whop-login-button">{authContent}</a>
+            )}
+
+            <div className="login-separator"><span>Membership required</span></div>
+
+            <p className="login-purchase">
+              Don&apos;t have access yet?{' '}
+              <a
+                href={process.env.NEXT_PUBLIC_WHOP_BUY_URL ?? 'https://whop.com'}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View membership →
+              </a>
             </p>
+
+            <div className="login-security">
+              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                <rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+              </svg>
+              Secure access verified by Whop
+            </div>
           </div>
-        )}
 
-        {isIframe ? (
-          <button onClick={openPopup} style={{
-            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            padding: '14px 20px', borderRadius: 7, fontWeight: 650, fontSize: 15,
-            background: '#FA4616', color: '#fff', border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer',
-            boxShadow: '0 8px 22px rgba(250,70,22,0.22), inset 0 1px 0 rgba(255,255,255,0.16)',
-          }}>
-            <svg width="22" height="12" viewBox="0 0 1000 515" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M158.881 -0.00366211C93.2014 -0.00366211 47.9251 28.989 13.6619 61.7749C13.6619 61.7749 -0.173169 74.965 0.00164277 75.3669L143.897 220.129L287.766 75.3669C260.521 37.6314 209.152 -0.00366211 158.881 -0.00366211Z" fill="white"/>
-              <path d="M514.191 -0.00354004C448.513 -0.00354004 403.236 28.9891 368.971 61.7751C368.971 61.7751 356.336 74.6134 355.763 75.3671L177.903 254.322L321.574 398.857L643.077 75.3671C615.831 37.6316 564.488 -0.00354004 514.191 -0.00354004Z" fill="white"/>
-              <path d="M870.479 -0.00354004C804.798 -0.00354004 759.524 28.9891 725.259 61.7751C725.259 61.7751 712.098 74.7138 711.6 75.3671L355.806 433.351L393.466 471.237C451.73 529.852 547.101 529.852 605.365 471.237L998.914 75.3671H999.365C972.119 37.6316 920.773 -0.00354004 870.479 -0.00354004Z" fill="white"/>
-            </svg>
-            Connect to Whop
-          </button>
-        ) : (
-        <a href="/api/auth/whop" style={{
-          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          padding: '14px 20px', borderRadius: 7, fontWeight: 650, fontSize: 15,
-          background: '#FA4616', color: '#fff', textDecoration: 'none',
-          border: '1px solid rgba(255,255,255,0.16)', boxShadow: '0 8px 22px rgba(250,70,22,0.22), inset 0 1px 0 rgba(255,255,255,0.16)', transition: 'all 0.18s',
-        }}>
-          {/* Official Whop brandmark */}
-          <svg width="22" height="12" viewBox="0 0 1000 515" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M158.881 -0.00366211C93.2014 -0.00366211 47.9251 28.989 13.6619 61.7749C13.6619 61.7749 -0.173169 74.965 0.00164277 75.3669L143.897 220.129L287.766 75.3669C260.521 37.6314 209.152 -0.00366211 158.881 -0.00366211Z" fill="white"/>
-            <path d="M514.191 -0.00354004C448.513 -0.00354004 403.236 28.9891 368.971 61.7751C368.971 61.7751 356.336 74.6134 355.763 75.3671L177.903 254.322L321.574 398.857L643.077 75.3671C615.831 37.6316 564.488 -0.00354004 514.191 -0.00354004Z" fill="white"/>
-            <path d="M870.479 -0.00354004C804.798 -0.00354004 759.524 28.9891 725.259 61.7751C725.259 61.7751 712.098 74.7138 711.6 75.3671L355.806 433.351L393.466 471.237C451.73 529.852 547.101 529.852 605.365 471.237L998.914 75.3671H999.365C972.119 37.6316 920.773 -0.00354004 870.479 -0.00354004Z" fill="white"/>
-          </svg>
-          Connect to Whop
-        </a>
-        )}
-
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
-            Don&apos;t have access yet?{' '}
-            <a href={process.env.NEXT_PUBLIC_WHOP_BUY_URL ?? 'https://whop.com'}
-              target="_blank" rel="noopener noreferrer"
-              style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
-              Purchase membership →
-            </a>
-          </p>
+          <p className="login-legal">By continuing, you agree to use TrueSource in accordance with marketplace policies.</p>
         </div>
-      </div>
-
-      <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 24, textAlign: 'center' }}>
-        Protected by Whop · TrueSource Flip
-      </p>
-    </div>
+      </section>
+    </main>
   )
 }
 
 export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginContent />
-    </Suspense>
-  )
+  return <Suspense><LoginContent /></Suspense>
 }
