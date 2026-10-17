@@ -54,8 +54,35 @@ export async function recordMarketHistory(
     if (error && !['PGRST205', '42P01'].includes(error.code)) {
       console.warn('[history] write skipped:', error.message)
     }
+    try {
+      const status = JSON.stringify({
+        at: new Date().toISOString(),
+        ok: !error,
+        attempted: rows.length,
+        errorCode: error?.code ?? null,
+        error: error?.message ?? null,
+      })
+      await supabase.storage.from('ts-settings').upload(
+        'history-writer.json',
+        new Blob([status], { type: 'application/json' }),
+        { upsert: true, cacheControl: '0' },
+      )
+    } catch {}
   } catch (error) {
     console.warn('[history] write skipped:', error instanceof Error ? error.message : error)
+    try {
+      const status = JSON.stringify({
+        at: new Date().toISOString(),
+        ok: false,
+        attempted: rows.length,
+        error: error instanceof Error ? error.message : String(error),
+      })
+      await supabase.storage.from('ts-settings').upload(
+        'history-writer.json',
+        new Blob([status], { type: 'application/json' }),
+        { upsert: true, cacheControl: '0' },
+      )
+    } catch {}
   }
 }
 

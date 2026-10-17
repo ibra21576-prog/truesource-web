@@ -77,5 +77,10 @@ export async function GET() {
     out.priceIntelligence = { databaseReady: false, historyItems: 0, embeddedItems: 0 }
   }
 
+  try {
+    const { data } = await supabase.storage.from('ts-settings').download('history-writer.json')
+    if (data) out.priceIntelligence.writer = JSON.parse(await data.text())
+  } catch {}
+
   return NextResponse.json(out, { headers: { 'Cache-Control': 'no-store' } })
 }
