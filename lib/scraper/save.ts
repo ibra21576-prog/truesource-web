@@ -60,6 +60,11 @@ export async function saveNewItems(supabase: any, search: any, items: ScrapedIte
       { ignoreDuplicates: true }
     ),
   ])
+  // A customer can delete/re-create a monitor while a background scrape is in
+  // flight. In that narrow race the parent search is already gone, so both
+  // foreign-key writes are expected to be discarded rather than reported as a
+  // broken platform scan.
+  if (itemWrite?.error?.code === '23503' || seenWrite?.error?.code === '23503') return 0
   if (itemWrite?.error) throw new Error(`Could not save listings: ${itemWrite.error.message}`)
   if (seenWrite?.error) throw new Error(`Could not save seen IDs: ${seenWrite.error.message}`)
   return rows.length
