@@ -335,7 +335,7 @@ export default function DashboardPage() {
               )}
             </div>
             <p style={{ fontSize: 15, color: 'var(--text2)', marginTop: 10, lineHeight: 1.5 }}>
-              Real-time listings across 12 marketplaces
+              Real-time listings across 13 marketplaces
             </p>
           </div>
 

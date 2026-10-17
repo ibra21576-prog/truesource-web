@@ -23,7 +23,7 @@ function WhopMark() {
 }
 
 const BENEFITS = [
-  'Live listings across 12 marketplaces',
+  'Live listings across 13 marketplaces',
   'Fast, automated product monitoring',
   'Built for professional resellers',
 ]
