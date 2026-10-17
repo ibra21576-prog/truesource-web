@@ -34,6 +34,16 @@ const NAV = [
     ),
   },
   {
+    href: '/price-insights',
+    label: 'Price Insights',
+    icon: (
+      <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="M3 20V10"/><path d="M9 20V4"/><path d="M15 20v-7"/><path d="M21 20V7"/>
+        <path d="m3 8 6-5 6 8 6-6"/>
+      </svg>
+    ),
+  },
+  {
     href: '/create-listing',
     label: 'Create Listing',
     icon: (
@@ -92,7 +102,7 @@ export default function Navigation() {
         return (
           <Link key={l.href} href={authHref(l.href)} className={active ? 'active' : undefined}>
             {l.icon}
-            {l.label === 'Create Listing' ? 'Create' : l.label}
+            {l.label === 'Create Listing' ? 'Create' : l.label === 'Price Insights' ? 'Insights' : l.label}
           </Link>
         )
       })}
@@ -116,7 +126,8 @@ export default function Navigation() {
               title={l.label}
             >
               <span className="sidebar-link-icon">{l.icon}</span>
-              <span className="sidebar-link-label">{l.label === 'Create Listing' ? 'Create' : l.label}</span>
+              <span className="sidebar-link-label">{l.label === 'Create Listing' ? 'Create' : l.label === 'Price Insights' ? 'Insights' : l.label}</span>
+              {l.href === '/price-insights' && <span className="sidebar-soon">Soon</span>}
             </Link>
           )
         })}

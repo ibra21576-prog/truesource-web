@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @next/next/no-img-element */
 import { useState } from 'react'
 import { apiFetch } from '@/lib/api-client'
 
@@ -84,19 +85,22 @@ const TRADERA_DOMAINS = [{ value: 'www.tradera.com', label: '🇸🇪 tradera.co
 const WILLHABEN_DOMAINS = [{ value: 'www.willhaben.at', label: '🇦🇹 willhaben.at — Österreich' }]
 
 const PLATFORMS = [
-  { value: 'vinted',        label: 'Vinted',        flag: '👗' },
-  { value: 'ebay',          label: 'eBay',          flag: '🛒' },
-  { value: 'kleinanzeigen', label: 'Kleinanz.',     flag: '📌' },
-  { value: 'shpock',        label: 'Shpock',        flag: '📦' },
-  { value: 'marktplaats',   label: 'Marktplaats',  flag: '🇳🇱' },
-  { value: 'leboncoin',     label: 'Leboncoin',    flag: '🇫🇷' },
-  { value: 'craigslist',    label: 'Craigslist',   flag: '🇺🇸' },
-  { value: 'kijiji',        label: 'Kijiji',       flag: '🇨🇦' },
-  { value: 'gumtree',       label: 'Gumtree',      flag: '🇬🇧' },
-  { value: 'subito',        label: 'Subito',       flag: '🇮🇹' },
-  { value: 'tradera',       label: 'Tradera',      flag: '🇸🇪' },
-  { value: 'willhaben',     label: 'willhaben',    flag: '🇦🇹' },
+  { value: 'vinted',        label: 'Vinted',       domain: 'vinted.de' },
+  { value: 'ebay',          label: 'eBay',         domain: 'ebay.de' },
+  { value: 'kleinanzeigen', label: 'Kleinanz.',    domain: 'kleinanzeigen.de' },
+  { value: 'shpock',        label: 'Shpock',       domain: 'shpock.com' },
+  { value: 'marktplaats',   label: 'Marktplaats',  domain: 'marktplaats.nl' },
+  { value: 'leboncoin',     label: 'Leboncoin',    domain: 'leboncoin.fr' },
+  { value: 'craigslist',    label: 'Craigslist',   domain: 'craigslist.org' },
+  { value: 'kijiji',        label: 'Kijiji',       domain: 'kijiji.ca' },
+  { value: 'gumtree',       label: 'Gumtree',      domain: 'gumtree.com' },
+  { value: 'subito',        label: 'Subito',       domain: 'subito.it' },
+  { value: 'tradera',       label: 'Tradera',      domain: 'tradera.com' },
+  { value: 'willhaben',     label: 'willhaben',    domain: 'willhaben.at' },
 ]
+
+const platformLogo = (domain: string) =>
+  `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`
 
 const DEFAULT_DOMAINS: Record<string, string> = {
   vinted: 'www.vinted.de',
@@ -232,13 +236,27 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
                   fontFamily: 'var(--font-sans)',
                   border: active ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
                   transition: 'all 0.15s ease',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                   ...(active
                     ? { background: 'rgba(168,85,247,0.10)', color: 'var(--accent)' }
                     : { background: 'var(--surface)', color: 'var(--text2)' }
                   ),
                 }}>
-                <span style={{ fontSize: 16 }}>{opt.flag}</span>
+                <span style={{
+                  width: 28, height: 28, borderRadius: 7,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: '#fff', border: '1px solid var(--border)',
+                  boxShadow: '0 1px 2px rgba(18,18,18,0.05)', overflow: 'hidden',
+                }}>
+                  <img
+                    src={platformLogo(opt.domain)}
+                    alt={`${opt.label} logo`}
+                    width="20"
+                    height="20"
+                    loading="lazy"
+                    style={{ width: 20, height: 20, objectFit: 'contain' }}
+                  />
+                </span>
                 <span>{opt.label}</span>
               </button>
             )
