@@ -134,9 +134,9 @@ export default function CreateListingPage() {
 
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 38, flexWrap: 'wrap' }}>
           <div>
-            <div className="eyebrow">AI listing studio</div>
+            <div className="eyebrow">AI listing assistant</div>
             <h1 style={{ fontSize: 40, fontWeight: 700, margin: 0, letterSpacing: '-0.045em', color: 'var(--text)' }}>
-              Create Listing
+              Listing Studio
             </h1>
             <p style={{ fontSize: 15, color: 'var(--text2)', marginTop: 10, lineHeight: 1.5 }}>
               Photo in, ready-to-post listing out — title, description and price, generated automatically.

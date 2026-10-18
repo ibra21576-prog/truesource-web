@@ -45,11 +45,21 @@ const NAV = [
   },
   {
     href: '/create-listing',
-    label: 'Create Listing',
+    label: 'Listing Studio',
     icon: (
       <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" viewBox="0 0 24 24">
         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
         <circle cx="12" cy="13" r="4"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/toolkit',
+    label: 'Toolkit',
+    icon: (
+      <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="M14.7 6.3a4 4 0 0 0-5-5l2.1 2.1-3.4 3.4-2.1-2.1a4 4 0 0 0 5 5l7.4 7.4a2 2 0 1 0 2.8-2.8l-6.8-6.8Z"/>
+        <path d="m5 19 4.5-4.5"/><path d="m3 21 2-2"/>
       </svg>
     ),
   },
@@ -103,7 +113,7 @@ export default function Navigation() {
         return (
           <Link key={l.href} href={authHref(l.href)} className={active ? 'active' : undefined}>
             {l.icon}
-            {l.label === 'Create Listing' ? 'Create' : l.label === 'Price Insights' ? 'Insights' : l.label === 'Connectors' ? 'Connect' : l.label}
+            {l.label === 'Listing Studio' ? 'Studio' : l.label === 'Price Insights' ? 'Insights' : l.label === 'Connectors' ? 'Connect' : l.label}
           </Link>
         )
       })}
@@ -127,7 +137,7 @@ export default function Navigation() {
               title={l.label}
             >
               <span className="sidebar-link-icon">{l.icon}</span>
-              <span className="sidebar-link-label">{l.label === 'Create Listing' ? 'Create' : l.label === 'Price Insights' ? 'Insights' : l.label === 'Connectors' ? 'Connect' : l.label}</span>
+              <span className="sidebar-link-label">{l.label === 'Listing Studio' ? 'Studio' : l.label === 'Price Insights' ? 'Insights' : l.label === 'Connectors' ? 'Connect' : l.label}</span>
             </Link>
           )
         })}
