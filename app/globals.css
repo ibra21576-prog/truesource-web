@@ -179,23 +179,87 @@
     text-transform: uppercase;
   }
 
-  .coming-soon-toast {
+  .soon-modal-backdrop {
     position: fixed;
-    left: 96px;
-    bottom: 22px;
-    z-index: 220;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    background: rgba(10,11,11,.66);
+    backdrop-filter: blur(8px);
+  }
+  .soon-modal {
+    position: relative;
+    width: min(460px, 100%);
+    padding: 30px;
+    border: 1px solid rgba(124,58,237,.28);
+    border-radius: 16px;
+    background: #fff;
+    color: #111;
+    box-shadow: 0 30px 90px rgba(0,0,0,.35);
+  }
+  .soon-modal-close {
+    position: absolute;
+    top: 13px;
+    right: 13px;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e5e4df;
+    border-radius: 8px;
+    background: #f7f7f5;
+    color: #74767a;
+    font-size: 21px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .soon-modal-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 18px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #7c3aed, #9b65f5);
+    color: #fff;
+  }
+  .soon-modal-icon svg { width: 21px; height: 21px; }
+  .soon-modal-badge {
+    display: inline-flex;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #effbdc;
+    color: #4c7b1f;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .soon-modal h2 { margin: 11px 0 0; font-size: 27px; letter-spacing: -.04em; }
+  .soon-modal-description { margin: 9px 0 21px; color: #686b70; font-size: 13.5px; line-height: 1.6; }
+  .soon-modal-features { display: grid; gap: 8px; }
+  .soon-modal-features div {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 11px 14px;
-    border: 1px solid rgba(155,234,70,.35);
+    padding: 11px 12px;
+    border: 1px solid #e8e7e2;
     border-radius: 9px;
-    background: #171918;
-    color: #f5f5f4;
-    box-shadow: 0 16px 45px rgba(0,0,0,.32);
-    font-size: 12px;
+    background: #fafaf8;
   }
-  .coming-soon-toast b { color: #9bea46; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+  .soon-modal-features span { color: #6d28d9; font-weight: 800; }
+  .soon-modal-features p { margin: 0; color: #383a3e; font-size: 12.5px; }
+  .soon-modal-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding-top: 17px;
+    border-top: 1px solid #ecebe7;
+    color: #8a8d91;
+    font-size: 10.5px;
+  }
 
   .coming-soon-grid {
     display: grid;
@@ -1070,7 +1134,8 @@
     text-transform: uppercase;
   }
 
-  .coming-soon-toast { left: 12px; right: 12px; bottom: 88px; justify-content: center; }
+  .soon-modal-backdrop { padding: 14px; }
+  .soon-modal { padding: 24px 20px; }
 
   .page {
     margin: 0;

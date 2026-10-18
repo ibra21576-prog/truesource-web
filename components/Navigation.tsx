@@ -78,16 +78,36 @@ const NAV = [
   },
 ]
 
+const SOON_PREVIEWS = {
+  'Price Insights': {
+    title: 'Price Insights',
+    description: 'Understand the real market value of a product before you buy or resell it.',
+    features: [
+      'Lowest, highest, average and median prices',
+      'Historical price development from saved listings',
+      'Deal scores and profitable opportunities',
+    ],
+  },
+  'Listing Studio': {
+    title: 'Listing Studio',
+    description: 'Turn a product photo into a polished, marketplace-ready sales listing.',
+    features: [
+      'AI-generated titles and descriptions from a photo',
+      'Condition, category and price suggestions',
+      'Ready-to-copy drafts for multiple marketplaces',
+    ],
+  },
+} as const
+
+type SoonPreviewKey = keyof typeof SOON_PREVIEWS
+
 export default function Navigation() {
   const path = usePathname()
   const [srvAgo, setSrvAgo] = useState<number | null>(null)
   const [sessionToken, setSessionToken] = useState('')
-  const [soonNotice, setSoonNotice] = useState('')
+  const [soonPreview, setSoonPreview] = useState<SoonPreviewKey | null>(null)
 
-  const showComingSoon = (label: string) => {
-    setSoonNotice(`${label} is coming soon.`)
-    window.setTimeout(() => setSoonNotice(''), 2400)
-  }
+  const showComingSoon = (label: SoonPreviewKey) => setSoonPreview(label)
 
   const shortLabel = (label: string) => label === 'Listing Studio' ? 'Studio' : label === 'Price Insights' ? 'Insights' : label === 'Connectors' ? 'Connect' : label
 
@@ -121,7 +141,7 @@ export default function Navigation() {
       {NAV.map(l => {
         const active = path === l.href || (l.href !== '/dashboard' && path?.startsWith(l.href))
         if (l.comingSoon) return (
-          <button key={l.href} type="button" className="coming-soon-link" onClick={() => showComingSoon(shortLabel(l.label))} aria-label={`${shortLabel(l.label)} — coming soon`}>
+          <button key={l.href} type="button" className="coming-soon-link" onClick={() => showComingSoon(l.label as SoonPreviewKey)} aria-label={`${shortLabel(l.label)} — coming soon`}>
             {l.icon}
             <span>{shortLabel(l.label)}</span>
             <small className="bottom-soon">Soon</small>
@@ -152,7 +172,7 @@ export default function Navigation() {
               type="button"
               className="sidebar-link coming-soon-link"
               title={`${l.label} — coming soon`}
-              onClick={() => showComingSoon(shortLabel(l.label))}
+              onClick={() => showComingSoon(l.label as SoonPreviewKey)}
             >
               <span className="sidebar-soon">Soon</span>
               <span className="sidebar-link-icon">{l.icon}</span>
@@ -197,7 +217,23 @@ export default function Navigation() {
         </a>
       </div>
     </aside>
-    {soonNotice && <div className="coming-soon-toast" role="status"><b>Coming soon</b><span>{soonNotice}</span></div>}
+    {soonPreview && (() => {
+      const preview = SOON_PREVIEWS[soonPreview]
+      const navItem = NAV.find(item => item.label === soonPreview)
+      return <div className="soon-modal-backdrop" onMouseDown={event => { if (event.currentTarget === event.target) setSoonPreview(null) }}>
+        <section className="soon-modal" role="dialog" aria-modal="true" aria-labelledby="soon-modal-title">
+          <button className="soon-modal-close" onClick={() => setSoonPreview(null)} aria-label="Close preview">×</button>
+          <div className="soon-modal-icon">{navItem?.icon}</div>
+          <span className="soon-modal-badge">Coming soon</span>
+          <h2 id="soon-modal-title">{preview.title}</h2>
+          <p className="soon-modal-description">{preview.description}</p>
+          <div className="soon-modal-features">
+            {preview.features.map(feature => <div key={feature}><span>✓</span><p>{feature}</p></div>)}
+          </div>
+          <div className="soon-modal-footer"><span className="live-dot" /> In development for TrueSource members</div>
+        </section>
+      </div>
+    })()}
     </>
   )
 }
