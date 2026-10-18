@@ -5,6 +5,10 @@ export interface Search {
   domain: string
   min_price?: number | null
   max_price?: number | null
+  exclude_terms?: string[] | null
+  max_age_hours?: number | null
+  alert_max_price?: number | null
+  alert_min_discount?: number | null
   enabled: boolean
   user_id?: string | null
 }

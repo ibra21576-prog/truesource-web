@@ -18,7 +18,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const body = await req.json()
-  const { error } = await supabase.from('searches').update(body).eq('id', params.id).eq('user_id', user.userId)
+  const allowed = ['enabled', 'query', 'min_price', 'max_price', 'exclude_terms', 'max_age_hours', 'alert_max_price', 'alert_min_discount']
+  const update = Object.fromEntries(Object.entries(body).filter(([key]) => allowed.includes(key)))
+  if (Array.isArray(update.exclude_terms)) {
+    update.exclude_terms = update.exclude_terms.map(value => String(value).trim().toLowerCase()).filter(Boolean).slice(0, 20)
+  }
+  if (update.max_age_hours != null) update.max_age_hours = Math.min(168, Math.max(1, Number(update.max_age_hours) || 48))
+  if (update.alert_min_discount != null) update.alert_min_discount = Math.min(90, Math.max(1, Number(update.alert_min_discount)))
+  const { error } = await supabase.from('searches').update(update).eq('id', params.id).eq('user_id', user.userId)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }

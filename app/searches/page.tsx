@@ -7,6 +7,8 @@ import { apiFetch } from '@/lib/api-client'
 interface Search {
   id: string; query: string; platform: string; domain: string
   min_price?: number | null; max_price?: number | null
+  exclude_terms?: string[]; max_age_hours?: number | null; alert_max_price?: number | null; alert_min_discount?: number | null
+  last_scraped_at?: string | null; items?: { count: number }[]
   enabled: boolean; created_at: string
 }
 
@@ -28,6 +30,7 @@ const P: Record<string, { label: string }> = {
 export default function SearchesPage() {
   const [searches, setSearches] = useState<Search[]>([])
   const [loading,  setLoading]  = useState(true)
+  const [alertsEnabled, setAlertsEnabled] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -41,7 +44,15 @@ export default function SearchesPage() {
     }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load(); setAlertsEnabled(typeof Notification !== 'undefined' && Notification.permission === 'granted' && localStorage.getItem('ts_browser_alerts') === '1') }, [load])
+
+  async function enableAlerts() {
+    if (typeof Notification === 'undefined') return
+    const permission = await Notification.requestPermission()
+    const enabled = permission === 'granted'
+    setAlertsEnabled(enabled)
+    if (enabled) localStorage.setItem('ts_browser_alerts', '1')
+  }
 
   async function toggle(s: Search) {
     await apiFetch(`/api/searches/${s.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: !s.enabled }) })
@@ -60,7 +71,8 @@ export default function SearchesPage() {
       <div className="page">
 
         {/* Page header */}
-        <div style={{ marginBottom: 40 }}>
+        <div style={{ marginBottom: 40, display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div>
           <div className="eyebrow">Automation</div>
           <h1 style={{
             fontSize: 40, fontWeight: 700, margin: 0,
@@ -69,6 +81,8 @@ export default function SearchesPage() {
           <p style={{ fontSize: 15, color: 'var(--text2)', marginTop: 10, lineHeight: 1.5 }}>
             {searches.length} search{searches.length !== 1 ? 'es' : ''} configured
           </p>
+          </div>
+          <button className={alertsEnabled ? 'btn-secondary' : 'btn-primary'} onClick={enableAlerts} disabled={alertsEnabled}>{alertsEnabled ? '✓ Browser alerts enabled' : 'Enable smart alerts'}</button>
         </div>
 
         <div className="searches-layout">
@@ -155,6 +169,13 @@ export default function SearchesPage() {
                         {s.min_price ?? 0}€ – {s.max_price ?? '∞'}€
                       </p>
                     )}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                      <span style={{ fontSize: 10.5, color: 'var(--text3)', padding: '3px 7px', background: 'var(--surface)', borderRadius: 5 }}>{s.last_scraped_at ? `Scanned ${new Date(s.last_scraped_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Waiting for first scan'}</span>
+                      <span style={{ fontSize: 10.5, color: 'var(--text3)', padding: '3px 7px', background: 'var(--surface)', borderRadius: 5 }}>{s.items?.[0]?.count || 0} listings</span>
+                      <span style={{ fontSize: 10.5, color: 'var(--text3)', padding: '3px 7px', background: 'var(--surface)', borderRadius: 5 }}>Max age {s.max_age_hours || 48}h</span>
+                      {!!s.exclude_terms?.length && <span style={{ fontSize: 10.5, color: 'var(--text3)', padding: '3px 7px', background: 'var(--surface)', borderRadius: 5 }}>Excludes {s.exclude_terms.join(', ')}</span>}
+                      {(s.alert_max_price || s.alert_min_discount) && <span style={{ fontSize: 10.5, color: 'var(--accent)', padding: '3px 7px', background: 'rgba(124,58,237,.08)', borderRadius: 5 }}>Smart alert active</span>}
+                    </div>
                   </div>
 
                   {/* Actions */}

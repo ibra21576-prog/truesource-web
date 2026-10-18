@@ -6,11 +6,11 @@ import Logo from '@/components/Logo'
 import { apiFetch } from '@/lib/api-client'
 
 interface Item {
-  id: string; item_id: string; platform: string; domain: string
+  id: string; item_id: string; search_id?: string; platform: string; domain: string
   title?: string; price?: string; url?: string; image?: string | null
   found_at: string; posted_at?: string | null; first_scan?: boolean; searches?: { query: string }; search_query?: string
 }
-interface Search { id: string; query: string; platform: string; domain: string; enabled: boolean }
+interface Search { id: string; query: string; platform: string; domain: string; enabled: boolean; alert_max_price?: number | null; alert_min_discount?: number | null }
 interface Me { userId: string; username: string; memberSince?: string }
 interface AccountStats { totalItems: number; searches: number; activeSearches: number; pricedItems: number; newItems5m: number }
 
@@ -152,8 +152,10 @@ export default function DashboardPage() {
   const [nextScan,     setNextScan]     = useState(SCRAPE_INTERVAL / 1000)
 
   const [platFilter,   setPlatFilter]   = useState<string>('all')
-  const [sortMode,     setSortMode]     = useState<'newest' | 'cheapest' | 'expensive'>('newest')
+  const [sortMode,     setSortMode]     = useState<'recommended' | 'newest' | 'cheapest' | 'expensive'>('newest')
   const [dismissed,    setDismissed]    = useState<Set<string>>(new Set())
+  const [savedIds,     setSavedIds]     = useState<Set<string>>(new Set())
+  const [savedSignals, setSavedSignals] = useState<{ platform: string; title: string }[]>([])
   const [newCount,     setNewCount]     = useState(0)
   const [archiveItems, setArchiveItems] = useState<Item[]>([])
   const [loadingMore,  setLoadingMore]  = useState(false)
@@ -172,6 +174,22 @@ export default function DashboardPage() {
       else setDismissed(new Set())
     } catch {}
   }, [me?.userId])
+
+  useEffect(() => {
+    apiFetch('/api/deals').then(async response => {
+      if (!response.ok) return
+      const deals = await response.json()
+      setSavedIds(new Set(deals.filter((deal: any) => deal.status !== 'ignored').map((deal: any) => deal.item_id)))
+      setSavedSignals(deals.filter((deal: any) => deal.status !== 'ignored' && deal.item).map((deal: any) => ({ platform: deal.item.platform, title: deal.item.title || '' })))
+    }).catch(() => {})
+  }, [])
+
+  async function saveDeal(item: Item) {
+    const response = await apiFetch('/api/deals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ item_id: item.id, status: 'watching' }) })
+    if (!response.ok) return
+    setSavedIds(current => new Set(current).add(item.id))
+    setSavedSignals(current => [...current, { platform: item.platform, title: item.title || '' }])
+  }
 
   function dismiss(itemId: string) {
     setDismissed(prev => {
@@ -192,6 +210,19 @@ export default function DashboardPage() {
       const newItems = raw.filter(it => !it.first_scan && !knownIdsRef.current.has(it.id))
       if (newItems.length > 0) {
         setNewCount(n => n + newItems.length)
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && localStorage.getItem('ts_browser_alerts') === '1') {
+          for (const item of newItems.slice(0, 4)) {
+            const search = searchesRef.current.find(candidate => candidate.id === item.search_id)
+            if (!search || (!search.alert_max_price && !search.alert_min_discount)) continue
+            const price = parsePriceNum(item.price)
+            const peerPrices = raw.filter(peer => peer.search_id === item.search_id).map(peer => parsePriceNum(peer.price)).filter(value => value >= 0).sort((a, b) => a - b)
+            const median = peerPrices.length ? peerPrices[Math.floor(peerPrices.length / 2)] : 0
+            const discount = median > 0 && price >= 0 ? ((median - price) / median) * 100 : 0
+            const matchesPrice = search.alert_max_price != null && price >= 0 && price <= Number(search.alert_max_price)
+            const matchesDiscount = search.alert_min_discount != null && discount >= Number(search.alert_min_discount)
+            if (matchesPrice || matchesDiscount) new Notification(`TrueSource deal · ${item.price || 'New listing'}`, { body: item.title || search.query, icon: item.image || '/truesource-logo-original-compact.png' })
+          }
+        }
       }
     }
 
@@ -318,6 +349,15 @@ export default function DashboardPage() {
     .filter(it => !dismissed.has(it.id))
     .filter(it => platFilter === 'all' || it.platform === platFilter)
     .sort((a, b) => {
+      if (sortMode === 'recommended') {
+        const score = (item: Item) => {
+          const titleWords = new Set((item.title || '').toLowerCase().split(/[^a-z0-9äöüß]+/).filter(word => word.length > 3))
+          return savedSignals.reduce((total, signal) => total + (signal.platform === item.platform ? 2 : 0) + signal.title.toLowerCase().split(/[^a-z0-9äöüß]+/).filter(word => titleWords.has(word)).length, 0)
+        }
+        const delta = score(b) - score(a)
+        if (delta) return delta
+        return new Date(b.found_at).getTime() - new Date(a.found_at).getTime()
+      }
       if (sortMode === 'newest') return new Date(b.found_at).getTime() - new Date(a.found_at).getTime()
       const pa = parsePriceNum(a.price), pb = parsePriceNum(b.price)
       if (sortMode === 'cheapest') {
@@ -534,6 +574,7 @@ export default function DashboardPage() {
                 color: 'var(--text2)', outline: 'none', width: 'auto',
               }}
             >
+              <option value="recommended">For you</option>
               <option value="newest">Newest first</option>
               <option value="cheapest">Price: low to high</option>
               <option value="expensive">Price: high to low</option>
@@ -584,6 +625,20 @@ export default function DashboardPage() {
               {visibleItems.map(item => (
                 <div key={item.id} style={{ position: 'relative' }} className={isFresh(item) ? 'item-new' : ''}>
                   <ItemCard item={item} variant="grid" />
+                  <button
+                    onClick={() => saveDeal(item)}
+                    disabled={savedIds.has(item.id)}
+                    title={savedIds.has(item.id) ? 'Saved to Deal Board' : 'Save to Deal Board'}
+                    style={{
+                      position: 'absolute', top: 8, left: 8, zIndex: 10,
+                      width: 28, height: 28, borderRadius: 7, cursor: savedIds.has(item.id) ? 'default' : 'pointer',
+                      border: '1px solid rgba(255,255,255,.18)', background: savedIds.has(item.id) ? 'var(--accent)' : 'rgba(0,0,0,.68)',
+                      color: '#fff', display: 'grid', placeItems: 'center',
+                    }}
+                  >
+                    <svg width="13" height="13" fill={savedIds.has(item.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg>
+                  </button>
+                  <a href={`/items/${item.id}`} title="Open deal details" style={{ position: 'absolute', bottom: 8, right: 8, zIndex: 10, padding: '5px 8px', borderRadius: 6, background: 'rgba(0,0,0,.72)', color: '#fff', fontSize: 10.5, fontWeight: 700 }}>Analyse</a>
                   <button
                     onClick={() => dismiss(item.id)}
                     title="Hide listing"

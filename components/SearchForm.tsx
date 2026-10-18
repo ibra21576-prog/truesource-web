@@ -175,6 +175,11 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
   const [domain,   setDomain]   = useState('www.vinted.de')
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
+  const [excludeTerms, setExcludeTerms] = useState('')
+  const [maxAgeHours, setMaxAgeHours] = useState('48')
+  const [alertMaxPrice, setAlertMaxPrice] = useState('')
+  const [alertMinDiscount, setAlertMinDiscount] = useState('')
+  const [advancedOpen, setAdvancedOpen] = useState(false)
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
   const [regionOpen, setRegionOpen] = useState(false)
@@ -211,10 +216,17 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
       const res = await apiFetch('/api/searches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: query.trim(), platform, domain, min_price: minPrice || null, max_price: maxPrice || null }),
+        body: JSON.stringify({
+          query: query.trim(), platform, domain,
+          min_price: minPrice || null, max_price: maxPrice || null,
+          exclude_terms: excludeTerms.split(',').map(value => value.trim()).filter(Boolean),
+          max_age_hours: maxAgeHours,
+          alert_max_price: alertMaxPrice || null,
+          alert_min_discount: alertMinDiscount || null,
+        }),
       })
       if (!res.ok) throw new Error((await res.json()).error || 'Error')
-      setQuery(''); setMinPrice(''); setMaxPrice('')
+      setQuery(''); setMinPrice(''); setMaxPrice(''); setExcludeTerms(''); setAlertMaxPrice(''); setAlertMinDiscount('')
       onCreated()
     } catch (e: any) { setError(e.message) }
     finally { setLoading(false) }
@@ -448,6 +460,19 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
           </div>
         </div>
       </div>
+
+      <button type="button" className="btn-ghost" onClick={() => setAdvancedOpen(open => !open)} style={{ justifyContent: 'space-between', width: '100%', padding: '8px 2px', color: 'var(--text2)' }}>
+        <span>Advanced filters & smart alerts</span><span>{advancedOpen ? '−' : '+'}</span>
+      </button>
+
+      {advancedOpen && <div style={{ display: 'grid', gap: 12, padding: 14, borderRadius: 9, background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <label><span className="label">Exclude words</span><input value={excludeTerms} onChange={event => setExcludeTerms(event.target.value)} placeholder="defect, broken, parts only" /><small style={{ color: 'var(--text3)' }}>Separate words or phrases with commas.</small></label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <label><span className="label">Maximum listing age</span><select value={maxAgeHours} onChange={event => setMaxAgeHours(event.target.value)}><option value="1">1 hour</option><option value="6">6 hours</option><option value="12">12 hours</option><option value="24">24 hours</option><option value="48">48 hours</option><option value="168">7 days</option></select></label>
+          <label><span className="label">Alert below price</span><input type="number" min="0" value={alertMaxPrice} onChange={event => setAlertMaxPrice(event.target.value)} placeholder={`e.g. 250 ${currency}`} /></label>
+        </div>
+        <label><span className="label">Alert when below market median</span><div style={{ position: 'relative' }}><input type="number" min="1" max="90" value={alertMinDiscount} onChange={event => setAlertMinDiscount(event.target.value)} placeholder="e.g. 20" style={{ paddingRight: 34 }} /><span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }}>%</span></div></label>
+      </div>}
 
       {error && (
         <div style={{
