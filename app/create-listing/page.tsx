@@ -37,6 +37,8 @@ const PLAT_COLOR: Record<string, string> = {
   wallapop: '#13c1ac', olx: '#23e5db',
 }
 
+const LISTING_LANGUAGES = ['German', 'English', 'French', 'Italian', 'Dutch', 'Swedish']
+
 // Downscale + compress in the browser before upload — keeps the request small
 // and well under serverless payload limits.
 function compressImage(file: File, maxDim = 1024, quality = 0.82): Promise<{ base64: string; mimeType: string }> {
@@ -64,6 +66,7 @@ function compressImage(file: File, maxDim = 1024, quality = 0.82): Promise<{ bas
 
 export default function CreateListingPage() {
   const [mode, setMode] = useState<'photo' | 'manual'>('photo')
+  const [language, setLanguage] = useState('German')
   const [preview,  setPreview]  = useState<string | null>(null)
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
@@ -88,7 +91,7 @@ export default function CreateListingPage() {
       const res = await apiFetch('/api/listing/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64, mimeType }),
+        body: JSON.stringify({ imageBase64: base64, mimeType, language }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -118,7 +121,7 @@ export default function CreateListingPage() {
   }
 
   function fullListingText(l: Listing) {
-    return `${l.title}\n\n${l.description}\n\nPreis: ${l.suggestedPriceEur}€ · Zustand: ${l.condition}`
+    return `${l.title}\n\n${l.description}\n\nPrice: ${l.suggestedPriceEur}€ · Condition: ${l.condition}`
   }
 
   function openPlatform(p: typeof PLATFORMS[number]) {
@@ -173,7 +176,7 @@ export default function CreateListingPage() {
               color: credits.unlimited ? 'var(--accent)' : noCredits ? 'var(--danger)' : 'var(--text2)',
               whiteSpace: 'nowrap',
             }}>
-              {credits.unlimited ? 'Unlimited credits' : `${credits.balance} credit${credits.balance === 1 ? '' : 's'} left this month`}
+              {credits.unlimited ? 'Owner account · credits not deducted' : `${credits.balance} AI credit${credits.balance === 1 ? '' : 's'} left this month`}
             </div>
           )}
         </div>
@@ -206,6 +209,23 @@ export default function CreateListingPage() {
             <span style={{ display: 'block', fontSize: 12.5, color: 'var(--text3)', marginTop: 4 }}>Use the editor and marketplace shortcuts without AI.</span>
           </button>
         </div>
+
+        {mode === 'photo' && (
+          <div className="glass-panel" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 280px) 1fr', gap: 20, alignItems: 'center', padding: '18px 20px', marginBottom: 18, background: 'var(--card)' }}>
+            <label>
+              <span className="label">Listing language</span>
+              <select value={language} onChange={event => setLanguage(event.target.value)}>
+                {LISTING_LANGUAGES.map(option => <option key={option}>{option}</option>)}
+              </select>
+            </label>
+            <div style={{ display: 'flex', gap: 11, alignItems: 'flex-start', color: 'var(--text2)', fontSize: 12.5, lineHeight: 1.55 }}>
+              <svg width="17" height="17" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}>
+                <rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <span><strong style={{ color: 'var(--text)' }}>Photo analysis by Anthropic Claude Haiku 4.5.</strong><br />Your compressed photo is sent to Anthropic only for this analysis. Manual mode sends no image and uses no AI credits.</span>
+            </div>
+          </div>
+        )}
 
         {/* Upload zone */}
         {mode === 'photo' ? <div
