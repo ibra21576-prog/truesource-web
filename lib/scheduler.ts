@@ -33,6 +33,7 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
   const started = Date.now()
   const supabase = createServiceClient()
   const errorDetails: string[] = []
+  const groupStats: { platform: string; fetched: number; saved: number }[] = []
 
   const { data: allSearches } = await supabase
     .from('searches')
@@ -71,7 +72,8 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
     await Promise.allSettled(wave.map(async (g) => {
       try {
         const items = await fetchItems(g.rep)
-        await Promise.all(g.members.map(s => saveNewItems(supabase, s, items)))
+        const savedCounts = await Promise.all(g.members.map(s => saveNewItems(supabase, s, items)))
+        groupStats.push({ platform: g.platform, fetched: items.length, saved: savedCounts.reduce((sum, count) => sum + count, 0) })
         g.members.forEach(s => doneSearchIds.push(s.id))
         processed += g.members.length
         scrapedGroups += 1
@@ -101,6 +103,7 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
       processed,
       unique_groups: groups.size,
       errors: errorDetails.length,
+      groups: groupStats,
     })
     await supabase.storage.from('ts-settings')
       .upload('heartbeat2.json', new Blob([beat], { type: 'application/json' }), { upsert: true, cacheControl: '0' })
