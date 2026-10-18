@@ -21,7 +21,7 @@ const BUILT_IN = [
 
 type RegionStatus = { connected: boolean; email?: string; connectedAt?: number }
 type StatusMap = Record<string, RegionStatus>
-type Health = { secondsSinceLastScrape?: number; totalItems?: number; lastScrape?: { errors?: number; processed?: number }; priceIntelligence?: { historyItems?: number } }
+type Health = { secondsSinceLastScrape?: number; totalItems?: number; searches?: number; pricedItems?: number; lastScrape?: { errors?: number; processed?: number } }
 
 function timeAgo(value?: number) {
   if (!value) return 'Recently'
@@ -55,11 +55,13 @@ function ConnectorsInner() {
   const load = useCallback(async () => {
     setRefreshing(true)
     try {
-      const [connectionResponse, healthResponse] = await Promise.all([
-        apiFetch('/api/vinted-connect'), fetch('/api/status', { cache: 'no-store' }),
+      const [connectionResponse, healthResponse, accountResponse] = await Promise.all([
+        apiFetch('/api/vinted-connect'), fetch('/api/status', { cache: 'no-store' }), apiFetch('/api/account-stats'),
       ])
       if (connectionResponse.ok) setStatus(await connectionResponse.json())
-      if (healthResponse.ok) setHealth(await healthResponse.json())
+      const system = healthResponse.ok ? await healthResponse.json() : {}
+      const account = accountResponse.ok ? await accountResponse.json() : {}
+      setHealth({ ...system, ...account })
     } finally { setLoading(false); setRefreshing(false) }
   }, [])
 
@@ -119,7 +121,7 @@ function ConnectorsInner() {
 
     <section className="status-grid">
       <article><span className={`status-dot ${live ? 'green' : 'amber'}`} /><div><small>Scanner</small><strong>{live ? 'Live and healthy' : 'Checking scanner'}</strong><p>{health?.secondsSinceLastScrape != null ? `Last scan ${health.secondsSinceLastScrape}s ago` : 'Waiting for status'}</p></div></article>
-      <article><span className="status-icon">◎</span><div><small>Marketplace data</small><strong>{health?.totalItems ?? '—'} listings</strong><p>{health?.priceIntelligence?.historyItems ?? '—'} saved for price insights</p></div></article>
+      <article><span className="status-icon">◎</span><div><small>Your marketplace data</small><strong>{health?.totalItems ?? '—'} listings</strong><p>{health?.pricedItems ?? '—'} prices · {health?.searches ?? '—'} searches</p></div></article>
       <article><span className="status-icon vinted">V</span><div><small>Vinted accounts</small><strong>{connected} connected</strong><p>Optional authenticated fallback</p></div></article>
     </section>
 

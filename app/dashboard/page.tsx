@@ -161,28 +161,32 @@ export default function DashboardPage() {
   const searchesRef  = useRef<Search[]>([])
   const knownIdsRef  = useRef<Set<string>>(new Set())
   const firstLoadRef = useRef(true)
+  const loadMoreAnchorRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
+    if (!me?.userId) return
     try {
-      const saved = localStorage.getItem('ts_dismissed')
+      const saved = localStorage.getItem(`ts_dismissed_${me.userId}`)
       if (saved) setDismissed(new Set(JSON.parse(saved)))
+      else setDismissed(new Set())
     } catch {}
-  }, [])
+  }, [me?.userId])
 
   function dismiss(itemId: string) {
     setDismissed(prev => {
       const next = new Set(prev)
       next.add(itemId)
-      try { localStorage.setItem('ts_dismissed', JSON.stringify(Array.from(next))) } catch {}
+      try { if (me?.userId) localStorage.setItem(`ts_dismissed_${me.userId}`, JSON.stringify(Array.from(next))) } catch {}
       return next
     })
   }
 
   const loadFeed = useCallback(async () => {
-    const res = await apiFetch('/api/feed')
+    const res = await apiFetch('/api/feed?limit=500')
     if (!res.ok) { setLoading(false); return }
     const raw: Item[] = (await res.json()).map((it: any) => ({ ...it, search_query: it.searches?.query }))
 
-    if (!firstLoadRef.current) {
+    const isFirstLoad = firstLoadRef.current
+    if (!isFirstLoad) {
       const newItems = raw.filter(it => !it.first_scan && !knownIdsRef.current.has(it.id))
       if (newItems.length > 0) {
         setNewCount(n => n + newItems.length)
@@ -193,8 +197,12 @@ export default function DashboardPage() {
     firstLoadRef.current = false
     setItems(raw)
     setLoading(false)
-    setArchiveItems([])
-    setNoMoreItems(false)
+    if (isFirstLoad) setArchiveItems([])
+    else setArchiveItems(previous => {
+      const currentIds = new Set(raw.map(item => item.id))
+      return previous.filter(item => !currentIds.has(item.id))
+    })
+    setNoMoreItems(raw.length < 500)
   }, [])
 
   const loadMoreArchive = useCallback(async () => {
@@ -218,6 +226,18 @@ export default function DashboardPage() {
       setLoadingMore(false)
     }
   }, [items, archiveItems])
+
+  // Infinite archive: 500 is only the network page size. Reaching the bottom
+  // automatically requests the next cursor and can continue indefinitely.
+  useEffect(() => {
+    const anchor = loadMoreAnchorRef.current
+    if (!anchor || noMoreItems || loadingMore || items.length === 0) return
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) loadMoreArchive()
+    }, { rootMargin: '500px 0px' })
+    observer.observe(anchor)
+    return () => observer.disconnect()
+  }, [loadMoreArchive, loadingMore, noMoreItems, items.length])
 
   const loadSearches = useCallback(async () => {
     const res = await apiFetch('/api/searches')
@@ -510,7 +530,7 @@ export default function DashboardPage() {
               <>
                 <div style={{ width: 1, height: 22, background: 'var(--border)', flexShrink: 0 }} />
                 <button
-                  onClick={() => { setDismissed(new Set()); localStorage.removeItem('ts_dismissed') }}
+                  onClick={() => { setDismissed(new Set()); if (me?.userId) localStorage.removeItem(`ts_dismissed_${me.userId}`) }}
                   style={{
                     padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: 'pointer',
                     background: 'transparent', border: 'none', color: 'var(--text3)',
@@ -535,7 +555,7 @@ export default function DashboardPage() {
           <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text3)', fontSize: 14 }}>
             No listings match current filters.{' '}
             <button
-              onClick={() => { setPlatFilter('all'); setDismissed(new Set()); localStorage.removeItem('ts_dismissed') }}
+              onClick={() => { setPlatFilter('all'); setDismissed(new Set()); if (me?.userId) localStorage.removeItem(`ts_dismissed_${me.userId}`) }}
               style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}
             >
               Reset
@@ -574,7 +594,7 @@ export default function DashboardPage() {
 
             {/* Load older */}
             {!noMoreItems && items.length > 0 && (
-              <div style={{ textAlign: 'center', marginTop: 32 }}>
+              <div ref={loadMoreAnchorRef} style={{ textAlign: 'center', marginTop: 32 }}>
                 <button
                   onClick={loadMoreArchive}
                   disabled={loadingMore}

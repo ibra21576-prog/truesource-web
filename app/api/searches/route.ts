@@ -3,52 +3,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getRequestSession } from '@/lib/session'
 import { fetchItems } from '@/lib/scraper'
 import { saveNewItems } from '@/lib/scraper/save'
+import { claimLegacySearches, getUserSearchIds, saveUserSearchIds } from '@/lib/user-data'
 
 export const dynamic = 'force-dynamic'
 
-const BUCKET = 'ts-settings'
-
 async function getUser(req: NextRequest) {
   return getRequestSession(req)
-}
-
-async function getUserSearchIds(supabase: any, userId: string): Promise<string[]> {
-  try {
-    const { data } = await supabase.storage.from(BUCKET).download(`user-data/${userId}/search-ids.json`)
-    if (!data) return []
-    return JSON.parse(await data.text()) as string[]
-  } catch {
-    return []
-  }
-}
-
-async function saveUserSearchIds(supabase: any, userId: string, ids: string[]) {
-  const { error } = await supabase.storage.from(BUCKET).upload(
-    `user-data/${userId}/search-ids.json`,
-    Buffer.from(JSON.stringify(ids)),
-    { contentType: 'application/json', upsert: true }
-  )
-  if (error) throw error
 }
 
 export async function GET(req: NextRequest) {
   const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const isAdmin = user.userId === process.env.WHOP_OWNER_ID
   const supabase = createServiceClient()
-
-  if (isAdmin) {
-    const { data, error } = await supabase.from('searches').select('*').order('created_at', { ascending: false })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json(data)
-  }
-
-  // Regular user: get only their own search IDs
   const ids = await getUserSearchIds(supabase, user.userId)
   if (ids.length === 0) return NextResponse.json([])
 
-  const { data, error } = await supabase.from('searches').select('*').in('id', ids).order('created_at', { ascending: false })
+  await claimLegacySearches(supabase, user.userId, ids)
+
+  const { data, error } = await supabase.from('searches').select('*').eq('user_id', user.userId).in('id', ids).order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
 }
@@ -65,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('searches')
-    .insert({ query, platform, domain, min_price: min_price || null, max_price: max_price || null, enabled: true })
+    .insert({ query, platform, domain, min_price: min_price || null, max_price: max_price || null, enabled: true, user_id: user.userId })
     .select()
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

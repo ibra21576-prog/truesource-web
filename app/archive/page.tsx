@@ -18,14 +18,39 @@ export default function ArchivePage() {
   const [search,   setSearch]   = useState('')
   const [platform, setPlatform] = useState('')
   const [page,     setPage]     = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   const load = useCallback(async () => {
     const params = new URLSearchParams()
     if (platform) params.set('platform', platform)
+    params.set('limit', '500')
     const res = await apiFetch(`/api/feed?${params}`)
-    if (res.ok) setItems((await res.json()).map((it: any) => ({ ...it, search_query: it.searches?.query })))
+    if (res.ok) {
+      const rows = (await res.json()).map((it: any) => ({ ...it, search_query: it.searches?.query }))
+      setItems(rows)
+      setHasMore(rows.length === 500)
+    }
     setLoading(false)
   }, [platform])
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || !items.length) return
+    setLoadingMore(true)
+    try {
+      const oldest = items.reduce((a, b) => new Date(a.found_at) < new Date(b.found_at) ? a : b)
+      const params = new URLSearchParams({ before: oldest.found_at, limit: '500' })
+      if (platform) params.set('platform', platform)
+      const response = await apiFetch(`/api/feed?${params}`)
+      if (!response.ok) return
+      const rows: Item[] = (await response.json()).map((it: any) => ({ ...it, search_query: it.searches?.query }))
+      setItems(current => {
+        const ids = new Set(current.map(item => item.id))
+        return [...current, ...rows.filter(item => !ids.has(item.id))]
+      })
+      setHasMore(rows.length === 500)
+    } finally { setLoadingMore(false) }
+  }, [hasMore, items, loadingMore, platform])
 
   useEffect(() => { load() }, [load])
 
@@ -36,6 +61,7 @@ export default function ArchivePage() {
     if (!confirm('Delete the entire archive? This cannot be undone.')) return
     await apiFetch('/api/feed', { method: 'DELETE' })
     setItems([])
+    setHasMore(false)
   }
 
   const filtered = items.filter(it => {
@@ -47,6 +73,10 @@ export default function ArchivePage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage   = Math.min(page, totalPages)
   const pageItems  = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  useEffect(() => {
+    if (safePage >= totalPages - 1 && hasMore && !loadingMore) loadMore()
+  }, [safePage, totalPages, hasMore, loadingMore, loadMore])
 
   const filters = [
     { value: '',              label: 'All' },
@@ -93,7 +123,8 @@ export default function ArchivePage() {
               Archive
             </h1>
             <p style={{ fontSize: 14, color: 'var(--text2)', marginTop: 6, lineHeight: 1.6 }}>
-              {filtered.length} of {items.length} listings
+              {filtered.length} of {items.length} loaded listings
+              {loadingMore && <span style={{ color: 'var(--accent)' }}> · Loading more…</span>}
               {totalPages > 1 && <span style={{ color: 'var(--text3)' }}> · Seite {safePage} von {totalPages}</span>}
             </p>
           </div>

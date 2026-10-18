@@ -4,8 +4,7 @@ import { saveNewItems } from '@/lib/scraper/save'
 import { NextRequest, NextResponse } from 'next/server'
 import { getRequestSession } from '@/lib/session'
 import { cooldownFor } from '@/lib/scraper/cadence'
-
-const BUCKET = 'ts-settings'
+import { ownsSearch } from '@/lib/user-data'
 
 export async function POST(req: NextRequest) {
   const session = await getRequestSession(req)
@@ -17,16 +16,9 @@ export async function POST(req: NextRequest) {
   const { data: search } = await supabase.from('searches').select('*').eq('id', searchId).single()
   if (!search) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // Verify ownership (admin can scrape any search)
-  const isAdmin = session.userId === process.env.WHOP_OWNER_ID
-  if (!isAdmin) {
-    try {
-      const { data } = await supabase.storage.from(BUCKET).download(`user-data/${session.userId}/search-ids.json`)
-      const ids: string[] = data ? JSON.parse(await data.text()) : []
-      if (!ids.includes(searchId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    } catch {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  // Every member, including the owner account, may scrape only their own monitor.
+  if (!(await ownsSearch(supabase, session.userId, searchId))) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   // Attach userId so vinted.ts loads the correct per-user session

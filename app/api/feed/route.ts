@@ -1,23 +1,12 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getRequestSession } from '@/lib/session'
+import { claimLegacySearches, getUserSearchIds } from '@/lib/user-data'
 
 export const dynamic = 'force-dynamic'
 
-const BUCKET = 'ts-settings'
-
 async function getUser(req: NextRequest) {
   return getRequestSession(req)
-}
-
-async function getUserSearchIds(supabase: any, userId: string): Promise<string[]> {
-  try {
-    const { data } = await supabase.storage.from(BUCKET).download(`user-data/${userId}/search-ids.json`)
-    if (!data) return []
-    return JSON.parse(await data.text()) as string[]
-  } catch {
-    return []
-  }
 }
 
 export async function GET(req: NextRequest) {
@@ -26,22 +15,18 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const platform = searchParams.get('platform')
-  const isAdmin  = user.userId === process.env.WHOP_OWNER_ID
-
   const supabase = createServiceClient()
-
-  let searchIds: string[] | null = null
-  if (!isAdmin) {
-    const ids = await getUserSearchIds(supabase, user.userId)
-    if (ids.length === 0) return NextResponse.json([])
-    searchIds = ids
-  }
+  const searchIds = await getUserSearchIds(supabase, user.userId)
+  if (searchIds.length === 0) return NextResponse.json([])
+  await claimLegacySearches(supabase, user.userId, searchIds)
 
   try {
     // Show items newest-first. Items are never deleted — they accumulate as a
     // permanent archive. `before` cursor lets the dashboard load older pages.
     const before  = searchParams.get('before')   // ISO date — load items older than this
-    const limitN  = Math.min(Number(searchParams.get('limit') || 500), 500)
+    // 500 is a page size, never a total account limit. Clients keep requesting
+    // older cursors as the member scrolls.
+    const limitN  = Math.min(Math.max(Number(searchParams.get('limit') || 250), 1), 500)
 
     let q = supabase
       .from('items')
@@ -49,7 +34,7 @@ export async function GET(req: NextRequest) {
       .order('found_at', { ascending: false })
       .limit(limitN)
     if (platform) q = q.eq('platform', platform)
-    if (searchIds) q = q.in('search_id', searchIds)
+    q = q.eq('user_id', user.userId).in('search_id', searchIds)
     if (before)   q = q.lt('found_at', before)
 
     const { data: rows, error } = await q
@@ -64,11 +49,11 @@ export async function GET(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const user = await getUser(req)
-  if (!user || user.userId !== process.env.WHOP_OWNER_ID) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = createServiceClient()
-  const { error } = await supabase.from('items').delete().gte('id', '00000000-0000-0000-0000-000000000000')
+  const searchIds = await getUserSearchIds(supabase, user.userId)
+  if (!searchIds.length) return NextResponse.json({ ok: true })
+  const { error } = await supabase.from('items').delete().eq('user_id', user.userId).in('search_id', searchIds)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }

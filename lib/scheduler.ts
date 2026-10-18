@@ -90,14 +90,8 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
     } catch {}
   }
 
-  // 5. Cleanup — drop listings older than 10 days. Every 10th minute only.
-  if (new Date().getMinutes() % 10 === 0) {
-    try {
-      await supabase.from('items')
-        .delete()
-        .lt('found_at', new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString())
-    } catch {}
-  }
+  // 5. Listings are intentionally never deleted. Each member gets a permanent,
+  //    continuously growing archive that can be paged without a 500-item ceiling.
 
   // 6. Heartbeat — proves the cycle actually ran and when. Read by /api/status to
   //    distinguish "trigger isn't firing" from "no new listings to show".

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { getRequestSession } from '@/lib/session'
+import { parseMarketplacePrice } from '@/lib/intelligence/price'
+import { claimLegacySearches, getUserSearchIds } from '@/lib/user-data'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +18,17 @@ type MarketRow = {
   posted_at: string | null
   first_seen_at: string
   last_seen_at: string
+}
+
+type ItemRow = {
+  id: string
+  platform: string
+  title: string | null
+  price: string | null
+  url: string | null
+  image: string | null
+  posted_at: string | null
+  found_at: string
 }
 
 const STOP_WORDS = new Set([
@@ -69,15 +82,43 @@ export async function GET(req: NextRequest) {
   const query = (req.nextUrl.searchParams.get('q') || '').trim().slice(0, 120)
   const requestedCurrency = (req.nextUrl.searchParams.get('currency') || 'EUR').toUpperCase().slice(0, 3)
   const supabase = createServiceClient()
-  const { data, error } = await supabase
-    .from('market_history')
-    .select('id,platform,title,price_text,price_amount,currency,url,image,posted_at,first_seen_at,last_seen_at')
-    .order('last_seen_at', { ascending: false })
-    .limit(2500)
+  const searchIds = await getUserSearchIds(supabase, session.userId)
+  if (!searchIds.length) {
+    return NextResponse.json({
+      viewerId: session.userId, query, currency: requestedCurrency, availableCurrencies: [],
+      overview: { totalTracked: 0, pricedInCurrency: 0, platforms: 0, currencies: 0 },
+      stats: null, history: [], deals: [], opportunities: [],
+    })
+  }
+  await claimLegacySearches(supabase, session.userId, searchIds)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // Read the member's archive in pages. There is deliberately no 500-item
+  // account ceiling; additional database pages are consumed until exhausted.
+  const itemRows: ItemRow[] = []
+  const pageSize = 1000
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from('items')
+      .select('id,platform,title,price,url,image,posted_at,found_at')
+      .eq('user_id', session.userId)
+      .in('search_id', searchIds)
+      .order('found_at', { ascending: false })
+      .range(offset, offset + pageSize - 1)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const page = (data || []) as ItemRow[]
+    itemRows.push(...page)
+    if (page.length < pageSize) break
+  }
 
-  const allRows = ((data || []) as MarketRow[]).filter(row => {
+  const allRows: MarketRow[] = itemRows.map(row => {
+    const parsed = parseMarketplacePrice(row.price)
+    return {
+      id: row.id, platform: row.platform, title: row.title || '(untitled)',
+      price_text: row.price, price_amount: parsed.amount, currency: parsed.currency,
+      url: row.url, image: row.image, posted_at: row.posted_at,
+      first_seen_at: row.found_at, last_seen_at: row.found_at,
+    }
+  }).filter(row => {
     const amount = Number(row.price_amount)
     return Number.isFinite(amount) && amount > 0 && Boolean(row.currency)
   })
@@ -176,6 +217,7 @@ export async function GET(req: NextRequest) {
     .slice(0, 8)
 
   return NextResponse.json({
+    viewerId: session.userId,
     query,
     currency,
     availableCurrencies,

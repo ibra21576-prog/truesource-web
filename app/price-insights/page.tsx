@@ -9,7 +9,7 @@ type HistoryPoint = { date: string; median: number; low: number; high: number; c
 type Deal = { id: string; platform: string; title: string; price: number; currency: string; url: string | null; image: string | null; savingsPercent: number; score: number; rating: string }
 type Opportunity = { key: string; title: string; platform: string; image: string | null; url: string | null; lowest: number; median: number; potentialProfit: number; spreadPercent: number; samples: number; currency: string }
 type Insights = {
-  query: string; currency: string; availableCurrencies: string[]
+  viewerId: string; query: string; currency: string; availableCurrencies: string[]
   overview: { totalTracked: number; pricedInCurrency: number; platforms: number; currencies: number }
   stats: Stats | null; history: HistoryPoint[]; deals: Deal[]; opportunities: Opportunity[]
 }
@@ -49,6 +49,7 @@ export default function PriceInsightsPage() {
   const [buyPrice, setBuyPrice] = useState(0), [salePrice, setSalePrice] = useState(0)
   const [shipping, setShipping] = useState(0), [otherCosts, setOtherCosts] = useState(0), [fees, setFees] = useState(10)
   const [inventory, setInventory] = useState<InventoryItem[]>([])
+  const [inventoryReady, setInventoryReady] = useState(false)
   const [itemName, setItemName] = useState(''), [itemBuy, setItemBuy] = useState(0), [itemSale, setItemSale] = useState(0), [itemCosts, setItemCosts] = useState(0)
 
   const load = async (nextQuery = query, nextCurrency = currency) => {
@@ -65,8 +66,14 @@ export default function PriceInsightsPage() {
   }
 
   useEffect(() => { load('', 'EUR') }, []) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { try { setInventory(JSON.parse(localStorage.getItem('ts_inventory') || '[]')) } catch {} }, [])
-  useEffect(() => { localStorage.setItem('ts_inventory', JSON.stringify(inventory)) }, [inventory])
+  useEffect(() => {
+    if (!data?.viewerId) return
+    try { setInventory(JSON.parse(localStorage.getItem(`ts_inventory_${data.viewerId}`) || '[]')) } catch { setInventory([]) }
+    setInventoryReady(true)
+  }, [data?.viewerId])
+  useEffect(() => {
+    if (inventoryReady && data?.viewerId) localStorage.setItem(`ts_inventory_${data.viewerId}`, JSON.stringify(inventory))
+  }, [inventory, inventoryReady, data?.viewerId])
 
   const calculator = useMemo(() => {
     const feeAmount = salePrice * Math.max(fees, 0) / 100, totalCost = buyPrice + shipping + otherCosts + feeAmount, profit = salePrice - totalCost

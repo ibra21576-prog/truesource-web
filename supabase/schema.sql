@@ -5,6 +5,7 @@ create extension if not exists "uuid-ossp";
 -- Searches
 create table if not exists searches (
   id         uuid primary key default gen_random_uuid(),
+  user_id    text,
   query      text not null,
   platform   text not null default 'vinted',
   domain     text not null,
@@ -22,6 +23,7 @@ create index if not exists searches_last_scraped on searches (last_scraped_at nu
 -- Found items (feed + archive)
 create table if not exists items (
   id         uuid primary key default gen_random_uuid(),
+  user_id    text,
   search_id  uuid references searches on delete cascade not null,
   item_id    text not null,
   platform   text not null,
@@ -56,6 +58,8 @@ drop policy if exists "allow all searches" on searches;
 drop policy if exists "allow all items" on items;
 drop policy if exists "allow all seen_ids" on seen_ids;
 
-create policy "allow all searches" on searches for all using (true) with check (true);
-create policy "allow all items"    on items    for all using (true) with check (true);
-create policy "allow all seen_ids" on seen_ids for all using (true) with check (true);
+-- Custom Whop sessions are verified by the Next.js API. Raw browser clients
+-- must not access shared tables; the service role used by server routes bypasses RLS.
+revoke all on table searches from anon, authenticated;
+revoke all on table items from anon, authenticated;
+revoke all on table seen_ids from anon, authenticated;

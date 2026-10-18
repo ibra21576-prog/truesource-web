@@ -2,6 +2,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getRequestSession } from '@/lib/session'
 import { spendCredit } from '@/lib/credits'
+import { claimLegacySearches, getUserSearchIds } from '@/lib/user-data'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -85,10 +86,14 @@ export async function POST(req: NextRequest) {
     // the same product across platforms, so the price suggestion isn't just a guess.
     let marketRefs: { platform: string; price: string; title: string }[] = []
     if (listing.product && listing.product !== 'unknown') {
+      const searchIds = await getUserSearchIds(supabase, user.userId)
+      await claimLegacySearches(supabase, user.userId, searchIds)
       const term = listing.product.split(' ').slice(0, 3).join(' ')
       const { data: refRows } = await supabase
         .from('items')
         .select('platform, price, title')
+        .eq('user_id', user.userId)
+        .in('search_id', searchIds.length ? searchIds : ['00000000-0000-0000-0000-000000000000'])
         .ilike('title', `%${term}%`)
         .not('price', 'is', null)
         .order('found_at', { ascending: false })

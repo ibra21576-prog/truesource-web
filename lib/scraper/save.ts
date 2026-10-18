@@ -42,6 +42,7 @@ export async function saveNewItems(supabase: any, search: any, items: ScrapedIte
 
   const rows = freshItems.map(it => ({
     search_id:  search.id,
+    user_id:    search.user_id || null,
     item_id:    it.id,
     platform:   it.platform,
     domain:     search.domain,
