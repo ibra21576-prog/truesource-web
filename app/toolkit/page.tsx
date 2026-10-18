@@ -9,6 +9,11 @@ function money(value: number) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(Number.isFinite(value) ? value : 0)
 }
 
+function csvCell(value: unknown) {
+  const text = value == null ? '' : String(value)
+  return `"${text.replace(/"/g, '""')}"`
+}
+
 function NumberField({ label, value, onChange, suffix = '€' }: { label: string; value: number; onChange: (value: number) => void; suffix?: string }) {
   return (
     <label style={{ display: 'block' }}>
@@ -53,9 +58,29 @@ export default function ToolkitPage() {
     setExporting(true)
     setExportError('')
     try {
-      const response = await apiFetch('/api/export')
-      if (!response.ok) throw new Error('Export could not be created')
-      const blob = await response.blob()
+      const rows: any[] = []
+      let before = ''
+      for (let page = 0; page < 1000; page++) {
+        const response = await apiFetch(`/api/feed?limit=500${before ? `&before=${encodeURIComponent(before)}` : ''}`)
+        if (!response.ok) throw new Error('Export could not be created')
+        const batch = await response.json()
+        rows.push(...batch)
+        if (batch.length < 500) break
+        before = batch[batch.length - 1].found_at
+      }
+
+      const header = ['platform', 'title', 'price', 'url', 'search', 'found_at', 'posted_at']
+      const lines = rows.map(row => [
+        row.platform,
+        row.title,
+        row.price,
+        row.url,
+        Array.isArray(row.searches) ? row.searches[0]?.query : row.searches?.query,
+        row.found_at,
+        row.posted_at,
+      ].map(csvCell).join(','))
+      const csv = `\uFEFF${header.join(',')}\r\n${lines.join('\r\n')}`
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement('a')
       anchor.href = url
