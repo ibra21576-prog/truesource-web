@@ -30,7 +30,17 @@ export async function middleware(req: NextRequest) {
     if (!secret) {
       return new NextResponse('Server configuration error', { status: 503 })
     }
-    await jwtVerify(token, new TextEncoder().encode(secret))
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret))
+
+    const comingSoonRoutes = ['/price-insights', '/create-listing']
+    const isComingSoon = comingSoonRoutes.some(route => pathname === route || pathname.startsWith(`${route}/`))
+    if (isComingSoon && payload.userId !== process.env.WHOP_OWNER_ID) {
+      const dashboardUrl = new URL('/dashboard', req.url)
+      dashboardUrl.searchParams.set('notice', 'coming-soon')
+      const urlToken = req.nextUrl.searchParams.get('t')
+      if (urlToken) dashboardUrl.searchParams.set('t', urlToken)
+      return NextResponse.redirect(dashboardUrl)
+    }
 
     return NextResponse.next()
   } catch {

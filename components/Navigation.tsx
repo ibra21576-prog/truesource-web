@@ -36,6 +36,7 @@ const NAV = [
   {
     href: '/price-insights',
     label: 'Price Insights',
+    comingSoon: true,
     icon: (
       <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
         <path d="M3 20V10"/><path d="M9 20V4"/><path d="M15 20v-7"/><path d="M21 20V7"/>
@@ -46,6 +47,7 @@ const NAV = [
   {
     href: '/create-listing',
     label: 'Listing Studio',
+    comingSoon: true,
     icon: (
       <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" viewBox="0 0 24 24">
         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -80,6 +82,14 @@ export default function Navigation() {
   const path = usePathname()
   const [srvAgo, setSrvAgo] = useState<number | null>(null)
   const [sessionToken, setSessionToken] = useState('')
+  const [soonNotice, setSoonNotice] = useState('')
+
+  const showComingSoon = (label: string) => {
+    setSoonNotice(`${label} is coming soon.`)
+    window.setTimeout(() => setSoonNotice(''), 2400)
+  }
+
+  const shortLabel = (label: string) => label === 'Listing Studio' ? 'Studio' : label === 'Price Insights' ? 'Insights' : label === 'Connectors' ? 'Connect' : label
 
   useEffect(() => {
     const urlToken = new URLSearchParams(window.location.search).get('t')
@@ -110,10 +120,17 @@ export default function Navigation() {
     <nav className="bottom-nav">
       {NAV.map(l => {
         const active = path === l.href || (l.href !== '/dashboard' && path?.startsWith(l.href))
+        if (l.comingSoon) return (
+          <button key={l.href} type="button" className="coming-soon-link" onClick={() => showComingSoon(shortLabel(l.label))} aria-label={`${shortLabel(l.label)} — coming soon`}>
+            {l.icon}
+            <span>{shortLabel(l.label)}</span>
+            <small className="bottom-soon">Soon</small>
+          </button>
+        )
         return (
           <Link key={l.href} href={authHref(l.href)} className={active ? 'active' : undefined}>
             {l.icon}
-            {l.label === 'Listing Studio' ? 'Studio' : l.label === 'Price Insights' ? 'Insights' : l.label === 'Connectors' ? 'Connect' : l.label}
+            {shortLabel(l.label)}
           </Link>
         )
       })}
@@ -129,6 +146,19 @@ export default function Navigation() {
       <nav className="sidebar-nav">
         {NAV.map(l => {
           const active = path === l.href || (l.href !== '/dashboard' && path?.startsWith(l.href))
+          if (l.comingSoon) return (
+            <button
+              key={l.href}
+              type="button"
+              className="sidebar-link coming-soon-link"
+              title={`${l.label} — coming soon`}
+              onClick={() => showComingSoon(shortLabel(l.label))}
+            >
+              <span className="sidebar-soon">Soon</span>
+              <span className="sidebar-link-icon">{l.icon}</span>
+              <span className="sidebar-link-label">{shortLabel(l.label)}</span>
+            </button>
+          )
           return (
             <Link
               key={l.href}
@@ -137,7 +167,7 @@ export default function Navigation() {
               title={l.label}
             >
               <span className="sidebar-link-icon">{l.icon}</span>
-              <span className="sidebar-link-label">{l.label === 'Listing Studio' ? 'Studio' : l.label === 'Price Insights' ? 'Insights' : l.label === 'Connectors' ? 'Connect' : l.label}</span>
+              <span className="sidebar-link-label">{shortLabel(l.label)}</span>
             </Link>
           )
         })}
@@ -167,6 +197,7 @@ export default function Navigation() {
         </a>
       </div>
     </aside>
+    {soonNotice && <div className="coming-soon-toast" role="status"><b>Coming soon</b><span>{soonNotice}</span></div>}
     </>
   )
 }
