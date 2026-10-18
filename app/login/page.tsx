@@ -28,6 +28,11 @@ const BENEFITS = [
   'Built for professional resellers',
 ]
 
+function membershipUrl() {
+  const value = (process.env.NEXT_PUBLIC_WHOP_BUY_URL || 'https://whop.com').replace(/^[\uFEFF\s]+/, '')
+  try { return new URL(value).toString() } catch { return 'https://whop.com/' }
+}
+
 function LoginContent() {
   const params = useSearchParams()
   const router = useRouter()
@@ -125,7 +130,7 @@ function LoginContent() {
             <p className="login-purchase">
               Don&apos;t have access yet?{' '}
               <a
-                href={process.env.NEXT_PUBLIC_WHOP_BUY_URL ?? 'https://whop.com'}
+                href={membershipUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
               >

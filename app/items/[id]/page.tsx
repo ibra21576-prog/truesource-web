@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+/* eslint-disable @next/next/no-img-element */
+import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import { apiFetch } from '@/lib/api-client'
@@ -20,7 +21,8 @@ export default function ItemDetailsPage() {
   const difference = data?.median ? data.median - current : null
   const history = data?.history || []
   const changed = history.length > 1
-  const min = useMemo(() => history.length ? Math.min(...history.map((row: any) => Number(row.price_amount || 0)).filter(Boolean)) : current, [history, current])
+  const historyPrices = history.map((row: any) => Number(row.price_amount || 0)).filter(Boolean)
+  const min = historyPrices.length ? Math.min(...historyPrices) : current
 
   async function save() {
     const response = await apiFetch('/api/deals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ item_id: params.id, status: 'watching' }) })
