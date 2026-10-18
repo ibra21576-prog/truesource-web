@@ -63,6 +63,7 @@ function compressImage(file: File, maxDim = 1024, quality = 0.82): Promise<{ bas
 }
 
 export default function CreateListingPage() {
+  const [mode, setMode] = useState<'photo' | 'manual'>('photo')
   const [preview,  setPreview]  = useState<string | null>(null)
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
@@ -91,14 +92,14 @@ export default function CreateListingPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        if (data.error === 'NO_CREDITS') setError('Keine Credits mehr übrig.')
-        else setError(data.error || 'Analyse fehlgeschlagen')
+        if (data.error === 'NO_CREDITS') setError('No credits left this month.')
+        else setError(data.error || 'The photo could not be analysed.')
         return
       }
       setListing(data)
       loadCredits()
     } catch (e: any) {
-      setError(e.message || 'Fehler beim Verarbeiten des Bildes')
+      setError(e.message || 'The photo could not be processed.')
     } finally {
       setLoading(false)
     }
@@ -125,12 +126,35 @@ export default function CreateListingPage() {
     window.open(p.url, '_blank')
   }
 
+  function choosePhotoMode() {
+    setMode('photo')
+    setError('')
+    setPreview(null)
+    setListing(null)
+  }
+
+  function startManualDraft() {
+    setMode('manual')
+    setError('')
+    setPreview(null)
+    setListing({
+      product: 'manual',
+      title: '',
+      description: '',
+      category: 'Manual draft',
+      condition: 'Choose condition',
+      suggestedPriceEur: 0,
+      confidence: 'low',
+      marketRefs: [],
+    })
+  }
+
   const noCredits = credits && !credits.unlimited && (credits.balance ?? 0) <= 0
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <Navigation />
-      <div className="page" style={{ maxWidth: 760 }}>
+      <div className="page">
 
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 38, flexWrap: 'wrap' }}>
           <div>
@@ -139,7 +163,7 @@ export default function CreateListingPage() {
               Listing Studio
             </h1>
             <p style={{ fontSize: 15, color: 'var(--text2)', marginTop: 10, lineHeight: 1.5 }}>
-              Photo in, ready-to-post listing out — title, description and price, generated automatically.
+              Create a ready-to-post sales draft from a photo, or build it manually for free.
             </p>
           </div>
           {credits && (
@@ -154,8 +178,37 @@ export default function CreateListingPage() {
           )}
         </div>
 
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12, marginBottom: 18 }}>
+          <button
+            onClick={choosePhotoMode}
+            style={{
+              padding: '20px 22px', textAlign: 'left', cursor: 'pointer', borderRadius: 11,
+              background: mode === 'photo' ? 'rgba(124,58,237,0.07)' : 'var(--card)',
+              border: `1px solid ${mode === 'photo' ? 'var(--accent)' : 'var(--border)'}`,
+              color: 'var(--text)', boxShadow: 'var(--shadow-card)',
+            }}
+          >
+            <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 5 }}>AI photo draft</span>
+            <strong style={{ display: 'block', fontSize: 17 }}>Generate from a photo</strong>
+            <span style={{ display: 'block', fontSize: 12.5, color: 'var(--text3)', marginTop: 4 }}>Title, description and price suggestion in one step.</span>
+          </button>
+          <button
+            onClick={startManualDraft}
+            style={{
+              padding: '20px 22px', textAlign: 'left', cursor: 'pointer', borderRadius: 11,
+              background: mode === 'manual' ? 'rgba(124,58,237,0.07)' : 'var(--card)',
+              border: `1px solid ${mode === 'manual' ? 'var(--accent)' : 'var(--border)'}`,
+              color: 'var(--text)', boxShadow: 'var(--shadow-card)',
+            }}
+          >
+            <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--success)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 5 }}>Free · no credits</span>
+            <strong style={{ display: 'block', fontSize: 17 }}>Write it manually</strong>
+            <span style={{ display: 'block', fontSize: 12.5, color: 'var(--text3)', marginTop: 4 }}>Use the editor and marketplace shortcuts without AI.</span>
+          </button>
+        </div>
+
         {/* Upload zone */}
-        <div
+        {mode === 'photo' ? <div
           onDragOver={e => e.preventDefault()}
           onDrop={onDrop}
           onClick={() => fileRef.current?.click()}
@@ -201,7 +254,15 @@ export default function CreateListingPage() {
               </p>
             </>
           )}
-        </div>
+        </div> : (
+          <div className="glass-panel" style={{ padding: '22px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 18, background: 'var(--card)' }}>
+            <div>
+              <strong style={{ fontSize: 15 }}>Manual draft ready</strong>
+              <p style={{ margin: '4px 0 0', color: 'var(--text3)', fontSize: 13 }}>Fill in the editor below. This mode is completely free and uses no credits.</p>
+            </div>
+            <span style={{ color: 'var(--success)', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>FREE MODE</span>
+          </div>
+        )}
 
         {error && (
           <p style={{ fontSize: 13.5, color: 'var(--danger)', marginTop: 14 }}>{error}</p>
@@ -250,6 +311,26 @@ export default function CreateListingPage() {
                       </button>
                     </div>
                   </div>
+
+                  {mode === 'manual' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                      <label>
+                        <span className="label">Category</span>
+                        <input value={listing.category === 'Manual draft' ? '' : listing.category} placeholder="e.g. Electronics" onChange={e => setListing({ ...listing, category: e.target.value })} />
+                      </label>
+                      <label>
+                        <span className="label">Condition</span>
+                        <select value={listing.condition} onChange={e => setListing({ ...listing, condition: e.target.value })}>
+                          <option>Choose condition</option>
+                          <option>New with tags</option>
+                          <option>New without tags</option>
+                          <option>Very good</option>
+                          <option>Good</option>
+                          <option>Satisfactory</option>
+                        </select>
+                      </label>
+                    </div>
+                  )}
 
                   <div>
                     <label className="label">Suggested price</label>

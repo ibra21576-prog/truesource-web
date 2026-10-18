@@ -99,7 +99,7 @@ export default function ToolkitPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <Navigation />
-      <main className="page" style={{ maxWidth: 1120 }}>
+      <main className="page">
         <div style={{ marginBottom: 34 }}>
           <div className="eyebrow">Free reseller utilities</div>
           <h1 style={{ fontSize: 40, fontWeight: 700, margin: 0, letterSpacing: '-0.045em' }}>Reseller Toolkit</h1>
