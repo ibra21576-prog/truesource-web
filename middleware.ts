@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose/jwt/verify'
 
-const PUBLIC = ['/login', '/api/auth', '/_next', '/logo', '/truesource-logo-purple.png', '/truesource-mark-v2.png', '/truesource-logo-original-compact.png', '/favicon', '/api/cron', '/api/debug-scrape', '/api/admin-reset', '/api/img', '/api/status']
+const PUBLIC = ['/login', '/api/auth', '/_next', '/logo', '/truesource-logo-purple.png', '/truesource-mark-v2.png', '/truesource-logo-original-compact.png', '/favicon', '/api/cron', '/api/img', '/api/status']
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
@@ -26,7 +26,10 @@ export async function middleware(req: NextRequest) {
   // jose uses the Edge runtime's Web Crypto implementation and applies the
   // same signature and expiry checks as the API route session helper.
   try {
-    const secret = process.env.SESSION_SECRET?.trim() || 'fallback-change-me'
+    const secret = process.env.SESSION_SECRET?.trim()
+    if (!secret) {
+      return new NextResponse('Server configuration error', { status: 503 })
+    }
     await jwtVerify(token, new TextEncoder().encode(secret))
 
     return NextResponse.next()

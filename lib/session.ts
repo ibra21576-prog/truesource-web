@@ -1,7 +1,11 @@
 import { SignJWT, jwtVerify } from 'jose'
 import type { NextRequest } from 'next/server'
 
-const secret = () => new TextEncoder().encode(process.env.SESSION_SECRET?.trim() || 'fallback-change-me')
+const secret = () => {
+  const configured = process.env.SESSION_SECRET?.trim()
+  if (!configured) throw new Error('SESSION_SECRET is not configured')
+  return new TextEncoder().encode(configured)
+}
 
 export interface SessionPayload {
   userId: string

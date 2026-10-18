@@ -16,7 +16,7 @@ const BUILT_IN = [
   ['eBay', 'Global'], ['Kleinanzeigen', 'Germany'], ['Gumtree', 'United Kingdom'],
   ['Kijiji', 'Canada'], ['Craigslist', 'United States'], ['Shpock', 'Europe'],
   ['Marktplaats', 'Netherlands'], ['Leboncoin', 'France'], ['Subito', 'Italy'],
-  ['Tradera', 'Sweden'], ['willhaben', 'Austria'], ['Wallapop', 'Spain'], ['OLX', 'Europe'],
+  ['Tradera', 'Sweden'], ['willhaben', 'Austria'], ['Wallapop', 'Spain'],
 ]
 
 type RegionStatus = { connected: boolean; email?: string; connectedAt?: number }
@@ -155,7 +155,7 @@ function ConnectorsInner() {
       </article>
     </section>
 
-    <section className="built-in-section"><div className="section-heading"><div><span className="section-kicker">No account required</span><h2>Built-in marketplace scanners</h2><p>These sources are already part of TrueSource. Create a search and the scanner handles the connection.</p></div><a href="/searches" className="btn-secondary">Create a search →</a></div><div className="source-grid">{BUILT_IN.map(([name, market]) => <article key={name}><div className="source-logo">{name.slice(0, 1)}</div><div><strong>{name}</strong><small>{market}</small></div><span><i /> Ready</span></article>)}<article className="coming-source"><div className="source-logo">f</div><div><strong>Facebook Marketplace</strong><small>Account integration required</small></div><span>COMING SOON</span></article></div></section>
+    <section className="built-in-section"><div className="section-heading"><div><span className="section-kicker">No account required</span><h2>Built-in marketplace scanners</h2><p>These sources are already part of TrueSource. Create a search and the scanner handles the connection.</p></div><a href="/searches" className="btn-secondary">Create a search →</a></div><div className="source-grid">{BUILT_IN.map(([name, market]) => <article key={name}><div className="source-logo">{name.slice(0, 1)}</div><div><strong>{name}</strong><small>{market}</small></div><span><i /> Ready</span></article>)}<article className="coming-source"><div className="source-logo">O</div><div><strong>OLX</strong><small>Reliable direct scanner in development</small></div><span>COMING SOON</span></article><article className="coming-source"><div className="source-logo">f</div><div><strong>Facebook Marketplace</strong><small>Account integration required</small></div><span>COMING SOON</span></article></div></section>
 
     <section className="explain-grid"><article><span>01</span><h3>Do I need to connect Vinted?</h3><p>No. Public Vinted scanning works automatically. Connect only if your searches show repeated Vinted access errors.</p></article><article><span>02</span><h3>What does TrueSource save?</h3><p>For account connections, a private storage bucket holds the session token. Your password is not stored.</p></article><article><span>03</span><h3>Can I disconnect later?</h3><p>Yes. Disconnect any country above at any time. Your searches and already saved listings stay available.</p></article></section>
   </main><style jsx>{`

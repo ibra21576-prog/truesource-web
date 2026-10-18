@@ -1,7 +1,7 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getRequestSession } from '@/lib/session'
-import { spendCredit } from '@/lib/credits'
+import { addCredits, spendCredit } from '@/lib/credits'
 import { claimLegacySearches, getUserSearchIds } from '@/lib/user-data'
 
 export const dynamic = 'force-dynamic'
@@ -39,20 +39,32 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json({ error: 'AI-Erkennung ist noch nicht konfiguriert (ANTHROPIC_API_KEY fehlt).' }, { status: 503 })
+    return NextResponse.json({ error: 'AI photo analysis is not configured yet.' }, { status: 503 })
   }
 
   const { imageBase64, mimeType, language } = await req.json()
   if (!imageBase64 || !mimeType) {
-    return NextResponse.json({ error: 'Kein Bild übermittelt' }, { status: 400 })
+    return NextResponse.json({ error: 'No image was provided.' }, { status: 400 })
   }
 
   const isAdmin = user.userId === process.env.WHOP_OWNER_ID
   const supabase = createServiceClient()
+  let charged = false
+
+  const refundCredit = async () => {
+    if (!charged) return
+    charged = false
+    try {
+      await addCredits(supabase, user.userId, 1)
+    } catch {
+      console.error('[listing/generate] failed to refund AI credit')
+    }
+  }
 
   if (!isAdmin) {
     const ok = await spendCredit(supabase, user.userId)
     if (!ok) return NextResponse.json({ error: 'NO_CREDITS' }, { status: 402 })
+    charged = true
   }
 
   try {
@@ -78,15 +90,18 @@ export async function POST(req: NextRequest) {
     })
 
     if (!aiRes.ok) {
-      const t = await aiRes.text()
-      console.error('[listing/generate] Anthropic error', aiRes.status, t)
-      return NextResponse.json({ error: 'AI-Analyse fehlgeschlagen' }, { status: 502 })
+      console.error('[listing/generate] Anthropic error', aiRes.status)
+      await refundCredit()
+      return NextResponse.json({ error: 'AI analysis failed. Your credit was refunded.' }, { status: 502 })
     }
 
     const aiData = await aiRes.json()
     const rawText: string = aiData.content?.[0]?.text || ''
     const jsonMatch = rawText.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) return NextResponse.json({ error: 'AI-Antwort konnte nicht gelesen werden' }, { status: 502 })
+    if (!jsonMatch) {
+      await refundCredit()
+      return NextResponse.json({ error: 'The AI response could not be read. Your credit was refunded.' }, { status: 502 })
+    }
 
     const listing = JSON.parse(jsonMatch[0])
 
@@ -110,8 +125,9 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ ...listing, marketRefs })
-  } catch (e: any) {
-    console.error('[listing/generate]', e)
-    return NextResponse.json({ error: e.message || 'Serverfehler' }, { status: 500 })
+  } catch {
+    await refundCredit()
+    console.error('[listing/generate] unexpected generation error')
+    return NextResponse.json({ error: 'AI analysis failed. Your credit was refunded.' }, { status: 500 })
   }
 }

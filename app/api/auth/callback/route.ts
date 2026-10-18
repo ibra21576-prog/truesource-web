@@ -8,8 +8,7 @@ export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')
 
   if (!code) {
-    const allParams = Object.fromEntries(req.nextUrl.searchParams.entries())
-    console.error('[whop] callback without code:', JSON.stringify(allParams))
+    console.error('[whop] callback without authorization code')
     return NextResponse.redirect(new URL('/login?error=no_code', req.url))
   }
 
@@ -33,7 +32,7 @@ export async function GET(req: NextRequest) {
 
     const tokenText = await tokenRes.text()
     if (!tokenRes.ok) {
-      console.error('[whop] token exchange failed', tokenRes.status, tokenText)
+      console.error('[whop] token exchange failed', tokenRes.status)
       return NextResponse.redirect(new URL('/login?error=token_failed', req.url))
     }
     const { access_token } = JSON.parse(tokenText)
@@ -54,14 +53,13 @@ export async function GET(req: NextRequest) {
         headers: { Authorization: `Bearer ${access_token}` },
       })
       const v5MeText = await v5MeRes.text()
-      console.log('[whop] /v5/me status:', v5MeRes.status, 'body:', v5MeText.slice(0, 300))
       if (v5MeRes.ok) {
         const v5Me = JSON.parse(v5MeText)
         displayName = v5Me.username ?? v5Me.name ?? v5Me.email?.split('@')[0] ?? username
       }
-    } catch (e) { console.log('[whop] /v5/me error:', e) }
-    console.log('[whop] userinfo full:', JSON.stringify(me))
-    console.log('[whop] displayName:', displayName)
+    } catch {
+      // The OAuth userinfo response already provides a safe fallback name.
+    }
 
     // 4) Check membership + get memberSince
     const productId = process.env.WHOP_PRODUCT_ID
@@ -91,8 +89,7 @@ export async function GET(req: NextRequest) {
         hasAccess   = !!active
         memberSince = active?.created_at ?? active?.starts_at ?? ''
       } else {
-        const t = await membRes.text()
-        console.error('[whop] membership check failed', membRes.status, t)
+        console.error('[whop] membership check failed', membRes.status)
         return NextResponse.redirect(new URL('/login?error=membership_failed', req.url))
       }
     }
@@ -129,8 +126,8 @@ export async function GET(req: NextRequest) {
     })
     return res
 
-  } catch (err) {
-    console.error('[whop callback]', err)
+  } catch {
+    console.error('[whop callback] unexpected authentication error')
     return NextResponse.redirect(new URL('/login?error=server_error', req.url))
   }
 }

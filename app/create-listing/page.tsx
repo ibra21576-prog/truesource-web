@@ -125,7 +125,8 @@ export default function CreateListingPage() {
   }
 
   function openPlatform(p: typeof PLATFORMS[number]) {
-    if (listing) copyText(p.key, fullListingText(listing))
+    if (!listing?.title.trim() || !listing.description.trim()) return
+    copyText(p.key, fullListingText(listing))
     window.open(p.url, '_blank')
   }
 
@@ -153,6 +154,7 @@ export default function CreateListingPage() {
   }
 
   const noCredits = credits && !credits.unlimited && (credits.balance ?? 0) <= 0
+  const listingReady = !!listing?.title.trim() && !!listing.description.trim()
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -390,10 +392,13 @@ export default function CreateListingPage() {
                       <button
                         key={p.key}
                         onClick={() => openPlatform(p)}
+                        disabled={!listingReady}
+                        title={!listingReady ? 'Add a title and description first' : `Copy listing and open ${p.label}`}
                         style={{
-                          padding: '9px 16px', borderRadius: 8, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
+                          padding: '9px 16px', borderRadius: 8, fontSize: 13.5, fontWeight: 600, cursor: listingReady ? 'pointer' : 'not-allowed',
                           background: 'var(--card)', border: `1px solid ${PLAT_COLOR[p.key]}44`,
                           color: PLAT_COLOR[p.key], display: 'flex', alignItems: 'center', gap: 7,
+                          opacity: listingReady ? 1 : 0.45,
                         }}
                       >
                         {copiedKey === p.key ? 'Copied — opening…' : p.label}
@@ -404,7 +409,7 @@ export default function CreateListingPage() {
                     ))}
                   </div>
                   <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 10, lineHeight: 1.6 }}>
-                    Clicking a platform copies the full listing text to your clipboard and opens their listing page — just paste and upload your photo.
+                    {listingReady ? 'Clicking a platform copies the full listing text to your clipboard and opens their listing page — just paste and upload your photo.' : 'Add a title and description to enable marketplace shortcuts.'}
                   </p>
                 </div>
               </>
