@@ -41,11 +41,11 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const { domain, email, password } = body
 
-  if (!domain || (!email && !body.accessToken)) {
-    return NextResponse.json({ ok: false, error: 'domain und (email+password oder accessToken) erforderlich' }, { status: 400 })
+  if (!domain || (!body.accessToken && (!email || !password))) {
+    return NextResponse.json({ ok: false, error: 'Choose a country and provide your Vinted email and password.' }, { status: 400 })
   }
   if (!ALLOWED_DOMAINS.includes(domain)) {
-    return NextResponse.json({ ok: false, error: 'Ungültige Domain' }, { status: 400 })
+    return NextResponse.json({ ok: false, error: 'This Vinted country is not supported yet.' }, { status: 400 })
   }
 
   // Path A: Direct token (Google/Apple/Facebook login users)
@@ -65,7 +65,13 @@ export async function POST(req: NextRequest) {
   let accessToken = ''
   let refreshToken = ''
 
-  const SCRAPER_KEY = process.env.SCRAPERAPI_KEY ?? '733e672464368f8af2e0e57599398209'
+  const SCRAPER_KEY = process.env.SCRAPERAPI_KEY
+  if (!SCRAPER_KEY) {
+    return NextResponse.json({
+      ok: false,
+      error: 'Password connection is temporarily unavailable. Please use the free browser connection instead.',
+    }, { status: 503 })
+  }
 
   try {
     const res = await fetch(
@@ -98,8 +104,8 @@ export async function POST(req: NextRequest) {
       const txt = await res.text().catch(() => '')
       console.error('[vinted-connect] login failed:', res.status, txt.slice(0, 300))
       const msg = res.status === 400 || res.status === 401
-        ? 'E-Mail oder Passwort falsch'
-        : `Vinted Fehler (${res.status}) — bitte erneut versuchen`
+        ? 'The email or password was not accepted by Vinted.'
+        : `Vinted returned an error (${res.status}). Please try again.`
       return NextResponse.json({ ok: false, error: msg }, { status: 400 })
     }
 
@@ -109,11 +115,11 @@ export async function POST(req: NextRequest) {
 
     if (!accessToken) {
       console.error('[vinted-connect] no token in response:', JSON.stringify(data).slice(0, 200))
-      return NextResponse.json({ ok: false, error: 'Kein Token erhalten — bitte erneut versuchen' }, { status: 400 })
+      return NextResponse.json({ ok: false, error: 'Vinted did not return a session. Please use the browser connection.' }, { status: 400 })
     }
   } catch (e: any) {
     console.error('[vinted-connect] exception:', e.message)
-    return NextResponse.json({ ok: false, error: `Verbindungsfehler: ${e.message}` }, { status: 500 })
+    return NextResponse.json({ ok: false, error: `Connection failed: ${e.message}` }, { status: 500 })
   }
 
   // Save session to Supabase Storage per user
@@ -146,7 +152,7 @@ export async function DELETE(req: NextRequest) {
 
   const { domain } = await req.json()
   if (!domain || !ALLOWED_DOMAINS.includes(domain)) {
-    return NextResponse.json({ ok: false, error: 'Ungültige Domain' }, { status: 400 })
+    return NextResponse.json({ ok: false, error: 'This Vinted country is not supported.' }, { status: 400 })
   }
 
   const supabase = createServiceClient()
