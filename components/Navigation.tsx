@@ -127,7 +127,6 @@ export default function Navigation() {
             >
               <span className="sidebar-link-icon">{l.icon}</span>
               <span className="sidebar-link-label">{l.label === 'Create Listing' ? 'Create' : l.label === 'Price Insights' ? 'Insights' : l.label}</span>
-              {l.href === '/price-insights' && <span className="sidebar-soon">Soon</span>}
             </Link>
           )
         })}
