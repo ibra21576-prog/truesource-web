@@ -31,6 +31,8 @@ export default function SearchesPage() {
   const [searches, setSearches] = useState<Search[]>([])
   const [loading,  setLoading]  = useState(true)
   const [alertsEnabled, setAlertsEnabled] = useState(false)
+  const [editing, setEditing] = useState<Search | null>(null)
+  const [draft, setDraft] = useState({ exclude: '', age: '48', maxPrice: '', discount: '' })
 
   const load = useCallback(async () => {
     try {
@@ -52,6 +54,31 @@ export default function SearchesPage() {
     const enabled = permission === 'granted'
     setAlertsEnabled(enabled)
     if (enabled) localStorage.setItem('ts_browser_alerts', '1')
+  }
+
+  function openRules(search: Search) {
+    setEditing(search)
+    setDraft({
+      exclude: (search.exclude_terms || []).join(', '),
+      age: String(search.max_age_hours || 48),
+      maxPrice: search.alert_max_price == null ? '' : String(search.alert_max_price),
+      discount: search.alert_min_discount == null ? '' : String(search.alert_min_discount),
+    })
+  }
+
+  async function saveRules() {
+    if (!editing) return
+    await apiFetch(`/api/searches/${editing.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        exclude_terms: draft.exclude.split(',').map(value => value.trim()).filter(Boolean),
+        max_age_hours: Number(draft.age),
+        alert_max_price: draft.maxPrice || null,
+        alert_min_discount: draft.discount || null,
+      }),
+    })
+    setEditing(null)
+    load()
   }
 
   async function toggle(s: Search) {
@@ -180,6 +207,9 @@ export default function SearchesPage() {
 
                   {/* Actions */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '0 10px', flexShrink: 0 }}>
+                    <button onClick={() => openRules(s)} title="Edit filters and alerts" className="btn-ghost" style={{ padding: '8px', color: 'var(--text3)' }}>
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="11" cy="18" r="2"/></svg>
+                    </button>
                     <button
                       onClick={() => toggle(s)}
                       title={s.enabled ? 'Pause' : 'Resume'}
@@ -221,6 +251,19 @@ export default function SearchesPage() {
         </div>
 
       </div>
+      {editing && <div className="soon-modal-backdrop" onMouseDown={event => { if (event.currentTarget === event.target) setEditing(null) }}>
+        <section className="soon-modal" role="dialog" aria-modal="true" style={{ textAlign: 'left', maxWidth: 480 }}>
+          <button className="soon-modal-close" onClick={() => setEditing(null)} aria-label="Close">×</button>
+          <span className="soon-modal-badge">Search rules</span>
+          <h2 style={{ marginTop: 12 }}>{editing.query}</h2>
+          <div style={{ display: 'grid', gap: 13, marginTop: 20 }}>
+            <label><span className="label">Exclude words</span><input value={draft.exclude} onChange={event => setDraft({ ...draft, exclude: event.target.value })} placeholder="defect, broken, parts only" /></label>
+            <label><span className="label">Maximum listing age</span><select value={draft.age} onChange={event => setDraft({ ...draft, age: event.target.value })}><option value="1">1 hour</option><option value="6">6 hours</option><option value="12">12 hours</option><option value="24">24 hours</option><option value="48">48 hours</option><option value="168">7 days</option></select></label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}><label><span className="label">Alert below price</span><input type="number" min="0" value={draft.maxPrice} onChange={event => setDraft({ ...draft, maxPrice: event.target.value })} placeholder="e.g. 250" /></label><label><span className="label">Below median</span><input type="number" min="1" max="90" value={draft.discount} onChange={event => setDraft({ ...draft, discount: event.target.value })} placeholder="e.g. 20%" /></label></div>
+            <button className="btn-primary" onClick={saveRules}>Save rules</button>
+          </div>
+        </section>
+      </div>}
     </div>
   )
 }
