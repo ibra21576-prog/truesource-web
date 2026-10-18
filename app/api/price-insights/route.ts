@@ -27,7 +27,6 @@ type ItemRow = {
   price: string | null
   url: string | null
   image: string | null
-  posted_at: string | null
   found_at: string
 }
 
@@ -99,7 +98,7 @@ export async function GET(req: NextRequest) {
   for (let offset = 0; ; offset += pageSize) {
     const { data, error } = await supabase
       .from('items')
-      .select('id,platform,title,price,url,image,posted_at,found_at')
+      .select('id,platform,title,price,url,image,found_at')
       .eq('user_id', session.userId)
       .in('search_id', searchIds)
       .order('found_at', { ascending: false })
@@ -115,7 +114,7 @@ export async function GET(req: NextRequest) {
     return {
       id: row.id, platform: row.platform, title: row.title || '(untitled)',
       price_text: row.price, price_amount: parsed.amount, currency: parsed.currency,
-      url: row.url, image: row.image, posted_at: row.posted_at,
+      url: row.url, image: row.image, posted_at: null,
       first_seen_at: row.found_at, last_seen_at: row.found_at,
     }
   }).filter(row => {
