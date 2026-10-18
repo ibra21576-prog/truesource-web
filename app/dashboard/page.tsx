@@ -12,6 +12,7 @@ interface Item {
 }
 interface Search { id: string; query: string; platform: string; domain: string; enabled: boolean }
 interface Me { userId: string; username: string; memberSince?: string }
+interface AccountStats { totalItems: number; searches: number; activeSearches: number; pricedItems: number; newItems5m: number }
 
 const PLAT_COLOR: Record<string, string> = {
   vinted: '#14b8a6', ebay: '#f59e0b', kleinanzeigen: '#f97316',
@@ -157,6 +158,7 @@ export default function DashboardPage() {
   const [archiveItems, setArchiveItems] = useState<Item[]>([])
   const [loadingMore,  setLoadingMore]  = useState(false)
   const [noMoreItems,  setNoMoreItems]  = useState(false)
+  const [accountStats, setAccountStats] = useState<AccountStats | null>(null)
 
   const searchesRef  = useRef<Search[]>([])
   const knownIdsRef  = useRef<Set<string>>(new Set())
@@ -248,6 +250,11 @@ export default function DashboardPage() {
     }
   }, [])
 
+  const loadAccountStats = useCallback(async () => {
+    const res = await apiFetch('/api/account-stats')
+    if (res.ok) setAccountStats(await res.json())
+  }, [])
+
   const scrapeOne = useCallback(async (searchId: string) => {
     setScraping(s => ({ ...s, [searchId]: true }))
     setErrors(e => { const n = { ...e }; delete n[searchId]; return n })
@@ -295,6 +302,12 @@ export default function DashboardPage() {
     const iv = setInterval(loadFeed, FEED_INTERVAL)
     return () => clearInterval(iv)
   }, [loadFeed])
+
+  useEffect(() => {
+    loadAccountStats()
+    const iv = setInterval(loadAccountStats, 10_000)
+    return () => clearInterval(iv)
+  }, [loadAccountStats])
 
   const anyLoading = Object.values(scraping).some(Boolean)
 
@@ -419,15 +432,15 @@ export default function DashboardPage() {
         <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 24 }}>
           {[
             {
-              label: 'Total Listings', value: allItems.length, color: 'var(--accent)', meta: 'Across all monitored marketplaces',
+              label: 'Total Listings', value: accountStats?.totalItems ?? allItems.length, color: 'var(--accent)', meta: 'All saved listings across your marketplaces',
               icon: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
             },
             {
-              label: 'Active Searches', value: searches.length, color: '#8b95ff', meta: 'Automated monitors currently running',
+              label: 'Active Searches', value: accountStats?.activeSearches ?? searches.length, color: '#8b95ff', meta: 'Automated monitors currently running',
               icon: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
             },
             {
-              label: 'New (5 min)', value: newToday, color: 'var(--success)', meta: 'Fresh opportunities detected',
+              label: 'New (5 min)', value: accountStats?.newItems5m ?? newToday, color: 'var(--success)', meta: 'Listings discovered in the last five minutes',
               icon: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
             },
           ].map((s, i) => (
