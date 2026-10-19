@@ -1,6 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { fetchItems } from '@/lib/scraper'
-import { saveNewItems } from '@/lib/scraper/save'
+import { saveNewItems, type SaveDiagnostics } from '@/lib/scraper/save'
 import { cooldownFor } from '@/lib/scraper/cadence'
 
 // ─── Shared scrape cycle ─────────────────────────────────────────────────────
@@ -33,7 +33,17 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
   const started = Date.now()
   const supabase = createServiceClient()
   const errorDetails: string[] = []
-  const groupStats: { platform: string; fetched: number; saved: number }[] = []
+  const groupStats: Array<{
+    platform: string
+    fetched: number
+    eligible: number
+    alreadyKnown: number
+    unseen: number
+    fresh: number
+    tooOld: number
+    invalidDates: number
+    saved: number
+  }> = []
 
   const { data: allSearches } = await supabase
     .from('searches')
@@ -72,8 +82,19 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
     await Promise.allSettled(wave.map(async (g) => {
       try {
         const items = await fetchItems(g.rep)
-        const savedCounts = await Promise.all(g.members.map(s => saveNewItems(supabase, s, items)))
-        groupStats.push({ platform: g.platform, fetched: items.length, saved: savedCounts.reduce((sum, count) => sum + count, 0) })
+        const memberStats: Partial<SaveDiagnostics>[] = g.members.map(() => ({}))
+        const savedCounts = await Promise.all(g.members.map((s, index) => saveNewItems(supabase, s, items, memberStats[index])))
+        groupStats.push({
+          platform: g.platform,
+          fetched: items.length,
+          eligible: memberStats.reduce((sum, stat) => sum + (stat.eligible || 0), 0),
+          alreadyKnown: memberStats.reduce((sum, stat) => sum + (stat.alreadyKnown || 0), 0),
+          unseen: memberStats.reduce((sum, stat) => sum + (stat.unseen || 0), 0),
+          fresh: memberStats.reduce((sum, stat) => sum + (stat.fresh || 0), 0),
+          tooOld: memberStats.reduce((sum, stat) => sum + (stat.tooOld || 0), 0),
+          invalidDates: memberStats.reduce((sum, stat) => sum + (stat.invalidDates || 0), 0),
+          saved: savedCounts.reduce((sum, count) => sum + count, 0),
+        })
         g.members.forEach(s => doneSearchIds.push(s.id))
         processed += g.members.length
         scrapedGroups += 1

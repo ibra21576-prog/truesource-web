@@ -6,12 +6,45 @@ import { parseMarketplacePrice } from '@/lib/intelligence/price'
 // marketplace says is older gets remembered (seen_ids) but never shown in the feed.
 const DEFAULT_MAX_LISTING_AGE_HOURS = 48
 
+export interface SaveDiagnostics {
+  fetched: number
+  eligible: number
+  alreadyKnown: number
+  unseen: number
+  fresh: number
+  tooOld: number
+  invalidDates: number
+  saved: number
+}
+
+function writeDiagnostics(target: Partial<SaveDiagnostics> | undefined, values: SaveDiagnostics) {
+  if (target) Object.assign(target, values)
+}
+
 // Single source of truth for persisting scraped items. Used by BOTH the cron
 // scheduler and the dashboard's on-demand scrape, so found_at (the listing's real
 // post time when known, else discovery time) and dedup behave identically no
 // matter which path triggered the scrape.
-export async function saveNewItems(supabase: any, search: any, items: ScrapedItem[]): Promise<number> {
-  if (!items.length) return 0
+export async function saveNewItems(
+  supabase: any,
+  search: any,
+  items: ScrapedItem[],
+  diagnostics?: Partial<SaveDiagnostics>,
+): Promise<number> {
+  const stats: SaveDiagnostics = {
+    fetched: items.length,
+    eligible: 0,
+    alreadyKnown: 0,
+    unseen: 0,
+    fresh: 0,
+    tooOld: 0,
+    invalidDates: 0,
+    saved: 0,
+  }
+  if (!items.length) {
+    writeDiagnostics(diagnostics, stats)
+    return 0
+  }
   const nowMs = Date.now()
   const now = new Date(nowMs).toISOString()
   const excluded = (Array.isArray(search.exclude_terms) ? search.exclude_terms : [])
@@ -35,6 +68,7 @@ export async function saveNewItems(supabase: any, search: any, items: ScrapedIte
     const title = item.title.toLowerCase()
     return !excluded.some((term: string) => title.includes(term))
   })
+  stats.eligible = eligibleItems.length
 
   // Keep existing listings current and create a durable event whenever their
   // advertised price changes. This powers the detail-page price timeline.
@@ -64,11 +98,23 @@ export async function saveNewItems(supabase: any, search: any, items: ScrapedIte
   }
 
   const newItems = eligibleItems.filter(it => !seenSet.has(it.id))
-  if (newItems.length === 0) return 0
+  stats.alreadyKnown = eligibleItems.length - newItems.length
+  stats.unseen = newItems.length
+  if (newItems.length === 0) {
+    writeDiagnostics(diagnostics, stats)
+    return 0
+  }
 
   const freshItems = newItems.filter(it => {
     if (it.postedAt) {
-      const age = nowMs - new Date(it.postedAt).getTime()
+      const postedMs = new Date(it.postedAt).getTime()
+      // A malformed marketplace timestamp must not silently discard a genuinely
+      // unseen listing forever. Treat it like an unknown timestamp instead.
+      if (!Number.isFinite(postedMs)) {
+        stats.invalidDates += 1
+        return true
+      }
+      const age = nowMs - postedMs
       return age <= maxAgeMs
     }
     // Some marketplaces do not expose a reliable post time. An unseen ID is
@@ -76,6 +122,8 @@ export async function saveNewItems(supabase: any, search: any, items: ScrapedIte
     // is a newly discovered listing.
     return true
   })
+  stats.fresh = freshItems.length
+  stats.tooOld = newItems.length - freshItems.length - stats.invalidDates
 
   const rows = freshItems.map(it => ({
     search_id:  search.id,
@@ -107,11 +155,15 @@ export async function saveNewItems(supabase: any, search: any, items: ScrapedIte
   // flight. In that narrow race the parent search is already gone, so both
   // foreign-key writes are expected to be discarded rather than reported as a
   // broken platform scan.
-  if (itemWrite?.error?.code === '23503' || seenWrite?.error?.code === '23503') return 0
+  if (itemWrite?.error?.code === '23503' || seenWrite?.error?.code === '23503') {
+    writeDiagnostics(diagnostics, stats)
+    return 0
+  }
   if (itemWrite?.error) throw new Error(`Could not save listings: ${itemWrite.error.message}`)
   if (seenWrite?.error) throw new Error(`Could not save seen IDs: ${seenWrite.error.message}`)
 
   const insertedRows = itemWrite?.data || []
+  stats.saved = insertedRows.length
   if (insertedRows.length) {
     const events = insertedRows.map((row: any) => {
       const parsed = parseMarketplacePrice(row.price)
@@ -128,5 +180,6 @@ export async function saveNewItems(supabase: any, search: any, items: ScrapedIte
     // never stop the scanner from delivering a newly discovered listing.
     await supabase.from('item_price_events').upsert(events, { onConflict: 'item_id,price_text,price_amount', ignoreDuplicates: true })
   }
-  return rows.length
+  writeDiagnostics(diagnostics, stats)
+  return insertedRows.length
 }
