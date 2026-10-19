@@ -176,6 +176,8 @@ export default function SearchForm({ onCreated }: { onCreated: () => void }) {
   const regionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    const prefill = new URLSearchParams(window.location.search).get('q')
+    if (prefill) setQuery(prefill.slice(0, 160))
     const closeOnOutside = (event: PointerEvent) => {
       if (regionRef.current && !regionRef.current.contains(event.target as Node)) setRegionOpen(false)
     }

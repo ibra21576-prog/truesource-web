@@ -44,6 +44,9 @@ export default function ToolkitPage() {
   const [ocrStatus, setOcrStatus] = useState('')
   const [ocrError, setOcrError] = useState('')
   const [scanning, setScanning] = useState(false)
+  const [barcode, setBarcode] = useState('')
+  const [barcodeError, setBarcodeError] = useState('')
+  const [scanningBarcode, setScanningBarcode] = useState(false)
 
   const result = useMemo(() => {
     const platformFees = sellPrice * (fees / 100)
@@ -105,6 +108,8 @@ export default function ToolkitPage() {
   function chooseOcrFile(file?: File) {
     setOcrError('')
     setOcrText('')
+    setBarcode('')
+    setBarcodeError('')
     setOcrProgress(0)
     if (!file) { setOcrFile(null); setOcrPreview(''); return }
     if (!file.type.startsWith('image/')) { setOcrError('Please choose an image file.'); return }
@@ -144,6 +149,28 @@ export default function ToolkitPage() {
       setScanning(false)
       setOcrStatus('')
     }
+  }
+
+  async function scanBarcode() {
+    if (!ocrPreview || scanningBarcode) return
+    setScanningBarcode(true)
+    setBarcode('')
+    setBarcodeError('')
+    try {
+      const { BrowserMultiFormatReader } = await import('@zxing/browser')
+      const reader = new BrowserMultiFormatReader()
+      const result = await reader.decodeFromImageUrl(ocrPreview)
+      setBarcode(result.getText())
+    } catch {
+      setBarcodeError('No barcode or QR code found. Try a straight, sharp photo with the full code visible.')
+    } finally {
+      setScanningBarcode(false)
+    }
+  }
+
+  function openSearch(value: string) {
+    if (!value.trim()) return
+    window.location.assign(`/searches?q=${encodeURIComponent(value.trim())}`)
   }
 
   const suggestedKeywords = useMemo(() => {
@@ -216,20 +243,23 @@ export default function ToolkitPage() {
               <p style={{ color: 'var(--text2)', fontSize: 13.5, lineHeight: 1.6, marginBottom: 15 }}>Read model names, product codes and label text from a photo. Processing runs in your browser; the image is not uploaded to TrueSource.</p>
               <label className="ocr-dropzone">
                 {ocrPreview ? <img src={ocrPreview} alt="Selected product label" /> : <span><b>Choose product photo</b><small>JPG, PNG or WebP · maximum 12 MB</small></span>}
-                <input type="file" accept="image/*" onChange={event => chooseOcrFile(event.target.files?.[0])} />
+                <input type="file" accept="image/*" capture="environment" onChange={event => chooseOcrFile(event.target.files?.[0])} />
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: 9, marginTop: 10 }} className="ocr-actions">
                 <select aria-label="Text language" value={ocrLanguage} onChange={event => setOcrLanguage(event.target.value as 'eng' | 'deu')}><option value="eng">English</option><option value="deu">Deutsch</option></select>
                 <button className="btn-primary" onClick={scanPhoto} disabled={!ocrFile || scanning}>{scanning ? `${ocrProgress}% · Scanning` : 'Extract text from photo'}</button>
               </div>
+              <button className="btn-secondary" onClick={scanBarcode} disabled={!ocrFile || scanningBarcode} style={{ width: '100%', marginTop: 9 }}>{scanningBarcode ? 'Scanning barcode…' : 'Scan barcode or QR code'}</button>
               {scanning && <div style={{ marginTop: 10 }}><div style={{ height: 5, overflow: 'hidden', borderRadius: 5, background: 'var(--surface)' }}><span style={{ display: 'block', width: `${ocrProgress}%`, height: '100%', background: 'var(--accent)', transition: 'width .2s' }} /></div><small style={{ display: 'block', marginTop: 5, color: 'var(--text3)', textTransform: 'capitalize' }}>{ocrStatus}</small></div>}
               {ocrError && <p style={{ color: 'var(--danger)', fontSize: 12.5, marginTop: 10 }}>{ocrError}</p>}
-              {ocrText && <div style={{ marginTop: 14 }}><span className="label">Detected text</span><textarea value={ocrText} onChange={event => setOcrText(event.target.value)} rows={6} /><div style={{ marginTop: 9, padding: 11, borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)' }}><span className="label">Suggested search keywords</span><p style={{ margin: 0, fontSize: 13, overflowWrap: 'anywhere' }}>{suggestedKeywords || 'No clear product keywords detected.'}</p></div><button className="btn-secondary" style={{ width: '100%', marginTop: 9 }} onClick={() => navigator.clipboard.writeText(suggestedKeywords || ocrText)}>Copy keywords</button></div>}
-              <p style={{ color: 'var(--text3)', fontSize: 10.5, margin: '12px 0 0' }}>Powered locally by the Apache-2.0 licensed Tesseract.js project.</p>
+              {barcodeError && <p style={{ color: 'var(--danger)', fontSize: 12.5, marginTop: 10 }}>{barcodeError}</p>}
+              {barcode && <div style={{ marginTop: 12, padding: 12, borderRadius: 9, background: 'rgba(124,58,237,.06)', border: '1px solid rgba(124,58,237,.18)' }}><span className="label">Detected code</span><strong style={{ display: 'block', overflowWrap: 'anywhere' }}>{barcode}</strong><div style={{ display: 'flex', gap: 7, marginTop: 10 }}><button className="btn-secondary" onClick={() => navigator.clipboard.writeText(barcode)}>Copy</button><button className="btn-primary" onClick={() => openSearch(barcode)}>Search this code</button></div></div>}
+              {ocrText && <div style={{ marginTop: 14 }}><span className="label">Detected text</span><textarea value={ocrText} onChange={event => setOcrText(event.target.value)} rows={6} /><div style={{ marginTop: 9, padding: 11, borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)' }}><span className="label">Suggested search keywords</span><p style={{ margin: 0, fontSize: 13, overflowWrap: 'anywhere' }}>{suggestedKeywords || 'No clear product keywords detected.'}</p></div><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginTop: 9 }} className="ocr-result-actions"><button className="btn-secondary" onClick={() => navigator.clipboard.writeText(suggestedKeywords || ocrText)}>Copy keywords</button><button className="btn-primary" onClick={() => openSearch(suggestedKeywords || ocrText)}>Create search</button></div></div>}
+              <p style={{ color: 'var(--text3)', fontSize: 10.5, margin: '12px 0 0' }}>Local processing with Tesseract.js (Apache-2.0) and ZXing for JS (MIT).</p>
             </div>
           </div>
         </section>
-        <style>{`.ocr-dropzone{position:relative;min-height:150px;display:grid;place-items:center;overflow:hidden;border:1px dashed var(--border2);border-radius:10px;background:var(--surface);cursor:pointer;text-align:center}.ocr-dropzone:hover{border-color:var(--accent)}.ocr-dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer}.ocr-dropzone img{width:100%;height:190px;object-fit:contain}.ocr-dropzone b,.ocr-dropzone small{display:block}.ocr-dropzone small{margin-top:5px;color:var(--text3);font-size:11px}@media(max-width:520px){.toolkit-grid{grid-template-columns:1fr!important}.toolkit-grid .glass-panel{padding:18px!important}.toolkit-grid .glass-panel>div[style*="grid-template-columns"]{grid-template-columns:1fr!important}.ocr-actions{grid-template-columns:1fr!important}}`}</style>
+        <style>{`.ocr-dropzone{position:relative;min-height:150px;display:grid;place-items:center;overflow:hidden;border:1px dashed var(--border2);border-radius:10px;background:var(--surface);cursor:pointer;text-align:center}.ocr-dropzone:hover{border-color:var(--accent)}.ocr-dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer}.ocr-dropzone img{width:100%;height:190px;object-fit:contain}.ocr-dropzone b,.ocr-dropzone small{display:block}.ocr-dropzone small{margin-top:5px;color:var(--text3);font-size:11px}@media(max-width:520px){.toolkit-grid{grid-template-columns:1fr!important}.toolkit-grid .glass-panel{padding:18px!important}.toolkit-grid .glass-panel>div[style*="grid-template-columns"]{grid-template-columns:1fr!important}.ocr-actions,.ocr-result-actions{grid-template-columns:1fr!important}}`}</style>
       </main>
     </div>
   )
