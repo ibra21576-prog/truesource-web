@@ -43,6 +43,8 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
     tooOld: number
     invalidDates: number
     saved: number
+    newestFetchedAt: string | null
+    oldestFetchedAt: string | null
   }> = []
 
   const { data: allSearches } = await supabase
@@ -82,6 +84,9 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
     await Promise.allSettled(wave.map(async (g) => {
       try {
         const items = await fetchItems(g.rep)
+        const fetchedTimes = items
+          .map(item => item.postedAt ? new Date(item.postedAt).getTime() : NaN)
+          .filter(Number.isFinite)
         const memberStats: Partial<SaveDiagnostics>[] = g.members.map(() => ({}))
         const savedCounts = await Promise.all(g.members.map((s, index) => saveNewItems(supabase, s, items, memberStats[index])))
         groupStats.push({
@@ -94,6 +99,8 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
           tooOld: memberStats.reduce((sum, stat) => sum + (stat.tooOld || 0), 0),
           invalidDates: memberStats.reduce((sum, stat) => sum + (stat.invalidDates || 0), 0),
           saved: savedCounts.reduce((sum, count) => sum + count, 0),
+          newestFetchedAt: fetchedTimes.length ? new Date(Math.max(...fetchedTimes)).toISOString() : null,
+          oldestFetchedAt: fetchedTimes.length ? new Date(Math.min(...fetchedTimes)).toISOString() : null,
         })
         g.members.forEach(s => doneSearchIds.push(s.id))
         processed += g.members.length
