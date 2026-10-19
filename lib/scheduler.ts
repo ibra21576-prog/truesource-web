@@ -39,6 +39,7 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
     eligible: number
     alreadyKnown: number
     unseen: number
+    recovered: number
     fresh: number
     tooOld: number
     invalidDates: number
@@ -95,6 +96,7 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
           eligible: memberStats.reduce((sum, stat) => sum + (stat.eligible || 0), 0),
           alreadyKnown: memberStats.reduce((sum, stat) => sum + (stat.alreadyKnown || 0), 0),
           unseen: memberStats.reduce((sum, stat) => sum + (stat.unseen || 0), 0),
+          recovered: memberStats.reduce((sum, stat) => sum + (stat.recovered || 0), 0),
           fresh: memberStats.reduce((sum, stat) => sum + (stat.fresh || 0), 0),
           tooOld: memberStats.reduce((sum, stat) => sum + (stat.tooOld || 0), 0),
           invalidDates: memberStats.reduce((sum, stat) => sum + (stat.invalidDates || 0), 0),

@@ -11,6 +11,7 @@ export interface SaveDiagnostics {
   eligible: number
   alreadyKnown: number
   unseen: number
+  recovered: number
   fresh: number
   tooOld: number
   invalidDates: number
@@ -36,6 +37,7 @@ export async function saveNewItems(
     eligible: 0,
     alreadyKnown: 0,
     unseen: 0,
+    recovered: 0,
     fresh: 0,
     tooOld: 0,
     invalidDates: 0,
@@ -97,9 +99,20 @@ export async function saveNewItems(
     await supabase.from('item_price_events').upsert(currentEvents, { onConflict: 'item_id,price_text,price_amount', ignoreDuplicates: true })
   }
 
-  const newItems = eligibleItems.filter(it => !seenSet.has(it.id))
-  stats.alreadyKnown = eligibleItems.length - newItems.length
-  stats.unseen = newItems.length
+  const unseenItems = eligibleItems.filter(it => !seenSet.has(it.id))
+  const existingItemIds = new Set((existingRows || []).map((row: any) => row.item_id))
+  // Older versions could prune item rows at the former 500-listing ceiling while
+  // leaving seen_ids behind. Repair only listings with a trustworthy, currently
+  // fresh marketplace timestamp so old inventory cannot flood the live feed.
+  const recoverableItems = eligibleItems.filter(it => {
+    if (!seenSet.has(it.id) || existingItemIds.has(it.id) || !it.postedAt) return false
+    const postedMs = new Date(it.postedAt).getTime()
+    return Number.isFinite(postedMs) && nowMs - postedMs <= maxAgeMs
+  })
+  const newItems = [...unseenItems, ...recoverableItems]
+  stats.alreadyKnown = eligibleItems.length - unseenItems.length
+  stats.unseen = unseenItems.length
+  stats.recovered = recoverableItems.length
   if (newItems.length === 0) {
     writeDiagnostics(diagnostics, stats)
     return 0
