@@ -33,6 +33,7 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
   const started = Date.now()
   const supabase = createServiceClient()
   const errorDetails: string[] = []
+  const heartbeatErrors: { platform: string; message: string }[] = []
   const groupStats: Array<{
     platform: string
     fetched: number
@@ -109,6 +110,7 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
         scrapedGroups += 1
       } catch (e: any) {
         errorDetails.push(`[${g.platform}] "${g.rep.query}": ${e.message}`)
+        heartbeatErrors.push({ platform: g.platform, message: String(e.message || 'Unknown scrape error').slice(0, 300) })
       }
     }))
   }
@@ -133,6 +135,7 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
       processed,
       unique_groups: groups.size,
       errors: errorDetails.length,
+      errorDetails: heartbeatErrors,
       groups: groupStats,
     })
     await supabase.storage.from('ts-settings')
