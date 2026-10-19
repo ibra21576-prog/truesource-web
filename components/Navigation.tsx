@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Logo from './Logo'
+import ScannerWatchdog from './ScannerWatchdog'
 import { useEffect, useState } from 'react'
 
 const NAV = [
@@ -148,6 +149,7 @@ export default function Navigation() {
 
   return (
     <>
+    <ScannerWatchdog />
     <nav className="bottom-nav">
       {NAV.filter(l => MOBILE_PRIMARY.has(l.href)).map(l => {
         const active = path === l.href || (l.href !== '/dashboard' && path?.startsWith(l.href))

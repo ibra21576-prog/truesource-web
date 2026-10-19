@@ -10,7 +10,7 @@ export async function fetchTradera(search: Search): Promise<ScrapedItem[]> {
       headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'text/html' },
       signal: AbortSignal.timeout(8000), cache: 'no-store',
     })
-    if (!res.ok) return []
+    if (!res.ok) throw new Error('tradera request failed: HTTP ' + res.status)
     const html = await res.text()
     const cards = html.split(/data-item-card-id="/i).slice(1, 61)
     const seen = new Set<string>()
@@ -30,6 +30,6 @@ export async function fetchTradera(search: Search): Promise<ScrapedItem[]> {
     return items
   } catch (e: any) {
     console.log(`[tradera] error: ${e.message}`)
-    return []
+    throw e
   }
 }

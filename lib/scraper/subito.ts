@@ -10,7 +10,7 @@ export async function fetchSubito(search: Search): Promise<ScrapedItem[]> {
       headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' },
       signal: AbortSignal.timeout(8000), cache: 'no-store',
     })
-    if (!res.ok) return []
+    if (!res.ok) throw new Error('subito request failed: HTTP ' + res.status)
     const data = await res.json() as any
     return (data.ads || []).slice(0, 50).map((ad: any) => {
       const priceFeature = (ad.features || []).find((f: any) => f.uri === '/price')
@@ -28,6 +28,6 @@ export async function fetchSubito(search: Search): Promise<ScrapedItem[]> {
     })
   } catch (e: any) {
     console.log(`[subito] error: ${e.message}`)
-    return []
+    throw e
   }
 }

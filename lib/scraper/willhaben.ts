@@ -13,7 +13,7 @@ export async function fetchWillhaben(search: Search): Promise<ScrapedItem[]> {
       headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'text/html' },
       signal: AbortSignal.timeout(8000), cache: 'no-store',
     })
-    if (!res.ok) return []
+    if (!res.ok) throw new Error('willhaben request failed: HTTP ' + res.status)
     const html = await res.text()
     const marker = html.indexOf('id="__NEXT_DATA__"')
     const start = html.indexOf('{', marker)
@@ -36,6 +36,6 @@ export async function fetchWillhaben(search: Search): Promise<ScrapedItem[]> {
     })
   } catch (e: any) {
     console.log(`[willhaben] error: ${e.message}`)
-    return []
+    throw e
   }
 }

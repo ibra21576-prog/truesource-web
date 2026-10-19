@@ -2,6 +2,7 @@ import { runScrapeCycle } from '@/lib/scheduler'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 // HTTP trigger for the scrape cycle (cron-job.org / external schedulers on Vercel).
 // On an always-on host the internal scheduler in lib/scheduler.ts runs this same

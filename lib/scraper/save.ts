@@ -54,17 +54,18 @@ export async function saveNewItems(
     .filter(Boolean)
   const maxAgeMs = Math.min(168, Math.max(1, Number(search.max_age_hours) || DEFAULT_MAX_LISTING_AGE_HOURS)) * 60 * 60 * 1000
 
-  const [{ data: seenRows }] = await Promise.all([
-    supabase.from('seen_ids').select('item_id').eq('search_id', search.id),
+  const [{ data: seenRows, error: seenReadError }] = await Promise.all([
+    supabase.from('seen_ids').select('item_id').eq('search_id', search.id).in('item_id', items.map(item => item.id)),
     // Keep a permanent, search-independent record for future price analysis.
     recordMarketHistory(supabase, search, items),
   ])
+  if (seenReadError) throw new Error(`Could not read seen IDs: ${seenReadError.message}`)
   const seenSet = new Set((seenRows || []).map((r: any) => r.item_id))
 
   // Baseline scan = the very first scrape of this search. Show its current
   // results immediately so a newly-created monitor never looks broken, but mark
   // them as baseline items so the UI does not fire sound/push notifications.
-  const isBaseline = seenSet.size === 0
+  const isBaseline = !search.last_scraped_at
 
   const eligibleItems = items.filter(item => {
     const title = item.title.toLowerCase()
@@ -75,9 +76,10 @@ export async function saveNewItems(
   // Keep existing listings current and create a durable event whenever their
   // advertised price changes. This powers the detail-page price timeline.
   const fetchedIds = eligibleItems.map(item => item.id)
-  const { data: existingRows } = fetchedIds.length
+  const { data: existingRows, error: existingError } = fetchedIds.length
     ? await supabase.from('items').select('id,item_id,price').eq('search_id', search.id).in('item_id', fetchedIds)
-    : { data: [] }
+    : { data: [], error: null }
+  if (existingError) throw new Error(`Could not read listings: ${existingError.message}`)
   const existingByMarketplaceId = new Map((existingRows || []).map((row: any) => [row.item_id, row]))
   const changed = eligibleItems.filter(item => {
     const existing: any = existingByMarketplaceId.get(item.id)
@@ -136,7 +138,7 @@ export async function saveNewItems(
     return true
   })
   stats.fresh = freshItems.length
-  stats.tooOld = newItems.length - freshItems.length - stats.invalidDates
+  stats.tooOld = newItems.length - freshItems.length
 
   const rows = freshItems.map(it => ({
     search_id:  search.id,
@@ -148,22 +150,16 @@ export async function saveNewItems(
     price:      it.price,
     url:        it.url,
     image:      it.image,
-    found_at:   it.postedAt || now,   // real post time when the platform exposes it
-    posted_at:  it.postedAt || null,
+    found_at:   it.postedAt && Number.isFinite(Date.parse(it.postedAt)) ? it.postedAt : now,
+    posted_at:  it.postedAt && Number.isFinite(Date.parse(it.postedAt)) ? it.postedAt : null,
     first_scan: isBaseline,
   }))
 
-  let [itemWrite, seenWrite] = await Promise.all([
+  let itemWrite =
     // ignoreDuplicates: never overwrite an existing row (protects found_at)
     rows.length
-      ? supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id', ignoreDuplicates: true }).select('id,item_id,price')
-      : Promise.resolve(),
-    // Remember EVERY id we saw (fresh or old) so old stock never resurfaces later
-    supabase.from('seen_ids').upsert(
-      newItems.map(it => ({ search_id: search.id, item_id: it.id })),
-      { ignoreDuplicates: true }
-    ),
-  ])
+      ? await supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id', ignoreDuplicates: true }).select('id,item_id,price')
+      : undefined
   // Some existing installations were created before items.posted_at was added.
   // Keep them fully operational and use found_at (already set to the real post
   // time) until the optional schema migration is applied.
@@ -177,11 +173,17 @@ export async function saveNewItems(
   // flight. In that narrow race the parent search is already gone, so both
   // foreign-key writes are expected to be discarded rather than reported as a
   // broken platform scan.
-  if (itemWrite?.error?.code === '23503' || seenWrite?.error?.code === '23503') {
+  if (itemWrite?.error?.code === '23503') {
     writeDiagnostics(diagnostics, stats)
     return 0
   }
   if (itemWrite?.error) throw new Error(`Could not save listings: ${itemWrite.error.message}`)
+  // Commit the deduplication marker only AFTER a successful item write. On any
+  // failure the next scheduled attempt must still be able to deliver the item.
+  const seenWrite = await supabase.from('seen_ids').upsert(
+    newItems.map(it => ({ search_id: search.id, item_id: it.id })),
+    { onConflict: 'search_id,item_id', ignoreDuplicates: true },
+  )
   if (seenWrite?.error) throw new Error(`Could not save seen IDs: ${seenWrite.error.message}`)
 
   const insertedRows = itemWrite?.data || []

@@ -49,10 +49,12 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
     oldestFetchedAt: string | null
   }> = []
 
-  const { data: allSearches } = await supabase
+  const { data: allSearches, error: searchError } = await supabase
     .from('searches')
     .select('*')
     .neq('enabled', false)
+
+  if (searchError) throw new Error(`Could not load searches: ${searchError.message}`)
 
   const searches: any[] = allSearches ?? []
   if (searches.length === 0) {
@@ -63,7 +65,7 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
   type Group = { key: string; platform: string; rep: any; members: any[]; lastScraped: number }
   const groups = new Map<string, Group>()
   for (const s of searches) {
-    const key = `${s.platform}|${(s.query || '').toLowerCase().trim()}|${s.domain || ''}`
+    const key = `${s.platform}|${(s.query || '').toLowerCase().trim()}|${s.domain || ''}|${s.platform === 'vinted' ? s.user_id || s.id : ''}`
     const ts = s.last_scraped_at ? new Date(s.last_scraped_at).getTime() : 0
     const g = groups.get(key)
     if (g) { g.members.push(s); g.lastScraped = Math.min(g.lastScraped, ts) }
@@ -85,6 +87,21 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
     const wave = eligible.slice(i, i + CHUNK)
     await Promise.allSettled(wave.map(async (g) => {
       try {
+        // Share the optimistic reservation with the signed-in browser fallback.
+        // Failed/interrupted attempts become eligible again after the cooldown.
+        const claimedMembers = []
+        for (const member of g.members) {
+          if (Date.now() - (Date.parse(member.last_scraped_at) || 0) < cooldownFor(member.platform, member.id)) continue
+          let claim = supabase.from('searches').update({ last_scraped_at: new Date().toISOString() })
+            .eq('id', member.id).neq('enabled', false)
+          claim = member.last_scraped_at ? claim.eq('last_scraped_at', member.last_scraped_at) : claim.is('last_scraped_at', null)
+          const { data, error } = await claim.select('id')
+          if (error) throw new Error(`Could not reserve scan: ${error.message}`)
+          if (data?.length) claimedMembers.push(member)
+        }
+        if (!claimedMembers.length) return
+        g.members = claimedMembers
+        g.rep = claimedMembers[0]
         const items = await fetchItems(g.rep)
         const fetchedTimes = items
           .map(item => item.postedAt ? new Date(item.postedAt).getTime() : NaN)
@@ -116,13 +133,7 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
   }
 
   // 4. Stamp last_scraped_at so the next tick rotates to the next-oldest searches.
-  if (doneSearchIds.length) {
-    try {
-      await supabase.from('searches')
-        .update({ last_scraped_at: new Date().toISOString() })
-        .in('id', doneSearchIds)
-    } catch {}
-  }
+  // Reservations already stamped attempts; never overwrite a newer reservation.
 
   // 5. Listings are intentionally never deleted. Each member gets a permanent,
   //    continuously growing archive that can be paged without a 500-item ceiling.

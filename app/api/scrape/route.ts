@@ -6,6 +6,8 @@ import { getRequestSession } from '@/lib/session'
 import { cooldownFor } from '@/lib/scraper/cadence'
 import { ownsSearch } from '@/lib/user-data'
 
+export const maxDuration = 60
+
 export async function POST(req: NextRequest) {
   const session = await getRequestSession(req)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -20,6 +22,7 @@ export async function POST(req: NextRequest) {
   if (!(await ownsSearch(supabase, session.userId, searchId))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+  if (search.enabled === false) return NextResponse.json({ ok: true, skipped: true, paused: true })
 
   // Attach userId so vinted.ts loads the correct per-user session
   const searchWithUser = { ...search, user_id: session.userId }
@@ -37,11 +40,12 @@ export async function POST(req: NextRequest) {
   // Optimistic reservation: only one concurrent request may claim this scan.
   let reservation = supabase.from('searches')
     .update({ last_scraped_at: new Date(now).toISOString() })
-    .eq('id', searchId)
+    .eq('id', searchId).neq('enabled', false)
   reservation = search.last_scraped_at
     ? reservation.eq('last_scraped_at', search.last_scraped_at)
     : reservation.is('last_scraped_at', null)
-  const { data: claimed } = await reservation.select('id')
+  const { data: claimed, error: claimError } = await reservation.select('id')
+  if (claimError) return NextResponse.json({ error: 'Could not start scan. Retrying automatically.' }, { status: 503 })
   if (!claimed?.length) {
     return NextResponse.json({ ok: true, skipped: true, retryAfterMs: cooldown })
   }
