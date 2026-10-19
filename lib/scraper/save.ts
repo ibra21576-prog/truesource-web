@@ -153,7 +153,7 @@ export async function saveNewItems(
     first_scan: isBaseline,
   }))
 
-  const [itemWrite, seenWrite] = await Promise.all([
+  let [itemWrite, seenWrite] = await Promise.all([
     // ignoreDuplicates: never overwrite an existing row (protects found_at)
     rows.length
       ? supabase.from('items').upsert(rows, { onConflict: 'search_id,item_id', ignoreDuplicates: true }).select('id,item_id,price')
@@ -164,6 +164,15 @@ export async function saveNewItems(
       { ignoreDuplicates: true }
     ),
   ])
+  // Some existing installations were created before items.posted_at was added.
+  // Keep them fully operational and use found_at (already set to the real post
+  // time) until the optional schema migration is applied.
+  if (itemWrite?.error?.message?.includes("'posted_at' column")) {
+    const legacyRows = rows.map(({ posted_at: _postedAt, ...row }) => row)
+    itemWrite = legacyRows.length
+      ? await supabase.from('items').upsert(legacyRows, { onConflict: 'search_id,item_id', ignoreDuplicates: true }).select('id,item_id,price')
+      : undefined
+  }
   // A customer can delete/re-create a monitor while a background scrape is in
   // flight. In that narrow race the parent search is already gone, so both
   // foreign-key writes are expected to be discarded rather than reported as a
