@@ -65,7 +65,12 @@ export async function saveNewItems(
   // Baseline scan = the very first scrape of this search. Show its current
   // results immediately so a newly-created monitor never looks broken, but mark
   // them as baseline items so the UI does not fire sound/push notifications.
-  const isBaseline = !search.last_scraped_at
+  let isBaseline = false
+  if (seenSet.size === 0) {
+    const baseline = await supabase.from('seen_ids').select('item_id').eq('search_id', search.id).limit(1)
+    if (baseline.error) throw new Error('Could not check initial scan')
+    isBaseline = !baseline.data?.length
+  }
 
   const eligibleItems = items.filter(item => {
     const title = item.title.toLowerCase()

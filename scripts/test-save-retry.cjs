@@ -16,7 +16,7 @@ async function run(fail, invalidDate = false) {
   const db = { from(table) {
     let write = false
     const query = {
-      select() { return query }, eq() { return query }, in() { return query },
+      select() { return query }, eq() { return query }, in() { return query }, limit() { return query },
       upsert() { write = true; calls.push(table); return query },
       then(resolve, reject) {
         return Promise.resolve(write && table === 'items'
