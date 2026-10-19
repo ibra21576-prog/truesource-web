@@ -5,7 +5,9 @@ function attrs(ad: any): Record<string, string> {
 }
 
 export async function fetchWillhaben(search: Search): Promise<ScrapedItem[]> {
-  const pageUrl = `https://www.willhaben.at/iad/kaufen-und-verkaufen/marktplatz?keyword=${encodeURIComponent(search.query)}`
+  // `sort=1` is Willhaben's public "Aktualität" / published-descending order.
+  // The default relevance order otherwise repeats the same popular inventory.
+  const pageUrl = `https://www.willhaben.at/iad/kaufen-und-verkaufen/marktplatz?keyword=${encodeURIComponent(search.query)}&sort=1`
   try {
     const res = await fetch(pageUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'text/html' },

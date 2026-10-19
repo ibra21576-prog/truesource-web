@@ -1,7 +1,10 @@
 import { Search, ScrapedItem } from './types'
 
 export async function fetchSubito(search: Search): Promise<ScrapedItem[]> {
-  const url = `https://hades.subito.it/v1/search/items?q=${encodeURIComponent(search.query)}&limit=100`
+  // Subito uses `sort=datedesc` and `lim` (not `limit`). Without these the API
+  // keeps returning a relevance-ranked set, so a monitor can run successfully
+  // for hours while never seeing the newest listings.
+  const url = `https://hades.subito.it/v1/search/items?q=${encodeURIComponent(search.query)}&t=s&sort=datedesc&lim=50&start=0`
   try {
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' },
