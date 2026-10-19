@@ -2,6 +2,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { fetchItems } from '@/lib/scraper'
 import { saveNewItems, type SaveDiagnostics } from '@/lib/scraper/save'
 import { cooldownFor } from '@/lib/scraper/cadence'
+import { claimScan } from '@/lib/scraper/claim'
 
 // ─── Shared scrape cycle ─────────────────────────────────────────────────────
 // One self-limiting pass over all enabled searches. Called either by the HTTP
@@ -91,13 +92,7 @@ export async function runScrapeCycle(opts: { timeBudgetMs?: number } = {}): Prom
         // Failed/interrupted attempts become eligible again after the cooldown.
         const claimedMembers = []
         for (const member of g.members) {
-          if (Date.now() - (Date.parse(member.last_scraped_at) || 0) < cooldownFor(member.platform, member.id)) continue
-          let claim = supabase.from('searches').update({ last_scraped_at: new Date().toISOString() })
-            .eq('id', member.id).neq('enabled', false)
-          claim = member.last_scraped_at ? claim.eq('last_scraped_at', member.last_scraped_at) : claim.is('last_scraped_at', null)
-          const { data, error } = await claim.select('id')
-          if (error) throw new Error(`Could not reserve scan: ${error.message}`)
-          if (data?.length) claimedMembers.push(member)
+          if (await claimScan(supabase, member)) claimedMembers.push(member)
         }
         if (!claimedMembers.length) return
         g.members = claimedMembers
