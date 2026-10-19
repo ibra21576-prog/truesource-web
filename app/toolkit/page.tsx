@@ -106,7 +106,7 @@ export default function ToolkitPage() {
           <p style={{ color: 'var(--text2)', fontSize: 15, marginTop: 10 }}>Check a deal, calculate the real profit and export your own TrueSource data.</p>
         </div>
 
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 18, alignItems: 'start' }}>
+        <section className="toolkit-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 18, alignItems: 'start' }}>
           <div style={panel}>
             <div className="section-label">Profit calculator</div>
             <h2 style={{ fontSize: 22, margin: '5px 0 18px' }}>Know your real profit</h2>
@@ -158,6 +158,7 @@ export default function ToolkitPage() {
             </Link>
           </div>
         </section>
+        <style>{`@media(max-width:520px){.toolkit-grid{grid-template-columns:1fr!important}.toolkit-grid .glass-panel{padding:18px!important}.toolkit-grid .glass-panel>div[style*="grid-template-columns"]{grid-template-columns:1fr!important}}`}</style>
       </main>
     </div>
   )

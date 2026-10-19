@@ -109,12 +109,14 @@ const SOON_PREVIEWS = {
 } as const
 
 type SoonPreviewKey = keyof typeof SOON_PREVIEWS
+const MOBILE_PRIMARY = new Set(['/dashboard', '/searches', '/archive', '/deals'])
 
 export default function Navigation() {
   const path = usePathname()
   const [srvAgo, setSrvAgo] = useState<number | null>(null)
   const [sessionToken, setSessionToken] = useState('')
   const [soonPreview, setSoonPreview] = useState<SoonPreviewKey | null>(null)
+  const [mobileMore, setMobileMore] = useState(false)
 
   const showComingSoon = (label: SoonPreviewKey) => setSoonPreview(label)
 
@@ -147,7 +149,7 @@ export default function Navigation() {
   return (
     <>
     <nav className="bottom-nav">
-      {NAV.map(l => {
+      {NAV.filter(l => MOBILE_PRIMARY.has(l.href)).map(l => {
         const active = path === l.href || (l.href !== '/dashboard' && path?.startsWith(l.href))
         if (l.comingSoon) return (
           <button key={l.href} type="button" className="coming-soon-link" onClick={() => showComingSoon(l.label as SoonPreviewKey)} aria-label={`${shortLabel(l.label)} — coming soon`}>
@@ -163,6 +165,10 @@ export default function Navigation() {
           </Link>
         )
       })}
+      <button type="button" onClick={() => setMobileMore(true)} className={NAV.some(item => !MOBILE_PRIMARY.has(item.href) && path?.startsWith(item.href)) ? 'active' : undefined} aria-label="More tools">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+        <span>More</span>
+      </button>
     </nav>
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -226,6 +232,18 @@ export default function Navigation() {
         </a>
       </div>
     </aside>
+    {mobileMore && <div className="mobile-more-backdrop" onMouseDown={event => { if (event.currentTarget === event.target) setMobileMore(false) }}>
+      <section className="mobile-more-sheet" role="dialog" aria-modal="true" aria-label="More TrueSource tools">
+        <div className="mobile-more-handle" />
+        <div className="mobile-more-header"><div><small>TRUESOURCE</small><h2>More tools</h2></div><button onClick={() => setMobileMore(false)} aria-label="Close menu">×</button></div>
+        <div className="mobile-more-grid">{NAV.filter(l => !MOBILE_PRIMARY.has(l.href)).map(l => {
+          const active = path === l.href || path?.startsWith(l.href)
+          if (l.comingSoon) return <button key={l.href} onClick={() => { setMobileMore(false); showComingSoon(l.label as SoonPreviewKey) }}><span className="mobile-more-icon">{l.icon}</span><span><strong>{l.label}</strong><small>Coming soon</small></span></button>
+          return <Link key={l.href} href={authHref(l.href)} className={active ? 'active' : undefined} onClick={() => setMobileMore(false)}><span className="mobile-more-icon">{l.icon}</span><span><strong>{l.label}</strong><small>Open tool</small></span></Link>
+        })}</div>
+        <a href="/api/auth/logout" onClick={() => sessionStorage.removeItem('ts_token')} className="mobile-more-logout">Sign out</a>
+      </section>
+    </div>}
     {soonPreview && (() => {
       const preview = SOON_PREVIEWS[soonPreview]
       const navItem = NAV.find(item => item.label === soonPreview)

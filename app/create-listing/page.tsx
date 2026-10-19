@@ -213,7 +213,7 @@ export default function CreateListingPage() {
         </div>
 
         {mode === 'photo' && (
-          <div className="glass-panel" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 280px) 1fr', gap: 20, alignItems: 'center', padding: '18px 20px', marginBottom: 18, background: 'var(--card)' }}>
+          <div className="glass-panel listing-upload-panel" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 280px) 1fr', gap: 20, alignItems: 'center', padding: '18px 20px', marginBottom: 18, background: 'var(--card)' }}>
             <label>
               <span className="label">Listing language</span>
               <select value={language} onChange={event => setLanguage(event.target.value)}>
@@ -417,6 +417,7 @@ export default function CreateListingPage() {
           </div>
         )}
       </div>
+      <style>{`@media(max-width:620px){.listing-upload-panel{grid-template-columns:1fr!important;padding:16px!important}.listing-upload-panel>div:first-child{max-width:none!important}}`}</style>
     </div>
   )
 }

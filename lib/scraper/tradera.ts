@@ -2,7 +2,9 @@ import { Search, ScrapedItem } from './types'
 import { stripHtml } from './utils'
 
 export async function fetchTradera(search: Search): Promise<ScrapedItem[]> {
-  const pageUrl = `https://www.tradera.com/search?q=${encodeURIComponent(search.query)}`
+  // Relevance sorting keeps returning the same popular listings. AddedOn puts
+  // newly published listings first, which is essential for a release monitor.
+  const pageUrl = `https://www.tradera.com/search?q=${encodeURIComponent(search.query)}&sortBy=AddedOn`
   try {
     const res = await fetch(pageUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'text/html' },
