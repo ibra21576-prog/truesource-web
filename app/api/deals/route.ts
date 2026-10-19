@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('saved_deals')
-    .select('*, item:items(*, searches(query))')
+    .select('*, item:items(*, searches(query,domain))')
     .eq('user_id', session.userId)
     .order('updated_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

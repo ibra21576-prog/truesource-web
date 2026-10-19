@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from 'react'
 import { apiFetch } from '@/lib/api-client'
+import { currencyForMarketplaceDomain, marketplaceCurrencySymbol } from '@/lib/intelligence/price'
 
 const VINTED_DOMAINS = [
   { value: 'www.vinted.de',     label: '🇩🇪 vinted.de — Deutschland' },
@@ -154,19 +155,7 @@ const DOMAIN_OPTIONS: Record<string, { value: string; label: string }[] | null> 
 }
 
 function currencyForDomain(domain: string): string {
-  if (domain.endsWith('.com.au')) return 'A$'
-  if (domain.includes('tradera.com')) return 'kr'
-  if (domain.endsWith('.co.uk'))  return '£'
-  if (domain.endsWith('.com') || domain.endsWith('.ca')) return '$'
-  if (domain.endsWith('.pl'))     return 'zł'
-  if (domain.endsWith('.ro'))     return 'lei'
-  if (domain.endsWith('.bg'))     return 'лв'
-  if (domain.endsWith('.ua'))     return '₴'
-  if (domain.endsWith('.cz'))     return 'Kč'
-  if (domain.endsWith('.hu'))     return 'Ft'
-  if (domain.endsWith('.se'))     return 'kr'
-  if (domain.endsWith('.ch'))     return 'CHF'
-  return '€'
+  return marketplaceCurrencySymbol(currencyForMarketplaceDomain(domain))
 }
 
 export default function SearchForm({ onCreated }: { onCreated: () => void }) {

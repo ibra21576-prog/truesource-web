@@ -3,26 +3,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Navigation from '@/components/Navigation'
 import { apiFetch } from '@/lib/api-client'
+import { currencyForMarketplaceDomain, formatMarketplaceMoney, parseMarketplacePrice } from '@/lib/intelligence/price'
 
 type DealStatus = 'watching' | 'bought' | 'sold' | 'ignored'
 type Deal = {
   item_id: string; status: DealStatus; purchase_price: number | null; shipping_cost: number | null
   fees: number | null; sale_price: number | null; notes: string; updated_at: string
-  item: { id: string; title: string; price: string; platform: string; image: string | null; url: string; found_at: string; searches?: { query: string } }
+  item: { id: string; title: string; price: string; platform: string; image: string | null; url: string; found_at: string; searches?: { query: string; domain: string } }
 }
 
 const TABS: { value: DealStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All' }, { value: 'watching', label: 'Watching' },
   { value: 'bought', label: 'Bought' }, { value: 'sold', label: 'Sold' }, { value: 'ignored', label: 'Ignored' },
 ]
-
-function numericPrice(value?: string | null) {
-  if (!value) return 0
-  const match = value.replace(/\s/g, '').match(/[0-9]+(?:[.,][0-9]{1,2})?/)
-  return match ? Number(match[0].replace(',', '.')) : 0
-}
-
-function money(value: number) { return new Intl.NumberFormat('en-DE', { style: 'currency', currency: 'EUR' }).format(value || 0) }
 
 export default function DealsPage() {
   const [deals, setDeals] = useState<Deal[]>([])
@@ -51,18 +44,22 @@ export default function DealsPage() {
 
   const visible = deals.filter(deal => tab === 'all' || deal.status === tab)
   const totals = useMemo(() => deals.reduce((sum, deal) => {
+    const currency = parseMarketplacePrice(deal.item.price).currency || currencyForMarketplaceDomain(deal.item.searches?.domain || '')
+    const bucket = sum[currency] || { invested: 0, profit: 0 }
     const buy = Number(deal.purchase_price || 0), shipping = Number(deal.shipping_cost || 0), fees = Number(deal.fees || 0), sale = Number(deal.sale_price || 0)
-    if (deal.status === 'bought') sum.invested += buy + shipping + fees
-    if (deal.status === 'sold') sum.profit += sale - buy - shipping - fees
+    if (deal.status === 'bought') bucket.invested += buy + shipping + fees
+    if (deal.status === 'sold') bucket.profit += sale - buy - shipping - fees
+    sum[currency] = bucket
     return sum
-  }, { invested: 0, profit: 0 }), [deals])
+  }, {} as Record<string, { invested: number; profit: number }>), [deals])
+  const totalEntries = Object.entries(totals)
 
   return <div style={{ minHeight: '100vh', background: 'var(--bg)' }}><Navigation /><main className="page">
     <header style={{ display: 'flex', justifyContent: 'space-between', gap: 20, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 30 }}>
       <div><div className="eyebrow">Reseller workflow</div><h1 style={{ fontSize: 40, margin: 0, letterSpacing: '-.045em' }}>Deal Board</h1><p style={{ color: 'var(--text2)', marginTop: 9 }}>Save opportunities, track purchases and see your real profit.</p></div>
       <div style={{ display: 'flex', gap: 9 }}>
-        <div className="glass-panel" style={{ padding: '11px 15px' }}><small style={{ color: 'var(--text3)' }}>ACTIVE INVESTMENT</small><strong style={{ display: 'block', marginTop: 3 }}>{money(totals.invested)}</strong></div>
-        <div className="glass-panel" style={{ padding: '11px 15px' }}><small style={{ color: 'var(--text3)' }}>REALISED PROFIT</small><strong style={{ display: 'block', marginTop: 3, color: totals.profit >= 0 ? 'var(--success)' : 'var(--danger)' }}>{money(totals.profit)}</strong></div>
+        <div className="glass-panel" style={{ padding: '11px 15px' }}><small style={{ color: 'var(--text3)' }}>ACTIVE INVESTMENT</small>{totalEntries.length ? totalEntries.map(([currency, value]) => <strong key={currency} style={{ display: 'block', marginTop: 3 }}>{formatMarketplaceMoney(value.invested, currency)}</strong>) : <strong style={{ display: 'block', marginTop: 3 }}>—</strong>}</div>
+        <div className="glass-panel" style={{ padding: '11px 15px' }}><small style={{ color: 'var(--text3)' }}>REALISED PROFIT</small>{totalEntries.length ? totalEntries.map(([currency, value]) => <strong key={currency} style={{ display: 'block', marginTop: 3, color: value.profit >= 0 ? 'var(--success)' : 'var(--danger)' }}>{formatMarketplaceMoney(value.profit, currency)}</strong>) : <strong style={{ display: 'block', marginTop: 3 }}>—</strong>}</div>
       </div>
     </header>
 
@@ -72,7 +69,9 @@ export default function DealsPage() {
 
     {loading ? <p style={{ color: 'var(--text3)', padding: 50, textAlign: 'center' }}>Loading your deals…</p> : visible.length === 0 ? <section className="glass-panel" style={{ padding: 56, textAlign: 'center' }}><h2 style={{ margin: 0 }}>No deals here yet</h2><p style={{ color: 'var(--text2)' }}>Open the Live Feed and use the star button to save an opportunity.</p></section> : <div style={{ display: 'grid', gap: 12 }}>
       {visible.map(deal => {
-        const livePrice = numericPrice(deal.item.price)
+        const parsedPrice = parseMarketplacePrice(deal.item.price)
+        const livePrice = parsedPrice.amount || 0
+        const currency = parsedPrice.currency || currencyForMarketplaceDomain(deal.item.searches?.domain || '')
         const buy = Number(deal.purchase_price ?? livePrice), shipping = Number(deal.shipping_cost || 0), fees = Number(deal.fees || 0), sale = Number(deal.sale_price || 0)
         const profit = sale - buy - shipping - fees
         return <article key={deal.item_id} className="glass-panel" style={{ padding: 15, display: 'grid', gridTemplateColumns: '86px minmax(180px,1fr) minmax(300px,1.25fr)', gap: 16, alignItems: 'center' }}>
@@ -81,10 +80,10 @@ export default function DealsPage() {
           <div style={{ display: 'grid', gap: 8 }}>
             <select value={deal.status} onChange={event => update(deal, { status: event.target.value as DealStatus })}><option value="watching">Watching</option><option value="bought">Bought</option><option value="sold">Sold</option><option value="ignored">Ignored</option></select>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
-              {[['Purchase', 'purchase_price', buy], ['Shipping', 'shipping_cost', shipping], ['Fees', 'fees', fees], ['Sale', 'sale_price', sale]].map(([label, key, value]) => <label key={String(key)}><span className="label">{label}</span><input type="number" defaultValue={Number(value) || ''} onBlur={event => update(deal, { [String(key)]: event.target.value } as any)} /></label>)}
+              {[['Purchase', 'purchase_price', buy], ['Shipping', 'shipping_cost', shipping], ['Fees', 'fees', fees], ['Sale', 'sale_price', sale]].map(([label, key, value]) => <label key={String(key)}><span className="label">{label} · {currency}</span><input type="number" step="0.01" defaultValue={Number(value) || ''} onBlur={event => update(deal, { [String(key)]: event.target.value } as any)} /></label>)}
             </div>
             <textarea defaultValue={deal.notes || ''} placeholder="Private notes…" rows={2} onBlur={event => update(deal, { notes: event.target.value })} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span style={{ fontSize: 12, color: 'var(--text3)' }}>{saving === deal.item_id ? 'Saving…' : deal.status === 'sold' ? `Profit ${money(profit)}` : 'Saved privately to your account'}</span><button className="btn-ghost" onClick={() => remove(deal.item_id)} style={{ color: 'var(--danger)', fontSize: 12 }}>Remove</button></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span style={{ fontSize: 12, color: 'var(--text3)' }}>{saving === deal.item_id ? 'Saving…' : deal.status === 'sold' ? `Profit ${formatMarketplaceMoney(profit, currency)}` : 'Saved privately to your account'}</span><button className="btn-ghost" onClick={() => remove(deal.item_id)} style={{ color: 'var(--danger)', fontSize: 12 }}>Remove</button></div>
           </div>
         </article>
       })}

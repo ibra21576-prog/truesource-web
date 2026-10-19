@@ -4,12 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import { apiFetch } from '@/lib/api-client'
-
-function priceNumber(value?: string) {
-  const match = (value || '').replace(/\s/g, '').match(/[0-9]+(?:[.,][0-9]{1,2})?/)
-  return match ? Number(match[0].replace(',', '.')) : 0
-}
-function money(value: number | null) { return value == null ? '—' : new Intl.NumberFormat('en-DE', { style: 'currency', currency: 'EUR' }).format(value) }
+import { formatMarketplaceMoney, parseMarketplacePrice } from '@/lib/intelligence/price'
 
 export default function ItemDetailsPage() {
   const params = useParams<{ id: string }>()
@@ -17,7 +12,9 @@ export default function ItemDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [saved, setSaved] = useState(false)
   useEffect(() => { apiFetch(`/api/items/${params.id}`).then(async response => { if (response.ok) { const value = await response.json(); setData(value); setSaved(Boolean(value.deal)) } }).finally(() => setLoading(false)) }, [params.id])
-  const current = priceNumber(data?.item?.price)
+  const current = parseMarketplacePrice(data?.item?.price).amount || 0
+  const currency = data?.currency || 'EUR'
+  const money = (value: number | null) => formatMarketplaceMoney(value, currency)
   const difference = data?.median ? data.median - current : null
   const history = data?.history || []
   const changed = history.length > 1

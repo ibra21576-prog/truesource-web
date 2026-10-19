@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Navigation from '@/components/Navigation'
 import SearchForm from '@/components/SearchForm'
 import { apiFetch } from '@/lib/api-client'
+import { currencyForMarketplaceDomain, marketplaceCurrencySymbol } from '@/lib/intelligence/price'
 
 interface Search {
   id: string; query: string; platform: string; domain: string
@@ -157,6 +158,7 @@ export default function SearchesPage() {
               </div>
             ) : searches.map(s => {
               const plat = P[s.platform] ?? P.vinted
+              const currencySymbol = marketplaceCurrencySymbol(currencyForMarketplaceDomain(s.domain))
               return (
                 <div key={s.id} className="anim-in glass-panel" style={{
                   display: 'flex', alignItems: 'center',
@@ -193,7 +195,7 @@ export default function SearchesPage() {
                         fontSize: 12, color: 'var(--text3)', marginTop: 4,
                         display: 'flex', alignItems: 'center', gap: 4,
                       }}>
-                        {s.min_price ?? 0}€ – {s.max_price ?? '∞'}€
+                        {s.min_price ?? 0} {currencySymbol} – {s.max_price ?? '∞'} {currencySymbol}
                       </p>
                     )}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
