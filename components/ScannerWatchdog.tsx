@@ -20,16 +20,19 @@ export default function ScannerWatchdog() {
         if (!response.ok) throw new Error('Searches unavailable')
         const searches = (await response.json()).filter((s: any) => s.enabled !== false)
           .sort((a: any, b: any) => (Date.parse(a.last_scraped_at) || 0) - (Date.parse(b.last_scraped_at) || 0))
-        let errors = false
+        let errors = searches.some((search: any) => ['retrying', 'connection_required', 'unavailable'].includes(search.scan_health?.status))
+        const due = searches.filter((search: any) => !search.scan_health?.nextRetryAt || Date.parse(search.scan_health.nextRetryAt) <= Date.now())
         // Small waves keep accounts with many searches from overwhelming the API.
-        for (let i = 0; i < searches.length && !stopped; i += 3) {
-          const results = await Promise.allSettled(searches.slice(i, i + 3).map(async (search: any) => {
+        for (let i = 0; i < due.length && !stopped; i += 3) {
+          const results = await Promise.allSettled(due.slice(i, i + 3).map(async (search: any) => {
             const result = await apiFetch('/api/scrape', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ searchId: search.id }),
               signal: AbortSignal.any([controller.signal, AbortSignal.timeout(40_000)]),
             })
             if (!result.ok) throw new Error('Scan unavailable')
+            const data = await result.json()
+            if (['retrying', 'connection_required'].includes(data.health?.status)) throw new Error('Scan waiting for retry')
           }))
           errors ||= results.some(result => result.status === 'rejected')
         }
@@ -51,5 +54,5 @@ export default function ScannerWatchdog() {
       document.removeEventListener('visibilitychange', resume)
     }
   }, [])
-  return failed ? <div role="status" style={{ position: 'fixed', bottom: 80, right: 16, zIndex: 100, maxWidth: 300, padding: 12, borderRadius: 10, background: 'var(--card)', color: 'var(--text)', border: '1px solid var(--border)' }}>Some searches could not refresh. Retrying automatically.</div> : null
+  return failed ? <div role="status" style={{ position: 'fixed', bottom: 80, right: 16, zIndex: 100, maxWidth: 300, padding: 12, borderRadius: 10, background: 'var(--card)', color: 'var(--text)', border: '1px solid var(--border)' }}>Some searches need attention. Automatic retries are active. <a href="/searches">View searches</a></div> : null
 }

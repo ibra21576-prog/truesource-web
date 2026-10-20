@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { Search, ScrapedItem } from './types'
 import { stripHtml } from './utils'
 import { proxyFetch, scraperApiFetch } from './proxy'
@@ -37,7 +38,7 @@ export async function fetchOlx(search: Search): Promise<ScrapedItem[]> {
         Accept: 'text/html,application/xhtml+xml',
         'Accept-Language': 'en-US,en;q=0.8',
       },
-      signal: AbortSignal.timeout(10000),
+      signal: requestSignal(10000),
       cache: 'no-store',
     }
     let res = await proxyFetch(pageUrl, init)
@@ -47,7 +48,7 @@ export async function fetchOlx(search: Search): Promise<ScrapedItem[]> {
       })
       if (fallback) res = fallback
     }
-    if (!res.ok) return []
+    if (!res.ok) throw new Error(`OLX HTTP ${res.status}`)
 
     const html = await res.text()
     const cards = html.split(/data-cy="l-card"/i).slice(1, 61)
@@ -78,6 +79,6 @@ export async function fetchOlx(search: Search): Promise<ScrapedItem[]> {
     return items
   } catch (e: any) {
     console.log(`[olx] error: ${e.message}`)
-    return []
+    throw e
   }
 }

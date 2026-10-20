@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 // Residential proxy support. Set PROXY_URL in your host's env vars, e.g.
 //   http://username:password@geo.iproyal.com:12321  (IPRoyal residential)
 //
@@ -54,6 +55,6 @@ export async function scraperApiFetch(
 
   return fetch(`https://api.scraperapi.com/?${params}`, {
     ...init,
-    signal: init.signal ?? AbortSignal.timeout(options.timeoutMs ?? (options.render ? 45000 : 20000)),
+    signal: init.signal ?? requestSignal(options.timeoutMs ?? (options.render ? 45000 : 20000)),
   })
 }

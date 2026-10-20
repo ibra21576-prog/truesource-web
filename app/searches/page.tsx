@@ -4,6 +4,7 @@ import Navigation from '@/components/Navigation'
 import SearchForm from '@/components/SearchForm'
 import { apiFetch } from '@/lib/api-client'
 import { currencyForMarketplaceDomain, marketplaceCurrencySymbol } from '@/lib/intelligence/price'
+import type { ScanHealth } from '@/lib/scraper/health'
 
 interface Search {
   id: string; query: string; platform: string; domain: string
@@ -11,6 +12,7 @@ interface Search {
   exclude_terms?: string[]; max_age_hours?: number | null; alert_max_price?: number | null; alert_min_discount?: number | null
   last_scraped_at?: string | null; items?: { count: number }[]
   enabled: boolean; created_at: string
+  scan_health?: ScanHealth | null
 }
 
 const P: Record<string, { label: string }> = {
@@ -31,6 +33,7 @@ const P: Record<string, { label: string }> = {
 export default function SearchesPage() {
   const [searches, setSearches] = useState<Search[]>([])
   const [loading,  setLoading]  = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [alertsEnabled, setAlertsEnabled] = useState(false)
   const [editing, setEditing] = useState<Search | null>(null)
   const [draft, setDraft] = useState({ exclude: '', age: '48', maxPrice: '', discount: '' })
@@ -38,16 +41,23 @@ export default function SearchesPage() {
   const load = useCallback(async () => {
     try {
       const res = await apiFetch('/api/searches')
-      const data = res.ok ? await res.json() : []
-      setSearches(Array.isArray(data) ? data : [])
+      if (!res.ok) throw new Error('Searches could not refresh. Please try again.')
+      const data = await res.json()
+      if (!Array.isArray(data)) throw new Error('Invalid response')
+      setSearches(data)
+      setLoadError('')
     } catch {
-      setSearches([])
+      setLoadError('Searches could not refresh. Your saved searches have not been removed.')
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => { load(); setAlertsEnabled(typeof Notification !== 'undefined' && Notification.permission === 'granted' && localStorage.getItem('ts_browser_alerts') === '1') }, [load])
+  useEffect(() => {
+    const timer = setInterval(load, 30_000)
+    return () => clearInterval(timer)
+  }, [load])
 
   async function enableAlerts() {
     if (typeof Notification === 'undefined') return
@@ -97,6 +107,7 @@ export default function SearchesPage() {
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <Navigation />
       <div className="page">
+        {loadError && <p role="alert">{loadError} <button className="btn-secondary" onClick={load}>Retry</button></p>}
 
         {/* Page header */}
         <div style={{ marginBottom: 40, display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
@@ -135,7 +146,7 @@ export default function SearchesPage() {
                 }} />
                 <p style={{ color: 'var(--text3)', fontSize: 13 }}>Loading searches…</p>
               </div>
-            ) : searches.length === 0 ? (
+            ) : searches.length === 0 && !loadError ? (
               <div className="glass-panel" style={{
                 textAlign: 'center', padding: '48px 24px',
                 background: 'var(--card)',
@@ -190,6 +201,11 @@ export default function SearchesPage() {
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       margin: 0,
                     }}>{s.query}</p>
+                    {s.enabled && s.scan_health?.message && <p role="status" style={{ fontSize: 12, color: 'var(--text2)', marginTop: 8 }}>
+                      {s.scan_health.message}
+                      {s.scan_health.nextRetryAt && ` Next attempt after ${new Date(s.scan_health.nextRetryAt).toLocaleTimeString()}.`}
+                      {s.scan_health.status === 'connection_required' && <> <a href="/connectors">Open Connectors</a></>}
+                    </p>}
                     {(s.min_price || s.max_price) && (
                       <p style={{
                         fontSize: 12, color: 'var(--text3)', marginTop: 4,
@@ -199,7 +215,7 @@ export default function SearchesPage() {
                       </p>
                     )}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                      <span style={{ fontSize: 10.5, color: 'var(--text3)', padding: '3px 7px', background: 'var(--surface)', borderRadius: 5 }}>{s.last_scraped_at ? `Scanned ${new Date(s.last_scraped_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Waiting for first scan'}</span>
+                      <span style={{ fontSize: 10.5, color: 'var(--text3)', padding: '3px 7px', background: 'var(--surface)', borderRadius: 5 }}>{!s.enabled ? 'Paused' : s.scan_health?.lastSuccessAt ? `Last successful scan: ${new Date(s.scan_health.lastSuccessAt).toLocaleString()}` : 'Waiting for a successful scan'}</span>
                       <span style={{ fontSize: 10.5, color: 'var(--text3)', padding: '3px 7px', background: 'var(--surface)', borderRadius: 5 }}>{s.items?.[0]?.count || 0} listings</span>
                       <span style={{ fontSize: 10.5, color: 'var(--text3)', padding: '3px 7px', background: 'var(--surface)', borderRadius: 5 }}>Max age {s.max_age_hours || 48}h</span>
                       {!!s.exclude_terms?.length && <span style={{ fontSize: 10.5, color: 'var(--text3)', padding: '3px 7px', background: 'var(--surface)', borderRadius: 5 }}>Excludes {s.exclude_terms.join(', ')}</span>}

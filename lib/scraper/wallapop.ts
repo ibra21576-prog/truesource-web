@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { Search, ScrapedItem } from './types'
 import { formatPrice } from './utils'
 
@@ -23,10 +24,10 @@ export async function fetchWallapop(search: Search): Promise<ScrapedItem[]> {
         Accept: 'application/json',
         'X-DeviceOS': '0',
       },
-      signal: AbortSignal.timeout(8000),
+      signal: requestSignal(8000),
       cache: 'no-store',
     })
-    if (!res.ok) return []
+    if (!res.ok) throw new Error(`Wallapop HTTP ${res.status}`)
 
     const data = await res.json() as any
     const items = data?.data?.section?.payload?.items || []
@@ -41,6 +42,6 @@ export async function fetchWallapop(search: Search): Promise<ScrapedItem[]> {
     }))
   } catch (e: any) {
     console.log(`[wallapop] error: ${e.message}`)
-    return []
+    throw e
   }
 }

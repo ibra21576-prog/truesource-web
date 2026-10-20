@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { Search, ScrapedItem } from './types'
 
 function attrs(ad: any): Record<string, string> {
@@ -11,16 +12,17 @@ export async function fetchWillhaben(search: Search): Promise<ScrapedItem[]> {
   try {
     const res = await fetch(pageUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'text/html' },
-      signal: AbortSignal.timeout(8000), cache: 'no-store',
+      signal: requestSignal(8000), cache: 'no-store',
     })
     if (!res.ok) throw new Error('willhaben request failed: HTTP ' + res.status)
     const html = await res.text()
     const marker = html.indexOf('id="__NEXT_DATA__"')
     const start = html.indexOf('{', marker)
     const end = html.indexOf('</script>', start)
-    if (marker < 0 || start < 0 || end < 0) return []
+    if (marker < 0 || start < 0 || end < 0) throw new Error('Willhaben search response could not be read')
     const data = JSON.parse(html.slice(start, end))
-    const ads = data?.props?.pageProps?.searchResult?.advertSummaryList?.advertSummary || []
+    const ads = data?.props?.pageProps?.searchResult?.advertSummaryList?.advertSummary
+    if (!Array.isArray(ads)) throw new Error('Willhaben search response changed')
     return ads.slice(0, 50).map((ad: any) => {
       const a = attrs(ad)
       const path = a.SEO_URL ? `/iad/${a.SEO_URL.replace(/^\//, '')}` : `/iad/object?adId=${ad.id}`

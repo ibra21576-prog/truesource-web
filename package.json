@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test:scanner": "node scripts/test-save-retry.cjs && node scripts/test-scanner-reliability.cjs",
     "trigger:dev": "npx trigger.dev dev",
     "trigger:deploy": "npx trigger.dev deploy"
   },

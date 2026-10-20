@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { Search, ScrapedItem } from './types'
 
 export async function fetchSubito(search: Search): Promise<ScrapedItem[]> {
@@ -8,10 +9,11 @@ export async function fetchSubito(search: Search): Promise<ScrapedItem[]> {
   try {
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' },
-      signal: AbortSignal.timeout(8000), cache: 'no-store',
+      signal: requestSignal(8000), cache: 'no-store',
     })
     if (!res.ok) throw new Error('subito request failed: HTTP ' + res.status)
     const data = await res.json() as any
+    if (!Array.isArray(data.ads)) throw new Error('Subito search response changed')
     return (data.ads || []).slice(0, 50).map((ad: any) => {
       const priceFeature = (ad.features || []).find((f: any) => f.uri === '/price')
       const imageBase = ad.images?.[0]?.cdn_base_url

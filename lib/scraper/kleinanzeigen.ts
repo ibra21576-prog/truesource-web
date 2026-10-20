@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { ScrapedItem, Search } from './types'
 import { stripHtml } from './utils'
 
@@ -18,7 +19,7 @@ export async function fetchKleinanzeigen(search: Search): Promise<ScrapedItem[]>
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
       Referer: `https://${domain}/`,
     },
-    signal: AbortSignal.timeout(15000),
+    signal: requestSignal(15000),
   })
   if (!res.ok) throw new Error(`Kleinanzeigen HTTP ${res.status}`)
   const html = await res.text()

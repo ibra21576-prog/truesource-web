@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { ScrapedItem, Search } from './types'
 import { proxyFetch } from './proxy'
 
@@ -38,7 +39,7 @@ export async function fetchLeboncoin(search: Search): Promise<ScrapedItem[]> {
         api_key: API_KEY,
       },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(15000),
+      signal: requestSignal(15000),
     }
     let res = await proxyFetch('https://api.leboncoin.fr/finder/search', requestInit)
 
@@ -94,7 +95,7 @@ async function fetchIndexedListings(search: Search): Promise<ScrapedItem[]> {
         'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.7',
       },
       cache: 'no-store',
-      signal: AbortSignal.timeout(15000),
+      signal: requestSignal(15000),
     })
     if (!res.ok) return [liveSearchItem(search)]
     const html = await res.text()
@@ -153,7 +154,7 @@ async function fetchIndexedViaReader(query: string, search: Search): Promise<Scr
     const res = await fetch(`https://r.jina.ai/${target}`, {
       headers: { Accept: 'text/plain', 'User-Agent': UA },
       cache: 'no-store',
-      signal: AbortSignal.timeout(5000),
+      signal: requestSignal(5000),
     })
     if (!res.ok) {
       console.log(`[leboncoin] reader fallback HTTP ${res.status}`)

@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { ScrapedItem, Search } from './types'
 import { formatPrice } from './utils'
 import { createServiceClient } from '@/lib/supabase/server'
@@ -51,7 +52,7 @@ async function refreshVintedToken(domain: string, refreshToken: string, userId?:
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
       },
       body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken, client_id: 'web' }),
-      signal: AbortSignal.timeout(10000),
+      signal: requestSignal(10000),
     })
     if (!res.ok) return ''
     const data = await res.json()
@@ -106,7 +107,7 @@ async function getGuestSession(domain: string): Promise<string> {
         'Upgrade-Insecure-Requests': '1',
       },
       cache: 'no-store',
-      signal: AbortSignal.timeout(12000),
+      signal: requestSignal(12000),
     })
     // getSetCookie() is available in Node 18+ and returns all Set-Cookie values
     const rawCookies: string[] = typeof (res.headers as any).getSetCookie === 'function'
@@ -166,7 +167,7 @@ async function doVintedRequest(apiUrl: string, domain: string, cookies: string, 
     Cookie:              cookies,
   }
   if (bearer) headers['Authorization'] = `Bearer ${bearer}`
-  return fetch(apiUrl, { headers, signal: AbortSignal.timeout(15000) })
+  return fetch(apiUrl, { headers, signal: requestSignal(15000) })
 }
 
 async function tryVintedRequest(apiUrl: string, domain: string, cookies: string, bearer: string): Promise<ScrapedItem[] | null> {
@@ -259,7 +260,7 @@ async function fetchPublicCatalog(search: Search, domain: string): Promise<Scrap
   }
 
   try {
-    let res = await fetch(pageUrl, { headers, cache: 'no-store', signal: AbortSignal.timeout(8000) })
+    let res = await fetch(pageUrl, { headers, cache: 'no-store', signal: requestSignal(8000) })
     if (!res.ok) {
       const proxied = await scraperApiFetch(pageUrl, {}, { country: domain.endsWith('.de') ? 'de' : undefined, timeoutMs: 5000 })
       if (proxied) res = proxied

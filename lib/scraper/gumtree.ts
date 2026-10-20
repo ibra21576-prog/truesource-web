@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { ScrapedItem, Search } from './types'
 import { stripHtml } from './utils'
 import { proxyFetch, hasProxy } from './proxy'
@@ -16,7 +17,7 @@ async function get(url: string, opts: { mobile?: boolean; timeout?: number; json
     }
     // proxyFetch tunnels through PROXY_URL (residential) when set, else direct.
     // Gumtree blocks datacenter IPs, so a residential proxy is what makes it work.
-    const res = await proxyFetch(url, { headers, signal: AbortSignal.timeout(timeout) })
+    const res = await proxyFetch(url, { headers, signal: requestSignal(timeout) })
     const text = await res.text()
     return { ok: res.ok, text, status: res.status }
   } catch { return { ok: false, text: '', status: 0 } }
@@ -38,7 +39,7 @@ export async function fetchGumtree(search: Search): Promise<ScrapedItem[]> {
   if (items.length > 0) return items
 
   console.log('[gumtree] all attempts failed — needs proxy for UK HTML scraping')
-  return []
+  throw new Error('Gumtree results could not be verified')
 }
 
 async function fetchGumtreeUK(query: string, domain: string): Promise<ScrapedItem[]> {
@@ -92,7 +93,8 @@ async function fetchGumtreeAU(query: string, domain: string): Promise<ScrapedIte
   const q = encodeURIComponent(query)
   const searchUrl = `https://${domain}/s-${q}/k0?sort=date`
   const r = await get(searchUrl, { timeout: 7000 })
-  if (!r.ok || isBlocked(r.text)) return []
+  if (!r.ok) throw new Error(`Gumtree HTTP ${r.status}`)
+  if (isBlocked(r.text)) throw new Error('Gumtree access blocked')
   const items = parseHtmlFallback(r.text, domain)
   console.log(`[gumtree AU] got ${items.length} items`)
   return items

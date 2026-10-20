@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { ScrapedItem, Search } from './types'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
@@ -15,7 +16,7 @@ async function fetchPage(url: string): Promise<string> {
         'Sec-Fetch-Mode': 'navigate',
         'Sec-Fetch-Site': 'none',
       },
-      signal: AbortSignal.timeout(7000),
+      signal: requestSignal(7000),
     })
     if (!res.ok) { console.log(`[kijiji] HTTP ${res.status}`); return '' }
     const t = await res.text()
@@ -47,6 +48,9 @@ export async function fetchKijiji(search: Search): Promise<ScrapedItem[]> {
     fetchPage(base),
     fetchPage(`${base}&page=2`),
   ])
+  if (![html1, html2].some(html => html && !isBlocked(html))) {
+    throw new Error('Kijiji access blocked or unavailable')
+  }
 
   const allItems: ScrapedItem[] = []
   const seen = new Set<string>()

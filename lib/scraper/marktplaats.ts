@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { ScrapedItem, Search } from './types'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
@@ -49,12 +50,12 @@ export async function fetchMarktplaats(search: Search): Promise<ScrapedItem[]> {
         Referer: `https://${domain}/`,
         'X-Requested-With': 'XMLHttpRequest',
       },
-      signal: AbortSignal.timeout(8000),
+      signal: requestSignal(8000),
     })
 
     if (!res.ok) {
       console.log(`[marktplaats] HTTP ${res.status}`)
-      return []
+      throw new Error(`Marktplaats HTTP ${res.status}`)
     }
 
     const data = await res.json()
@@ -108,6 +109,6 @@ export async function fetchMarktplaats(search: Search): Promise<ScrapedItem[]> {
     return items
   } catch (e: any) {
     console.log(`[marktplaats] error: ${e.message}`)
-    return []
+    throw e
   }
 }

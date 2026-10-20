@@ -1,11 +1,12 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getRequestSession } from '@/lib/session'
-import { fetchItems } from '@/lib/scraper'
-import { saveNewItems } from '@/lib/scraper/save'
 import { claimLegacySearches, getUserSearchIds, saveUserSearchIds } from '@/lib/user-data'
+import { readScanHealth } from '@/lib/scraper/health'
+import { runSearchScan } from '@/lib/scraper/run'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 async function getUser(req: NextRequest) {
   return getRequestSession(req)
@@ -23,7 +24,11 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase.from('searches').select('*, items(count)').eq('user_id', user.userId).in('id', ids).order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  const results = await Promise.all((data || []).map(async (search: any) => ({
+    ...search,
+    scan_health: await readScanHealth(supabase, search.id).catch(() => ({ status: 'unavailable', message: 'Scan status temporarily unavailable.' })),
+  })))
+  return NextResponse.json(results, { headers: { 'Cache-Control': 'no-store' } })
 }
 
 export async function POST(req: NextRequest) {
@@ -77,11 +82,7 @@ export async function POST(req: NextRequest) {
   let initial_results = 0
   try {
     const searchWithUser = { ...data, user_id: user.userId }
-    const items = await fetchItems(searchWithUser)
-    initial_results = await saveNewItems(supabase, data, items)
-    await supabase.from('searches')
-      .update({ last_scraped_at: new Date().toISOString() })
-      .eq('id', data.id)
+    initial_results = (await runSearchScan(supabase, searchWithUser)).saved
   } catch (e: any) {
     console.error(`[searches] initial scrape failed for ${data.id}:`, e.message)
   }

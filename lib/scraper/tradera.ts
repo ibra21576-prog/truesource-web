@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { Search, ScrapedItem } from './types'
 import { stripHtml } from './utils'
 
@@ -8,7 +9,7 @@ export async function fetchTradera(search: Search): Promise<ScrapedItem[]> {
   try {
     const res = await fetch(pageUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'text/html' },
-      signal: AbortSignal.timeout(8000), cache: 'no-store',
+      signal: requestSignal(8000), cache: 'no-store',
     })
     if (!res.ok) throw new Error('tradera request failed: HTTP ' + res.status)
     const html = await res.text()

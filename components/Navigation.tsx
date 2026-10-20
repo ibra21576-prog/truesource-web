@@ -213,10 +213,10 @@ export default function Navigation() {
       <div className="sidebar-footer">
         <div
           className={`sidebar-status${live ? ' live' : ''}`}
-          title={srvAgo == null ? 'Checking scraper status' : `Last scan: ${srvAgo < 60 ? 'just now' : `${Math.round(srvAgo / 60)}m ago`}`}
+          title={srvAgo == null ? 'Checking background service' : `Background heartbeat: ${srvAgo < 60 ? 'just now' : `${Math.round(srvAgo / 60)}m ago`}. See Searches for individual scan results.`}
         >
           <div className="live-dot" style={!live ? { background: '#f59e0b', boxShadow: 'none', animation: 'none' } : undefined} />
-          <span>{live ? 'Live' : 'Idle'}</span>
+          <span>{live ? 'Online' : 'Checking'}</span>
         </div>
 
         <a

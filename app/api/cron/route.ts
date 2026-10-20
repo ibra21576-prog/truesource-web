@@ -18,6 +18,10 @@ export async function GET(req: Request) {
   if (!ok) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  const result = await runScrapeCycle()
-  return NextResponse.json(result)
+  try {
+    const result = await runScrapeCycle()
+    return NextResponse.json(result, { status: result.ok ? 200 : 503 })
+  } catch {
+    return NextResponse.json({ ok: false, error: 'Scanner unavailable; retry required' }, { status: 503 })
+  }
 }

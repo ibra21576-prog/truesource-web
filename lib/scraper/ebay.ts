@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { ScrapedItem, Search } from './types'
 import { formatPrice, stripHtml } from './utils'
 import { proxyFetch, hasProxy } from './proxy'
@@ -41,7 +42,7 @@ async function getBrowseToken(appId: string, certId: string): Promise<string | n
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: 'grant_type=client_credentials&scope=' + encodeURIComponent('https://api.ebay.com/oauth/api_scope'),
-      signal: AbortSignal.timeout(8000),
+      signal: requestSignal(8000),
     })
     if (!res.ok) { console.log(`[ebay] OAuth token HTTP ${res.status}`); return null }
     const d = await res.json()
@@ -86,7 +87,7 @@ async function fetchBrowseApi(search: Search): Promise<ScrapedItem[]> {
         'X-EBAY-C-MARKETPLACE-ID': marketplace,
         Accept: 'application/json',
       },
-      signal: AbortSignal.timeout(9000),
+      signal: requestSignal(9000),
     })
     if (!res.ok) {
       if (res.status === 401) tokenCache = null // force refresh next round
@@ -169,7 +170,7 @@ async function fetchFindingApi(search: Search): Promise<ScrapedItem[]> {
   try {
     const res = await fetch(`https://svcs.ebay.com/services/search/FindingService/v1?${params}`, {
       headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(8000),
+      signal: requestSignal(8000),
     })
     if (!res.ok) { console.log(`[ebay] Finding API HTTP ${res.status}`); return [] }
     const data = await res.json()
@@ -211,10 +212,10 @@ async function fetchViaProxy(url: string): Promise<Response> {
   const key = process.env.SCRAPERAPI_KEY
   if (key) {
     return fetch(`https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=de`, {
-      signal: AbortSignal.timeout(30000),
+      signal: requestSignal(30000),
     })
   }
-  return proxyFetch(url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(12000) })
+  return proxyFetch(url, { headers: { 'User-Agent': UA }, signal: requestSignal(12000) })
 }
 
 export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
@@ -250,7 +251,7 @@ export async function fetchEbay(search: Search): Promise<ScrapedItem[]> {
         Accept: 'application/rss+xml,application/xml,text/xml,*/*',
         'Accept-Language': 'de-DE,de;q=0.9',
       },
-      signal: AbortSignal.timeout(12000),
+      signal: requestSignal(12000),
     })
     if (rssRes.ok) {
       const text = await rssRes.text()

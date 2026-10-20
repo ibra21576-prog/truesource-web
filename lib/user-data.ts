@@ -1,13 +1,21 @@
 const BUCKET = 'ts-settings'
 
 export async function getUserSearchIds(supabase: any, userId: string): Promise<string[]> {
+  // Database ownership survives a missing/outdated legacy storage index.
+  const owned: string[] = []
+  for (let offset = 0; ; offset += 500) {
+    const { data, error } = await supabase.from('searches').select('id').eq('user_id', userId).order('id').range(offset, offset + 499)
+    if (error) throw new Error('Could not load your searches')
+    owned.push(...(data || []).map((row: any) => row.id))
+    if (!data || data.length < 500) break
+  }
   try {
     const { data } = await supabase.storage.from(BUCKET).download(`user-data/${userId}/search-ids.json`)
-    if (!data) return []
+    if (!data) return owned
     const value = JSON.parse(await data.text())
-    return Array.isArray(value) ? [...new Set(value.filter(id => typeof id === 'string'))] as string[] : []
+    return Array.isArray(value) ? [...new Set([...owned, ...value.filter(id => typeof id === 'string')])] as string[] : owned
   } catch {
-    return []
+    return owned
   }
 }
 

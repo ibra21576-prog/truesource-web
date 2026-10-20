@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { ScrapedItem, Search } from './types'
 import { stripHtml } from './utils'
 
@@ -7,7 +8,7 @@ async function tryDirect(url: string): Promise<{ ok: boolean; text: string }> {
   try {
     const res = await fetch(url, {
       headers: { 'User-Agent': UA, Accept: '*/*', 'Accept-Language': 'en-US,en;q=0.9' },
-      signal: AbortSignal.timeout(6000),
+      signal: requestSignal(6000),
     })
     if (!res.ok) return { ok: false, text: '' }
     const text = await res.text()
@@ -20,7 +21,7 @@ async function tryProxy(url: string): Promise<{ ok: boolean; text: string }> {
   if (!key) return { ok: false, text: '' }
   try {
     const proxyUrl = `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(url)}&country_code=us`
-    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(7500) })
+    const res = await fetch(proxyUrl, { signal: requestSignal(7500) })
     if (!res.ok) return { ok: false, text: '' }
     const text = await res.text()
     return { ok: true, text }

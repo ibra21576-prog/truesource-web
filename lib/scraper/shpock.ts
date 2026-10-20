@@ -1,3 +1,4 @@
+import { requestSignal } from './request-budget'
 import { ScrapedItem, Search } from './types'
 import { proxyFetch, scraperApiFetch } from './proxy'
 
@@ -38,7 +39,7 @@ export async function fetchShpock(search: Search): Promise<ScrapedItem[]> {
           'Sec-Fetch-User': '?1',
           'Upgrade-Insecure-Requests': '1',
         },
-        signal: AbortSignal.timeout(15000),
+        signal: requestSignal(15000),
       })
       if (!res.ok) {
         const proxied = await scraperApiFetch(pageUrl, {}, { country: loc === 'en-gb' ? 'gb' : 'de', timeoutMs: 5000 })
@@ -75,7 +76,7 @@ async function fetchIndexedShpock(search: Search): Promise<ScrapedItem[]> {
     const res = await fetch(`https://r.jina.ai/${target}`, {
       headers: { Accept: 'text/plain', 'User-Agent': UA },
       cache: 'no-store',
-      signal: AbortSignal.timeout(5000),
+      signal: requestSignal(5000),
     })
     if (!res.ok) return [liveShpockSearch(search)]
     const markdown = await res.text()

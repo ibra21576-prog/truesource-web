@@ -3,7 +3,11 @@ import { cookies } from 'next/headers'
 
 // Next.js may otherwise cache Supabase's GET requests in server functions.
 // Search changes must be visible to the background scanner immediately.
-const noStoreFetch: typeof fetch = (input, init = {}) => fetch(input, { ...init, cache: 'no-store' })
+const noStoreFetch: typeof fetch = (input, init = {}) => {
+  const original = init.signal || (input instanceof Request ? input.signal : undefined)
+  const deadline = AbortSignal.timeout(10_000)
+  return fetch(input, { ...init, cache: 'no-store', signal: original ? AbortSignal.any([original, deadline]) : deadline })
+}
 
 export function createClient() {
   const cookieStore = cookies()

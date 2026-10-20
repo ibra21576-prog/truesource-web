@@ -312,21 +312,18 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    let active = true
     const scan = async () => {
       await loadSearches()
-      if (active) await scrapeAll()
     }
     const kickoff = setTimeout(scan, 3000)
     const scrapeIv = setInterval(() => { scan(); setNextScan(SCRAPE_INTERVAL / 1000) }, SCRAPE_INTERVAL)
     const countIv  = setInterval(() => setNextScan(n => Math.max(0, n - 1)), 1000)
     return () => {
-      active = false
       clearTimeout(kickoff)
       clearInterval(scrapeIv)
       clearInterval(countIv)
     }
-  }, [loadSearches, scrapeAll])
+  }, [loadSearches])
 
   useEffect(() => {
     loadFeed()
@@ -425,7 +422,7 @@ export default function DashboardPage() {
                 <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                 </svg>
-                {anyLoading ? 'Scanning…' : `Next ${fmtCountdown(nextScan)}`}
+                {anyLoading ? 'Scanning…' : `Status refresh ${fmtCountdown(nextScan)}`}
               </div>
             )}
 

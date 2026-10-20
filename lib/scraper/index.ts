@@ -14,10 +14,15 @@ import { fetchWillhaben } from './willhaben'
 import { fetchWallapop } from './wallapop'
 import { fetchOlx } from './olx'
 import { matchesProduct, isWantedAd } from './utils'
+import { withRequestBudget } from './request-budget'
 
 export type { Search, ScrapedItem }
 
 export async function fetchItems(search: Search, cookieStr?: string): Promise<ScrapedItem[]> {
+  return withRequestBudget(() => fetchWithinBudget(search, cookieStr))
+}
+
+async function fetchWithinBudget(search: Search, cookieStr?: string): Promise<ScrapedItem[]> {
   let items: ScrapedItem[]
   switch (search.platform) {
     case 'ebay':          items = await fetchEbay(search); break
@@ -33,7 +38,15 @@ export async function fetchItems(search: Search, cookieStr?: string): Promise<Sc
     case 'willhaben':     items = await fetchWillhaben(search); break
     case 'wallapop':      items = await fetchWallapop(search); break
     case 'olx':           items = await fetchOlx(search); break
-    default:              items = await fetchVinted(search, cookieStr); break
+    case 'vinted':       items = await fetchVinted(search, cookieStr); break
+    default: throw new Error('Unsupported marketplace')
   }
-  return items.filter(it => matchesProduct(it.title, search.query, search.platform) && !isWantedAd(it.title))
+  // A search-page shortcut is not a scraped product or a successful scan.
+  if (items.some(it => /^(?:live-search-|ebay-live-)/.test(it.id))) throw new Error('Marketplace results temporarily unavailable')
+  const unique = new Set<string>()
+  return items.filter(it => {
+    if (!it.id || it.id === 'undefined' || !it.title || unique.has(it.id)) return false
+    unique.add(it.id)
+    return matchesProduct(it.title, search.query, search.platform) && !isWantedAd(it.title)
+  })
 }
