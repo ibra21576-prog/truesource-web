@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Navigation from '@/components/Navigation'
 import ItemCard from '@/components/ItemCard'
+import ListingActions from '@/components/ListingActions'
 import Logo from '@/components/Logo'
 import { apiFetch } from '@/lib/api-client'
 
@@ -186,7 +187,7 @@ export default function DashboardPage() {
 
   async function saveDeal(item: Item) {
     const response = await apiFetch('/api/deals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ item_id: item.id, status: 'watching' }) })
-    if (!response.ok) return
+    if (!response.ok) throw new Error('Could not save listing')
     setSavedIds(current => new Set(current).add(item.id))
     setSavedSignals(current => [...current, { platform: item.platform, title: item.title || '' }])
   }
@@ -622,37 +623,7 @@ export default function DashboardPage() {
               {visibleItems.map(item => (
                 <div key={item.id} style={{ position: 'relative' }} className={isFresh(item) ? 'item-new' : ''}>
                   <ItemCard item={item} variant="grid" />
-                  <button
-                    onClick={() => saveDeal(item)}
-                    disabled={savedIds.has(item.id)}
-                    title={savedIds.has(item.id) ? 'Saved to Deal Board' : 'Save to Deal Board'}
-                    style={{
-                      position: 'absolute', top: 8, left: 8, zIndex: 10,
-                      width: 28, height: 28, borderRadius: 7, cursor: savedIds.has(item.id) ? 'default' : 'pointer',
-                      border: '1px solid rgba(255,255,255,.18)', background: savedIds.has(item.id) ? 'var(--accent)' : 'rgba(0,0,0,.68)',
-                      color: '#fff', display: 'grid', placeItems: 'center',
-                    }}
-                  >
-                    <svg width="13" height="13" fill={savedIds.has(item.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg>
-                  </button>
-                  <a href={`/items/${item.id}`} title="Open deal details" style={{ position: 'absolute', bottom: 8, right: 8, zIndex: 10, padding: '5px 8px', borderRadius: 6, background: 'rgba(0,0,0,.72)', color: '#fff', fontSize: 10.5, fontWeight: 700 }}>Analyse</a>
-                  <button
-                    onClick={() => dismiss(item.id)}
-                    title="Hide listing"
-                    style={{
-                      position: 'absolute', top: 8, right: 8, zIndex: 10,
-                      width: 22, height: 22, borderRadius: 5,
-                      background: 'rgba(0,0,0,0.65)', border: 'none',
-                      color: 'rgba(255,255,255,0.8)', fontSize: 12, cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      opacity: 0, transition: 'opacity 0.12s',
-                    }}
-                    className="dismiss-btn"
-                  >
-                    <svg width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24">
-                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </button>
+                  <ListingActions itemId={item.id} saved={savedIds.has(item.id)} onSave={() => saveDeal(item)} onHide={() => dismiss(item.id)} />
                 </div>
               ))}
             </div>
