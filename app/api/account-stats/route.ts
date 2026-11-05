@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { getRequestSession } from '@/lib/session'
-import { claimLegacySearches, getUserSearchIds } from '@/lib/user-data'
+import { getUserSearchIds } from '@/lib/user-data'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +11,8 @@ export async function GET(req: NextRequest) {
   const supabase = createServiceClient()
   const searchIds = await getUserSearchIds(supabase, session.userId)
   if (!searchIds.length) return NextResponse.json({ totalItems: 0, searches: 0, activeSearches: 0, pricedItems: 0, newItems5m: 0 })
-  await claimLegacySearches(supabase, session.userId, searchIds)
+  // Polled by the dashboard; the legacy ownership backfill already runs on the
+  // feed's full load, so repeating its writes here only adds database load.
 
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60_000).toISOString()
   const [totalResult, searchesResult, activeSearchesResult, pricedResult, recentResult] = await Promise.all([

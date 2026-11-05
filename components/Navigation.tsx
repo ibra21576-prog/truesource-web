@@ -136,7 +136,7 @@ export default function Navigation() {
   useEffect(() => {
     const pull = async () => {
       try {
-        const r = await fetch('/api/status')
+        const r = await fetch('/api/status?light=1', { cache: 'no-store' })
         if (r.ok) { const d = await r.json(); setSrvAgo(d.secondsSinceLastScrape ?? null) }
       } catch {}
     }

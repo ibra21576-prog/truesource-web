@@ -359,7 +359,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadAccountStats()
-    const iv = setInterval(loadAccountStats, 10_000)
+    // Exact counts over a member's whole archive are expensive; once a minute is plenty.
+    const iv = setInterval(() => { if (document.visibilityState === 'visible') loadAccountStats() }, 60_000)
     return () => clearInterval(iv)
   }, [loadAccountStats])
 
