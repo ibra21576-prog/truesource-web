@@ -70,7 +70,10 @@ export async function GET(req: NextRequest) {
     return new NextResponse(buf, {
       headers: {
         'Content-Type': ct,
-        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+        // max-age only reaches the browser. s-maxage lets Vercel's edge keep the
+        // image too, so every later viewer worldwide gets it from the nearest
+        // edge instead of a function round trip to fra1 and the marketplace CDN.
+        'Cache-Control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=604800',
         'Access-Control-Allow-Origin': '*',
       },
     })

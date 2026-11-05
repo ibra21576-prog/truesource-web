@@ -116,6 +116,8 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
             ? <img
                 src={imgSrc}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 className="listing-image"
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                 onError={e => {
@@ -239,6 +241,8 @@ export default function ItemCard({ item, variant = 'list' }: { item: Item; varia
           ? <img
               src={imgSrc}
               alt=""
+              loading="lazy"
+              decoding="async"
               className="listing-image"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
