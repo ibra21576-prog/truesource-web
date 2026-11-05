@@ -16,6 +16,11 @@ concurrency:
   group: scrape-trigger
   cancel-in-progress: true
 
+# Needed for the relay below: a run dispatches its own successor.
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   ping:
     runs-on: ubuntu-latest
@@ -26,11 +31,20 @@ jobs:
       - name: Ping cron every 15s
         env:
           CRON_URL: https://truesource-web-pink.vercel.app/api/cron?key=${{ secrets.CRON_SECRET }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           # 1,440 pings at a 15-second cadence cover six hours. Normally a new
           # scheduled run replaces this one after five minutes. If GitHub delays
           # that event, this run keeps monitoring instead of leaving a blind spot.
           for i in $(seq 1 1440); do
+            # GitHub regularly drops scheduled events for hours, which left
+            # 1-2 h scan gaps after a run hit its 6 h limit. 15 minutes before
+            # the limit this run dispatches its successor; the concurrency
+            # group then cancels this one once the successor is running.
+            if [ "$i" -eq 1380 ]; then
+              gh workflow run scrape.yml --ref "${GITHUB_REF_NAME}" || echo "relay dispatch failed"
+            fi
             started=$(date +%s)
             code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 40 "$CRON_URL" || true)
             code=${code:-000}

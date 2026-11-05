@@ -32,6 +32,9 @@ const PLAT_LABEL: Record<string, string> = {
 // The background worker discovers listings; this short poll only makes a
 // newly saved result visible in an already-open dashboard with minimal delay.
 const FEED_INTERVAL = 2_000
+// Polls only ask for rows newer than the newest one on screen. A periodic full
+// page refresh still picks up edits to existing rows (price drops, sold flags).
+const FULL_FEED_INTERVAL = 60_000
 // Frequent coordinator checks keep the UI responsive. The API enforces a safer
 // per-marketplace cooldown, so extra tabs cannot increase the real request rate.
 const SCRAPE_INTERVAL = 20_000
@@ -166,6 +169,9 @@ export default function DashboardPage() {
   const searchesRef  = useRef<Search[]>([])
   const knownIdsRef  = useRef<Set<string>>(new Set())
   const firstLoadRef = useRef(true)
+  const itemsRef     = useRef<Item[]>([])
+  const feedBusyRef  = useRef(false)
+  const lastFullFeedRef = useRef(0)
   const loadMoreAnchorRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
     if (!me?.userId) return
@@ -202,9 +208,24 @@ export default function DashboardPage() {
   }
 
   const loadFeed = useCallback(async () => {
-    const res = await apiFetch('/api/feed?limit=500')
+    // Slow responses must not stack up behind a 2 s interval.
+    if (feedBusyRef.current) return
+    feedBusyRef.current = true
+    try { await loadFeedOnce() } finally { feedBusyRef.current = false }
+  }, [])
+
+  async function loadFeedOnce() {
+    const newest = itemsRef.current[0]?.found_at
+    const full = firstLoadRef.current || !newest || Date.now() - lastFullFeedRef.current > FULL_FEED_INTERVAL
+    const res = await apiFetch(full ? '/api/feed?limit=500' : `/api/feed?after=${encodeURIComponent(newest)}&limit=200`)
     if (!res.ok) { setLoading(false); return }
-    const raw: Item[] = (await res.json()).map((it: any) => ({ ...it, search_query: it.searches?.query }))
+    const fetched: Item[] = (await res.json()).map((it: any) => ({ ...it, search_query: it.searches?.query }))
+    if (full) lastFullFeedRef.current = Date.now()
+    let raw = fetched
+    if (!full) {
+      const fetchedIds = new Set(fetched.map(item => item.id))
+      raw = [...fetched, ...itemsRef.current.filter(item => !fetchedIds.has(item.id))]
+    }
 
     const isFirstLoad = firstLoadRef.current
     if (!isFirstLoad) {
@@ -229,6 +250,7 @@ export default function DashboardPage() {
 
     raw.forEach(it => knownIdsRef.current.add(it.id))
     firstLoadRef.current = false
+    itemsRef.current = raw
     setItems(raw)
     setLoading(false)
     if (isFirstLoad) setArchiveItems([])
@@ -236,8 +258,8 @@ export default function DashboardPage() {
       const currentIds = new Set(raw.map(item => item.id))
       return previous.filter(item => !currentIds.has(item.id))
     })
-    setNoMoreItems(raw.length < 500)
-  }, [])
+    if (full) setNoMoreItems(fetched.length < 500)
+  }
 
   const loadMoreArchive = useCallback(async () => {
     setLoadingMore(true)
@@ -328,8 +350,11 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadFeed()
-    const iv = setInterval(loadFeed, FEED_INTERVAL)
-    return () => clearInterval(iv)
+    // A hidden tab doesn't need a 2 s poll; refresh as soon as it is visible again.
+    const iv = setInterval(() => { if (document.visibilityState === 'visible') loadFeed() }, FEED_INTERVAL)
+    const onVisible = () => { if (document.visibilityState === 'visible') loadFeed() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { clearInterval(iv); document.removeEventListener('visibilitychange', onVisible) }
   }, [loadFeed])
 
   useEffect(() => {

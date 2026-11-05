@@ -16,9 +16,13 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const platform = searchParams.get('platform')
   const supabase = createServiceClient()
+  // `after` is the dashboard's live poll (every few seconds). It only needs rows
+  // newer than what the client already has, so it skips the legacy ownership
+  // backfill writes that a full load performs.
+  const after = searchParams.get('after')
   const searchIds = await getUserSearchIds(supabase, user.userId)
   if (searchIds.length === 0) return NextResponse.json([])
-  await claimLegacySearches(supabase, user.userId, searchIds)
+  if (!after) await claimLegacySearches(supabase, user.userId, searchIds)
 
   try {
     // Show items newest-first. Items are never deleted — they accumulate as a
@@ -36,6 +40,7 @@ export async function GET(req: NextRequest) {
     if (platform) q = q.eq('platform', platform)
     q = q.eq('user_id', user.userId).in('search_id', searchIds)
     if (before)   q = q.lt('found_at', before)
+    if (after)    q = q.gte('found_at', after)
 
     const { data: rows, error } = await q
     if (error) throw new Error(error.message)

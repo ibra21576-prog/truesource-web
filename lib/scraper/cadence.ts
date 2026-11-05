@@ -6,14 +6,16 @@ export const PLATFORM_COOLDOWN_MS: Record<string, number> = {
   marktplaats: 60_000,  // public search endpoint
   tradera: 60_000,      // server-rendered search page
   willhaben: 60_000,    // server-rendered search page
-  kleinanzeigen: 60_000,
+  // Identical searches are grouped into one request per cycle, so the real
+  // per-marketplace rate stays low. Retries back off separately (health.ts).
+  kleinanzeigen: 45_000,
+  vinted: 45_000,       // per-user session, each user's own request budget
   craigslist: 90_000,
-  vinted: 90_000,
   gumtree: 90_000,
   kijiji: 90_000,
   shpock: 120_000,
   leboncoin: 120_000,
-  ebay: 180_000,        // official API quota
+  ebay: 120_000,        // Browse API quota: 5,000 calls/day shared by all eBay searches
 }
 
 // Stable per-search jitter spreads requests over time instead of sending every
