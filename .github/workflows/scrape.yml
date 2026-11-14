@@ -30,7 +30,7 @@ jobs:
     steps:
       - name: Ping cron every 15s
         env:
-          CRON_URL: https://truesource-web-pink.vercel.app/api/cron?key=${{ secrets.CRON_SECRET }}
+          CRON_URL: https://truesource-flip.onrender.com/api/cron?key=${{ secrets.CRON_SECRET }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
